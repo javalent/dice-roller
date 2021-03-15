@@ -21,6 +21,8 @@ There is full order-of-operations support, so it can even nested into parenthese
 
 The result is given the `.dice-roller` class. Override it to customize the look of the result.
 
+The dice button has the `.dice-roller-button` class. The button icon cannot be customized, but you can use this class to change how it is displayed.
+
 ### Coming Soon
 
 - Preview of actual dice results when hovered
