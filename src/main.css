@@ -1,0 +1,13 @@
+.dice-roller {
+	position: relative;
+	display: inline-block;
+	cursor: pointer;
+	margin: 0 0.25em 0 0;
+	font-weight: bolder;
+}
+.dice-roller > .dice-roller-button {
+	display: inline-block;
+	position: relative;
+	font-size: inherit;
+	margin-left: 0.25em;
+}
