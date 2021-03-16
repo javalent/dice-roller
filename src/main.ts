@@ -1,15 +1,11 @@
-import {
-	Plugin,
-	MarkdownPostProcessorContext,
-} from "obsidian";
+import { Plugin, MarkdownPostProcessorContext, Notice } from "obsidian";
 //@ts-ignore
-import lexer from 'lex';
+import lexer from "lex";
 
 import { faDice } from "@fortawesome/free-solid-svg-icons";
 import { icon } from "@fortawesome/fontawesome-svg-core";
 
-import './main.css';
-
+import "./main.css";
 
 class Parser {
 	table: any;
@@ -51,9 +47,12 @@ class Parser {
 								precedence = operator.precedence,
 								antecedence = table[punctuator].precedence;
 
-							if (precedence > antecedence ||
-								precedence === antecedence &&
-								operator.associativity === "right") break;
+							if (
+								precedence > antecedence ||
+								(precedence === antecedence &&
+									operator.associativity === "right")
+							)
+								break;
 							else output.push(stack.shift());
 						}
 
@@ -80,111 +79,63 @@ export default class MyPlugin extends Plugin {
 
 		this.registerMarkdownPostProcessor(
 			(el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
-				if (el.innerText.includes("{dice")) {
-					//find text node
 
-					let nodeList = this.findTextNode(el, "{dice:");
+				let nodeList = el.querySelectorAll("code");
+				if (!nodeList.length) return;
 
-					nodeList.forEach(node => {
-						let parent = node.parentElement;
-						/* node.parentElement.innerHTML = node.parentElement.innerHTML.replace(
-							/\{dice:\s*(\d+d\d+)\s*([\+\-\*])*\s*(\d+)*\}/g,
-							(match, p1, p2, p3, offset, string): string => {
-								let [, amt, face] = p1.match(/(\d+)d(\d+)/);
-								let modifier = p2;
-								let end = p3;
+				nodeList.forEach((node) => {
+					if (!node.innerText.includes("dice:")) return;
+					let parent = node.parentElement;
+
+					try {
+						let [, dice] = node.innerText.match(/dice:\s*([\s\S]+)\s*/);
+
+						dice = dice.split(" ").join("").trim();
+						let results = this.parseDice(dice);
+						
+						let container = createDiv().createDiv({
+							cls: "dice-roller",
+						});
+						container.setAttr("data-dice", dice);
 	
-								let results = getResults(
-									+amt,
-									+face,
-									modifier,
-									+end
-								);
+						let diceSpan = container.createSpan();
+						diceSpan.innerText = `${results}`;
 	
-								let container = createDiv().createDiv({
-									cls: "dice-roller",
-									title: ` (${p1}${p2 ? p2 : ""}${
-										p3 ? p3 : ""
-									}): ${results.join(", ")}`,
-								});
-								container.setAttrs({
-									"data-amt": +amt,
-									"data-face": +face,
-									"data-modifier": modifier,
-									"data-end": +end,
-									"data-source": match
-								});
-								let diceSpan = container.createSpan();
-	
-								diceSpan.innerText = `${results.reduce(
-									(a, c) => a + c
-								)}`;
-	
-								container
-									.createDiv({ cls: "dice-roller-button" })
-									.appendChild(
-										icon(faDice).node[0]
-									) as HTMLElement;
-	
-								return container.parentElement.innerHTML;
-							}
-						); */
-						node.parentElement.innerHTML = node.parentElement.innerHTML.replace(
-							/{dice:([\s\S]+?)}/g,
-							(match, dice): string => {
-								dice = dice.split(' ').join('').trim()
-								let results = this.parseDice(dice);
+						container
+							.createDiv({ cls: "dice-roller-button" })
+							.appendChild(icon(faDice).node[0]) as HTMLElement;
+						parent.replaceChild(container, node);
+						container.addEventListener("click", () => {
+							let { dice } = (container as HTMLElement).dataset;
+							let results = this.parseDice(dice);
+							diceSpan.innerText = `${results}`;
+						});
+					} catch(e) {
+						new Notice(`There was an error parsing the dice string: ${node.innerText}`);
+						return;
+					}
+					
+				});
 
-								let container = createDiv().createDiv({
-									cls: "dice-roller",
-								});
-								container.setAttr('data-dice', dice);
-
-								let diceSpan = container.createSpan();
-
-								diceSpan.innerText = `${results}`;
-
-								container
-									.createDiv({ cls: "dice-roller-button" })
-									.appendChild(
-										icon(faDice).node[0]
-									) as HTMLElement;
-
-								return container.parentElement.innerHTML;
-							}
-						);
-						parent
-							.querySelectorAll(".dice-roller")
-							.forEach(diceElement => {
-								this.registerDomEvent(
-									diceElement as HTMLElement,
-									"click",
-									() => {
-										let {
-											dice
-										} = (diceElement as HTMLElement).dataset;
-
-										let results = this.parseDice(dice.split(' ').join(''));
-										console.log(dice);
-										(diceElement
-											.children[0] as HTMLElement).innerText = `${results}`;
-									}
-								);
-							});
-					});
-				}
 			}
+
 		);
 
-		this.lexer = new lexer;
+		this.lexer = new lexer();
 
 		this.lexer.addRule(/\s+/, function () {
 			/* skip whitespace */
 		});
-
-		this.lexer.addRule(/([0-9]\d*)+[Dd]?([0-9]\d*)?/, function (lexeme: string) {
-			return lexeme; // symbols
+		this.lexer.addRule(/[{}]+/, function () {
+			/* skip brackets */
 		});
+
+		this.lexer.addRule(
+			/([0-9]\d*)+[Dd]?([0-9]\d*)?/,
+			function (lexeme: string) {
+				return lexeme; // symbols
+			}
+		);
 
 		this.lexer.addRule(/[\(\^\+\-\*\/\)]/, function (lexeme: string) {
 			return lexeme; // punctuation (i.e. "(", "+", "-", "*", "/", ")")
@@ -192,17 +143,17 @@ export default class MyPlugin extends Plugin {
 
 		var exponent = {
 			precedence: 3,
-			associativity: "right"
+			associativity: "right",
 		};
 
 		var factor = {
 			precedence: 2,
-			associativity: "left"
+			associativity: "left",
 		};
 
 		var term = {
 			precedence: 1,
-			associativity: "left"
+			associativity: "left",
 		};
 
 		this.parser = new Parser({
@@ -210,44 +161,26 @@ export default class MyPlugin extends Plugin {
 			"-": term,
 			"*": factor,
 			"/": factor,
-			"^": exponent
+			"^": exponent,
 		});
-
 	}
 
 	onunload() {
 		console.log("DiceRoller unloaded");
 	}
 
-	findTextNode(el: Node, search?: string): Node[] {
-		let list: Node[] = [];
-		if (
-			el.nodeType == 3 &&
-			el.textContent != "\n" &&
-			el.textContent.includes(search)
-		) {
-			list.push(el);
-		}
-
-		if (el.hasChildNodes()) {
-			el.childNodes.forEach(node => {
-				list.push(...this.findTextNode(node, search));
-			});
-		}
-
-		return list;
-	}
 	operators: any = {
 		"+": (a: number, b: number): number => a + b,
 		"-": (a: number, b: number): number => a - b,
 		"*": (a: number, b: number): number => a * b,
 		"/": (a: number, b: number): number => a / b,
-		"^": (a: number, b: number): number => { return Math.pow(a, b) }
+		"^": (a: number, b: number): number => {
+			return Math.pow(a, b);
+		},
 	};
 	parseDice(text: string): number {
-
 		let stack: number[] = [];
-		this.parse(text).forEach(d => {
+		this.parse(text).forEach((d) => {
 			switch (d) {
 				case "+":
 				case "-":
@@ -259,7 +192,9 @@ export default class MyPlugin extends Plugin {
 					stack.push(this.operators[d](a, b));
 					break;
 				default:
-					stack.push(this.roll(d).reduce((acc, curr) => acc + curr, 0));
+					stack.push(
+						this.roll(d).reduce((acc, curr) => acc + curr, 0)
+					);
 			}
 		});
 		return stack[0];
@@ -269,17 +204,18 @@ export default class MyPlugin extends Plugin {
 		if (!/([0-9]\d*)[dD]?([0-9]\d*)?/.test(dice)) return;
 		let [, amount, faces] = dice.match(/([0-9]\d*)[dD]?([0-9]\d*)?/);
 		if (!faces) return [Number(amount)];
-		let result = [...Array(Number(amount))].map(() => Math.floor(Math.random() * Number(faces)) + 1);
+		let result = [...Array(Number(amount))].map(
+			() => Math.floor(Math.random() * Number(faces)) + 1
+		);
 
 		return result;
 	}
 
 	parse(input: string): string[] {
 		this.lexer.setInput(input);
-		var tokens = [], token;
-		while (token = this.lexer.lex()) tokens.push(token);
+		var tokens = [],
+			token;
+		while ((token = this.lexer.lex())) tokens.push(token);
 		return this.parser.parse(tokens);
 	}
-
 }
-
