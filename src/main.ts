@@ -71,7 +71,7 @@ class Parser {
 	}
 }
 
-export default class MyPlugin extends Plugin {
+export default class DiceRoller extends Plugin {
 	lexer: lexer;
 	parser: Parser;
 	async onload() {
@@ -84,11 +84,11 @@ export default class MyPlugin extends Plugin {
 				if (!nodeList.length) return;
 
 				nodeList.forEach((node) => {
-					if (!node.innerText.includes("dice:")) return;
+					if (!node.innerText.includes("dice")) return;
 					let parent = node.parentElement;
 
 					try {
-						let [, dice] = node.innerText.match(/dice:\s*([\s\S]+)\s*/);
+						let [, dice] = node.innerText.match(/dice\s*([\s\S]+)\s*/);
 
 						dice = dice.split(" ").join("").trim();
 						let results = this.parseDice(dice);
@@ -106,7 +106,6 @@ export default class MyPlugin extends Plugin {
 							.appendChild(icon(faDice).node[0]) as HTMLElement;
 						parent.replaceChild(container, node);
 						container.addEventListener("click", () => {
-							let { dice } = (container as HTMLElement).dataset;
 							let results = this.parseDice(dice);
 							diceSpan.innerText = `${results}`;
 						});
