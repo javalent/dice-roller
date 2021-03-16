@@ -2,7 +2,7 @@
 Dice rolling for Obsidian.md
 
 ### Usage
-Simply place ```dice XdX``` and in preview mode it will be replaced with the result of the dice rolls. In preview mode, the result can be re-rolled by clicking on it.
+Simply place a code block with your formula in your note (such as ` ```dice XdX``` `) and in preview mode it will be replaced with the result of the dice rolls. The result can then be re-rolled by clicking on it.
 
 #### Dice Formula
 
@@ -12,10 +12,10 @@ There is full order-of-operations support, so it can even nested into parenthese
 
 | Examples                            |
 | ----------------------------------- |
-| ```dice 1d2```                         |
-| ```dice 3d4 + 2```                    |
-| ```dice 1d12 + 1d10 + 2```             |
-| ```dice 3d4+3d4-(3d4 * 1d4) - 2^1d2``` |
+| ` ```dice 1d2``` `                         |
+| ` ```dice 3d4 + 2``` `                    |
+| ` ```dice 1d12 + 1d10 + 2``` `             |
+| ` ```dice 3d4+3d4-(3d4 * 1d4) - 2^1d2``` ` |
 
 #### Customization
 
