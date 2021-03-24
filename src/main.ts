@@ -11,6 +11,7 @@ import { faDice } from "@fortawesome/free-solid-svg-icons";
 import { icon } from "@fortawesome/fontawesome-svg-core";
 
 import "./main.css";
+import { platform } from "node:os";
 
 class Parser {
     table: any;
@@ -126,13 +127,19 @@ export default class DiceRoller extends Plugin {
                         container.addEventListener(
                             "mouseenter",
                             (evt: MouseEvent) => {
-                                let containerDims = (evt.target as HTMLElement).getBoundingClientRect();
+                                this.buildTooltip(container, dice, {
+                                    delay: 0,
+                                    gap: 2,
+                                    placement: "top"
+                                });
+
+                                /* let containerDims = (evt.target as HTMLElement).getBoundingClientRect();
                                 let hover = new HoverPopover(
                                     container.parentElement,
                                     evt.target as HTMLElement,
                                     0
-                                ) as HoverPopoverWithElement;
-                                hover.onload = () => {
+                                ) as HoverPopoverWithElement; */
+                                /* hover.onload = () => {
                                     console.log(
                                         hover.hoverEl.getBoundingClientRect()
                                     );
@@ -174,7 +181,7 @@ export default class DiceRoller extends Plugin {
                                         "style",
                                         `top: ${top - 5}px; left: ${left}px;`
                                     );
-                                };
+                                }; */
                             }
                         );
                     } catch (e) {
@@ -283,5 +290,121 @@ export default class DiceRoller extends Plugin {
             token;
         while ((token = this.lexer.lex())) tokens.push(token);
         return this.parser.parse(tokens);
+    }
+
+    buildTooltip(
+        element: HTMLElement,
+        text: string,
+        params: {
+            placement?: string;
+            classes?: string[];
+            gap?: number;
+            delay?: number;
+        }
+    ) {
+        let placement = params.placement ? params.placement : "top";
+        let classes = params.classes ? params.classes : [];
+        let gap = params.gap ? params.gap : 4;
+        let delay = params.delay ? params.delay : 0;
+        if (delay > 0) {
+            //timeout
+        }
+        const { top, left, width, height } = element.getBoundingClientRect();
+        let b = 0;
+        let w = 0;
+
+        if (this.tooltip && this.tooltipTarget === element) {
+            this.tooltip.setText(text);
+        } else {
+            this.clearTooltip();
+            this.tooltip = createDiv({
+                cls: "tooltip",
+                text: text
+            });
+        }
+
+        let arrow = this.tooltip.createDiv("tooltip-arrow");
+
+        switch (placement) {
+            case "bottom": {
+                b = top + height + gap;
+                w = left + width / 2;
+                break;
+            }
+            case "right": {
+                b = top + height / 2;
+                w = left + width + gap;
+                classes.push("mod-right");
+                break;
+            }
+            case "left": {
+                b = top + height / 2;
+                w = left - gap;
+                classes.push("mod-left");
+                break;
+            }
+            case "top": {
+                b = top - gap - 5;
+                w = left + width / 2;
+                classes.push("mod-top");
+                break;
+            }
+        }
+
+        this.tooltip.addClasses(classes);
+        this.tooltip.style.top = "0px";
+        this.tooltip.style.left = "0px";
+        this.tooltip.style.width = "";
+        this.tooltip.style.height = "";
+        (this.tooltip.parentNode || document.body).appendChild(this.tooltip);
+
+        var k = this.tooltip.getBoundingClientRect(),
+            C = ["bottom", "top"].contains(placement) ? k.width / 2 : k.width,
+            x = ["left", "right"].contains(placement) ? k.height / 2 : k.height;
+        if (
+            ("left" === placement ? (w -= C) : "top" === placement && (b -= x),
+            b + x > window.innerHeight && (b = window.innerHeight - x - gap),
+            (b = Math.max(b, gap)),
+            "top" === placement || "bottom" === placement)
+        ) {
+            if (w + C > window.innerWidth)
+                (w -= E = w + C + gap - window.innerWidth),
+                    (arrow.style.left = "initial"),
+                    (arrow.style.right = C - E - gap / 2 + "px");
+            else if (w - gap - C < 0) {
+                var E;
+                (w += E = -(w - gap - C)),
+                    (arrow.style.right = "initial"),
+                    (arrow.style.left = C - E - gap / 2 + "px");
+            }
+            w = Math.max(w, gap);
+        }
+
+        this.tooltip.style.top = b + "px";
+        this.tooltip.style.left = w + "px";
+        this.tooltip.style.width = k.width + "px";
+        this.tooltip.style.height = k.height + "px";
+        this.tooltipTarget = element;
+
+        this.tooltipTarget.addEventListener("mouseleave", () => {
+            this.clearTooltip();
+        });
+    }
+    tooltip: HTMLDivElement = null;
+    tooltipTimeout: number = null;
+    tooltipTarget: HTMLElement = null;
+    clearTooltipTimeout() {
+        if (this.tooltipTimeout) {
+            clearTimeout(this.tooltipTimeout);
+            this.tooltipTimeout = null;
+        }
+    }
+    clearTooltip() {
+        this.clearTooltipTimeout();
+        if (this.tooltip) {
+            this.tooltip.detach();
+            this.tooltip = null;
+            this.tooltipTarget = null;
+        }
     }
 }
