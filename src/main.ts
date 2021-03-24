@@ -1,4 +1,9 @@
-import { Plugin, MarkdownPostProcessorContext, Notice } from "obsidian";
+import {
+    Plugin,
+    MarkdownPostProcessorContext,
+    Notice,
+    HoverPopover
+} from "obsidian";
 //@ts-ignore
 import lexer from "lex";
 
@@ -83,7 +88,12 @@ export default class DiceRoller extends Plugin {
                 if (!nodeList.length) return;
 
                 nodeList.forEach((node) => {
-                    if (!/^dice:\s*([0-9]+[dD]?[0-9]*[-+*^\(\)]*)\s*?/.test(node.innerText)) return;
+                    if (
+                        !/^dice:\s*([0-9]+[dD]?[0-9]*[-+*^\(\)]*)\s*?/.test(
+                            node.innerText
+                        )
+                    )
+                        return;
                     let parent = node.parentElement;
 
                     try {
@@ -110,6 +120,63 @@ export default class DiceRoller extends Plugin {
                             let results = this.parseDice(dice);
                             diceSpan.innerText = `${results}`;
                         });
+                        interface HoverPopoverWithElement extends HoverPopover {
+                            hoverEl: HTMLElement;
+                        }
+                        container.addEventListener(
+                            "mouseenter",
+                            (evt: MouseEvent) => {
+                                let containerDims = (evt.target as HTMLElement).getBoundingClientRect();
+                                let hover = new HoverPopover(
+                                    container.parentElement,
+                                    evt.target as HTMLElement,
+                                    0
+                                ) as HoverPopoverWithElement;
+                                hover.onload = () => {
+                                    console.log(
+                                        hover.hoverEl.getBoundingClientRect()
+                                    );
+                                    hover.hoverEl.addClass(
+                                        "tooltip",
+                                        "mod-top"
+                                    );
+                                    hover.hoverEl.removeClass(
+                                        "popover",
+                                        "hover-popover"
+                                    );
+                                    hover.hoverEl.removeClass(
+                                        "popover",
+                                        "hover-popover"
+                                    );
+                                    hover.hoverEl.appendChild(
+                                        createSpan({}, (s) => {
+                                            s.innerText = dice;
+                                        })
+                                    );
+
+                                    let arrow = createDiv({
+                                        cls: "tooltip-arrow"
+                                    });
+                                    hover.hoverEl.appendChild(arrow);
+                                    let top =
+                                        containerDims.top -
+                                        hover.hoverEl.getBoundingClientRect()
+                                            .height;
+                                    let left =
+                                        containerDims.left +
+                                        containerDims.width / 2;
+                                    console.log(
+                                        "🚀 ~ file: main.ts ~ line 130 ~ DiceRoller ~ container.addEventListener ~ left",
+                                        hover.hoverEl.getBoundingClientRect()
+                                            .width
+                                    );
+                                    hover.hoverEl.setAttribute(
+                                        "style",
+                                        `top: ${top - 5}px; left: ${left}px;`
+                                    );
+                                };
+                            }
+                        );
                     } catch (e) {
                         new Notice(
                             `There was an error parsing the dice string: ${node.innerText}`
