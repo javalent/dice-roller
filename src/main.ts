@@ -1,4 +1,9 @@
-import { Plugin, MarkdownPostProcessorContext, Notice } from "obsidian";
+import {
+    Plugin,
+    MarkdownPostProcessorContext,
+    Notice,
+    HoverPopover
+} from "obsidian";
 //@ts-ignore
 import lexer from "lex";
 
@@ -6,6 +11,7 @@ import { faDice } from "@fortawesome/free-solid-svg-icons";
 import { icon } from "@fortawesome/fontawesome-svg-core";
 
 import "./main.css";
+import { platform } from "node:os";
 
 class Parser {
     table: any;
@@ -83,16 +89,22 @@ export default class DiceRoller extends Plugin {
                 if (!nodeList.length) return;
 
                 nodeList.forEach((node) => {
-                    if (!/^dice:\s*([0-9]+[dD]?[0-9]*[-+*^\(\)]*)\s*?/.test(node.innerText)) return;
+                    if (
+                        !/^dice:\s*([0-9]+[dD]?[0-9]*[-+*^\(\)]*)\s*?/.test(
+                            node.innerText
+                        )
+                    )
+                        return;
                     let parent = node.parentElement;
 
                     try {
                         let [, dice] = node.innerText.match(
                             /^dice:\s*([\s\S]+)\s*?/
                         );
+                        
 
                         dice = dice.split(" ").join("").trim();
-                        let results = this.parseDice(dice);
+                        let { result, map } = this.parseDice(dice);
 
                         let container = createDiv().createDiv({
                             cls: "dice-roller"
@@ -100,16 +112,54 @@ export default class DiceRoller extends Plugin {
                         container.setAttr("data-dice", dice);
 
                         let diceSpan = container.createSpan();
-                        diceSpan.innerText = `${results}`;
+                        diceSpan.innerText = `${result}`;
 
                         container
                             .createDiv({ cls: "dice-roller-button" })
                             .appendChild(icon(faDice).node[0]) as HTMLElement;
+
                         parent.replaceChild(container, node);
+
                         container.addEventListener("click", () => {
-                            let results = this.parseDice(dice);
-                            diceSpan.innerText = `${results}`;
+                            let { result, map } = this.parseDice(dice);
+
+                            diceSpan.innerText = `${result}`;
+                            let text = `${dice}`;
+                            map.forEach(([roll, result]) => {
+                                text = text.replace(
+                                    roll,
+                                    `[${result.join(", ")}]`
+                                );
+                            });
+
+                            this.buildTooltip(container, `${dice}\n${text}`, {
+                                delay: 0,
+                                gap: 2,
+                                placement: "top"
+                            });
                         });
+                        container.addEventListener(
+                            "mouseenter",
+                            (evt: MouseEvent) => {
+                                let text = `${dice}`;
+                                map.forEach(([roll, result]) => {
+                                    text = text.replace(
+                                        roll,
+                                        `[${result.join(", ")}]`
+                                    );
+                                });
+
+                                this.buildTooltip(
+                                    container,
+                                    `${dice}\n${text}`,
+                                    {
+                                        delay: 0,
+                                        gap: 2,
+                                        placement: "top"
+                                    }
+                                );
+                            }
+                        );
                     } catch (e) {
                         new Notice(
                             `There was an error parsing the dice string: ${node.innerText}`
@@ -165,6 +215,7 @@ export default class DiceRoller extends Plugin {
     }
 
     onunload() {
+        this.clearTooltip();
         console.log("DiceRoller unloaded");
     }
 
@@ -177,8 +228,9 @@ export default class DiceRoller extends Plugin {
             return Math.pow(a, b);
         }
     };
-    parseDice(text: string): number {
-        let stack: number[] = [];
+    parseDice(text: string): { result: number; map: any[] } {
+        let stack: number[] = [],
+            diceMap: Array<[string, number[]]> = [];
         this.parse(text).forEach((d) => {
             switch (d) {
                 case "+":
@@ -191,12 +243,14 @@ export default class DiceRoller extends Plugin {
                     stack.push(this.operators[d](a, b));
                     break;
                 default:
+                    const res = this.roll(d);
+                    if (!Number(d)) diceMap.push([d, res]);
                     stack.push(
-                        this.roll(d).reduce((acc, curr) => acc + curr, 0)
+                        res.reduce((acc: number, curr: number) => acc + curr, 0)
                     );
             }
         });
-        return stack[0];
+        return { result: stack[0], map: diceMap };
     }
 
     roll(dice: string): number[] {
@@ -216,5 +270,144 @@ export default class DiceRoller extends Plugin {
             token;
         while ((token = this.lexer.lex())) tokens.push(token);
         return this.parser.parse(tokens);
+    }
+
+    buildTooltip(
+        element: HTMLElement,
+        text: string,
+        params: {
+            placement?: string;
+            classes?: string[];
+            gap?: number;
+            delay?: number;
+        }
+    ) {
+        let { placement = "top", classes = [], gap = 4, delay = 0 } = params;
+
+        if (delay > 0) {
+            setTimeout(() => {
+                this.buildTooltip(element, text, {
+                    placement: placement,
+                    classes: classes,
+                    gap: gap,
+                    delay: 0
+                });
+            }, delay);
+            return;
+        }
+        const { top, left, width, height } = element.getBoundingClientRect();
+
+        if (this.tooltip && this.tooltipTarget === element) {
+            this.tooltip.setText(text);
+        } else {
+            this.clearTooltip();
+            this.tooltip = createDiv({
+                cls: "tooltip",
+                text: text
+            });
+
+            (this.tooltip.parentNode || document.body).appendChild(
+                this.tooltip
+            );
+        }
+
+        let arrow =
+            (this.tooltip.getElementsByClassName(
+                "tooltip-arrow"
+            )[0] as HTMLDivElement) || this.tooltip.createDiv("tooltip-arrow");
+
+        let bottom = 0;
+        let middle = 0;
+        switch (placement) {
+            case "bottom": {
+                bottom = top + height + gap;
+                middle = left + width / 2;
+                break;
+            }
+            case "right": {
+                bottom = top + height / 2;
+                middle = left + width + gap;
+                classes.push("mod-right");
+                break;
+            }
+            case "left": {
+                bottom = top + height / 2;
+                middle = left - gap;
+                classes.push("mod-left");
+                break;
+            }
+            case "top": {
+                bottom = top - gap - 5;
+                middle = left + width / 2;
+                classes.push("mod-top");
+                break;
+            }
+        }
+
+        this.tooltip.addClasses(classes);
+        this.tooltip.style.top = "0px";
+        this.tooltip.style.left = "0px";
+        this.tooltip.style.width = "";
+        this.tooltip.style.height = "";
+
+        const {
+            width: ttWidth,
+            height: ttHeight
+        } = this.tooltip.getBoundingClientRect();
+        const actualWidth = ["bottom", "top"].contains(placement)
+            ? ttWidth / 2
+            : ttWidth;
+        const actualHeight = ["left", "right"].contains(placement)
+            ? ttHeight / 2
+            : ttHeight;
+        if (
+            ("left" === placement
+                ? (middle -= actualWidth)
+                : "top" === placement && (bottom -= actualHeight),
+            bottom + actualHeight > window.innerHeight &&
+                (bottom = window.innerHeight - actualHeight - gap),
+            (bottom = Math.max(bottom, gap)),
+            "top" === placement || "bottom" === placement)
+        ) {
+            if (middle + actualWidth > window.innerWidth) {
+                const E = middle + actualWidth + gap - window.innerWidth;
+                middle -= E;
+                arrow.style.left = "initial";
+                arrow.style.right = actualWidth - E - gap / 2 + "px";
+            } else if (middle - gap - actualWidth < 0) {
+                const E = -(middle - gap - actualWidth);
+                middle += E;
+                arrow.style.right = "initial";
+                arrow.style.left = actualWidth - E - gap / 2 + "px";
+            }
+            middle = Math.max(middle, gap);
+        }
+
+        this.tooltip.style.top = bottom + "px";
+        this.tooltip.style.left = middle + "px";
+        this.tooltip.style.width = ttWidth + "px";
+        this.tooltip.style.height = ttHeight + "px";
+        this.tooltipTarget = element;
+
+        this.tooltipTarget.addEventListener("mouseleave", () => {
+            this.clearTooltip();
+        });
+    }
+    tooltip: HTMLDivElement = null;
+    tooltipTimeout: number = null;
+    tooltipTarget: HTMLElement = null;
+    clearTooltipTimeout() {
+        if (this.tooltipTimeout) {
+            clearTimeout(this.tooltipTimeout);
+            this.tooltipTimeout = null;
+        }
+    }
+    clearTooltip() {
+        this.clearTooltipTimeout();
+        if (this.tooltip) {
+            this.tooltip.detach();
+            this.tooltip = null;
+            this.tooltipTarget = null;
+        }
     }
 }
