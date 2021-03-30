@@ -101,9 +101,10 @@ export default class DiceRoller extends Plugin {
                         let [, dice] = node.innerText.match(
                             /^dice:\s*([\s\S]+)\s*?/
                         );
+                        
 
                         dice = dice.split(" ").join("").trim();
-                        let results = this.parseDice(dice);
+                        let { result, map } = this.parseDice(dice);
 
                         let container = createDiv().createDiv({
                             cls: "dice-roller"
@@ -111,77 +112,52 @@ export default class DiceRoller extends Plugin {
                         container.setAttr("data-dice", dice);
 
                         let diceSpan = container.createSpan();
-                        diceSpan.innerText = `${results}`;
+                        diceSpan.innerText = `${result}`;
 
                         container
                             .createDiv({ cls: "dice-roller-button" })
                             .appendChild(icon(faDice).node[0]) as HTMLElement;
+
                         parent.replaceChild(container, node);
+
                         container.addEventListener("click", () => {
-                            let results = this.parseDice(dice);
-                            diceSpan.innerText = `${results}`;
+                            let { result, map } = this.parseDice(dice);
+
+                            diceSpan.innerText = `${result}`;
+                            let text = `${dice}`;
+                            map.forEach(([roll, result]) => {
+                                text = text.replace(
+                                    roll,
+                                    `[${result.join(", ")}]`
+                                );
+                            });
+
+                            this.buildTooltip(container, `${dice}\n${text}`, {
+                                delay: 0,
+                                gap: 2,
+                                placement: "top"
+                            });
                         });
-                        interface HoverPopoverWithElement extends HoverPopover {
-                            hoverEl: HTMLElement;
-                        }
                         container.addEventListener(
                             "mouseenter",
                             (evt: MouseEvent) => {
-                                this.buildTooltip(container, dice, {
-                                    delay: 0,
-                                    gap: 2,
-                                    placement: "top"
+                                let text = `${dice}`;
+                                map.forEach(([roll, result]) => {
+                                    text = text.replace(
+                                        roll,
+                                        `[${result.join(", ")}]`
+                                    );
                                 });
 
-                                /* let containerDims = (evt.target as HTMLElement).getBoundingClientRect();
-                                let hover = new HoverPopover(
-                                    container.parentElement,
-                                    evt.target as HTMLElement,
-                                    0
-                                ) as HoverPopoverWithElement; */
-                                /* hover.onload = () => {
-                                    console.log(
-                                        hover.hoverEl.getBoundingClientRect()
-                                    );
-                                    hover.hoverEl.addClass(
-                                        "tooltip",
-                                        "mod-top"
-                                    );
-                                    hover.hoverEl.removeClass(
-                                        "popover",
-                                        "hover-popover"
-                                    );
-                                    hover.hoverEl.removeClass(
-                                        "popover",
-                                        "hover-popover"
-                                    );
-                                    hover.hoverEl.appendChild(
-                                        createSpan({}, (s) => {
-                                            s.innerText = dice;
-                                        })
-                                    );
-
-                                    let arrow = createDiv({
-                                        cls: "tooltip-arrow"
-                                    });
-                                    hover.hoverEl.appendChild(arrow);
-                                    let top =
-                                        containerDims.top -
-                                        hover.hoverEl.getBoundingClientRect()
-                                            .height;
-                                    let left =
-                                        containerDims.left +
-                                        containerDims.width / 2;
-                                    console.log(
-                                        "🚀 ~ file: main.ts ~ line 130 ~ DiceRoller ~ container.addEventListener ~ left",
-                                        hover.hoverEl.getBoundingClientRect()
-                                            .width
-                                    );
-                                    hover.hoverEl.setAttribute(
-                                        "style",
-                                        `top: ${top - 5}px; left: ${left}px;`
-                                    );
-                                }; */
+                                this.buildTooltip(
+                                    container,
+                                    `${dice}\n${text}`,
+                                    {
+                                        delay: 0,
+                                        gap: 2,
+                                        placement: "top"
+                                    }
+                                );
                             }
                         );
                     } catch (e) {
@@ -239,6 +215,7 @@ export default class DiceRoller extends Plugin {
     }
 
     onunload() {
+        this.clearTooltip();
         console.log("DiceRoller unloaded");
     }
 
@@ -251,8 +228,9 @@ export default class DiceRoller extends Plugin {
             return Math.pow(a, b);
         }
     };
-    parseDice(text: string): number {
-        let stack: number[] = [];
+    parseDice(text: string): { result: number; map: any[] } {
+        let stack: number[] = [],
+            diceMap: Array<[string, number[]]> = [];
         this.parse(text).forEach((d) => {
             switch (d) {
                 case "+":
@@ -265,12 +243,14 @@ export default class DiceRoller extends Plugin {
                     stack.push(this.operators[d](a, b));
                     break;
                 default:
+                    const res = this.roll(d);
+                    if (!Number(d)) diceMap.push([d, res]);
                     stack.push(
-                        this.roll(d).reduce((acc, curr) => acc + curr, 0)
+                        res.reduce((acc: number, curr: number) => acc + curr, 0)
                     );
             }
         });
-        return stack[0];
+        return { result: stack[0], map: diceMap };
     }
 
     roll(dice: string): number[] {
@@ -302,16 +282,20 @@ export default class DiceRoller extends Plugin {
             delay?: number;
         }
     ) {
-        let placement = params.placement ? params.placement : "top";
-        let classes = params.classes ? params.classes : [];
-        let gap = params.gap ? params.gap : 4;
-        let delay = params.delay ? params.delay : 0;
+        let { placement = "top", classes = [], gap = 4, delay = 0 } = params;
+
         if (delay > 0) {
-            //timeout
+            setTimeout(() => {
+                this.buildTooltip(element, text, {
+                    placement: placement,
+                    classes: classes,
+                    gap: gap,
+                    delay: 0
+                });
+            }, delay);
+            return;
         }
         const { top, left, width, height } = element.getBoundingClientRect();
-        let b = 0;
-        let w = 0;
 
         if (this.tooltip && this.tooltipTarget === element) {
             this.tooltip.setText(text);
@@ -321,31 +305,40 @@ export default class DiceRoller extends Plugin {
                 cls: "tooltip",
                 text: text
             });
+
+            (this.tooltip.parentNode || document.body).appendChild(
+                this.tooltip
+            );
         }
 
-        let arrow = this.tooltip.createDiv("tooltip-arrow");
+        let arrow =
+            (this.tooltip.getElementsByClassName(
+                "tooltip-arrow"
+            )[0] as HTMLDivElement) || this.tooltip.createDiv("tooltip-arrow");
 
+        let bottom = 0;
+        let middle = 0;
         switch (placement) {
             case "bottom": {
-                b = top + height + gap;
-                w = left + width / 2;
+                bottom = top + height + gap;
+                middle = left + width / 2;
                 break;
             }
             case "right": {
-                b = top + height / 2;
-                w = left + width + gap;
+                bottom = top + height / 2;
+                middle = left + width + gap;
                 classes.push("mod-right");
                 break;
             }
             case "left": {
-                b = top + height / 2;
-                w = left - gap;
+                bottom = top + height / 2;
+                middle = left - gap;
                 classes.push("mod-left");
                 break;
             }
             case "top": {
-                b = top - gap - 5;
-                w = left + width / 2;
+                bottom = top - gap - 5;
+                middle = left + width / 2;
                 classes.push("mod-top");
                 break;
             }
@@ -356,34 +349,44 @@ export default class DiceRoller extends Plugin {
         this.tooltip.style.left = "0px";
         this.tooltip.style.width = "";
         this.tooltip.style.height = "";
-        (this.tooltip.parentNode || document.body).appendChild(this.tooltip);
 
-        var k = this.tooltip.getBoundingClientRect(),
-            C = ["bottom", "top"].contains(placement) ? k.width / 2 : k.width,
-            x = ["left", "right"].contains(placement) ? k.height / 2 : k.height;
+        const {
+            width: ttWidth,
+            height: ttHeight
+        } = this.tooltip.getBoundingClientRect();
+        const actualWidth = ["bottom", "top"].contains(placement)
+            ? ttWidth / 2
+            : ttWidth;
+        const actualHeight = ["left", "right"].contains(placement)
+            ? ttHeight / 2
+            : ttHeight;
         if (
-            ("left" === placement ? (w -= C) : "top" === placement && (b -= x),
-            b + x > window.innerHeight && (b = window.innerHeight - x - gap),
-            (b = Math.max(b, gap)),
+            ("left" === placement
+                ? (middle -= actualWidth)
+                : "top" === placement && (bottom -= actualHeight),
+            bottom + actualHeight > window.innerHeight &&
+                (bottom = window.innerHeight - actualHeight - gap),
+            (bottom = Math.max(bottom, gap)),
             "top" === placement || "bottom" === placement)
         ) {
-            if (w + C > window.innerWidth)
-                (w -= E = w + C + gap - window.innerWidth),
-                    (arrow.style.left = "initial"),
-                    (arrow.style.right = C - E - gap / 2 + "px");
-            else if (w - gap - C < 0) {
-                var E;
-                (w += E = -(w - gap - C)),
-                    (arrow.style.right = "initial"),
-                    (arrow.style.left = C - E - gap / 2 + "px");
+            if (middle + actualWidth > window.innerWidth) {
+                const E = middle + actualWidth + gap - window.innerWidth;
+                middle -= E;
+                arrow.style.left = "initial";
+                arrow.style.right = actualWidth - E - gap / 2 + "px";
+            } else if (middle - gap - actualWidth < 0) {
+                const E = -(middle - gap - actualWidth);
+                middle += E;
+                arrow.style.right = "initial";
+                arrow.style.left = actualWidth - E - gap / 2 + "px";
             }
-            w = Math.max(w, gap);
+            middle = Math.max(middle, gap);
         }
 
-        this.tooltip.style.top = b + "px";
-        this.tooltip.style.left = w + "px";
-        this.tooltip.style.width = k.width + "px";
-        this.tooltip.style.height = k.height + "px";
+        this.tooltip.style.top = bottom + "px";
+        this.tooltip.style.left = middle + "px";
+        this.tooltip.style.width = ttWidth + "px";
+        this.tooltip.style.height = ttHeight + "px";
         this.tooltipTarget = element;
 
         this.tooltipTarget.addEventListener("mouseleave", () => {
