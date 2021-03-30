@@ -27,7 +27,7 @@ The dice button has the `.dice-roller-button` class. The button icon cannot be c
 
 ## Coming Soon
 
--   [ ] Preview of actual dice results when hovered
+-   [x] Preview of actual dice results when hovered
 -   [ ] Set success and failure states (e.g., 1d20, above 10 passes)
 -   [ ] Drop X number of lowest or highest results
 
