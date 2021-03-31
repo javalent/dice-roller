@@ -1,9 +1,4 @@
-import {
-    Plugin,
-    MarkdownPostProcessorContext,
-    Notice,
-    HoverPopover
-} from "obsidian";
+import { Plugin, MarkdownPostProcessorContext, Notice } from "obsidian";
 //@ts-ignore
 import lexer from "lex";
 
@@ -11,14 +6,18 @@ import { faDice } from "@fortawesome/free-solid-svg-icons";
 import { icon } from "@fortawesome/fontawesome-svg-core";
 
 import "./main.css";
-import { platform } from "node:os";
+
+interface Lexeme {
+    type: string;
+    data: string;
+}
 
 class Parser {
     table: any;
     constructor(table: any) {
         this.table = table;
     }
-    parse(input: string[]) {
+    parse(input: Lexeme[]) {
         var length = input.length,
             table = this.table,
             output = [],
@@ -28,30 +27,30 @@ class Parser {
         while (index < length) {
             var token = input[index++];
 
-            switch (token) {
+            switch (token.data) {
                 case "(":
                     stack.unshift(token);
                     break;
                 case ")":
                     while (stack.length) {
                         var token = stack.shift();
-                        if (token === "(") break;
+                        if (token.data === "(") break;
                         else output.push(token);
                     }
 
-                    if (token !== "(")
+                    if (token.data !== "(")
                         throw new Error("Mismatched parentheses.");
                     break;
                 default:
-                    if (table.hasOwnProperty(token)) {
+                    if (table.hasOwnProperty(token.data)) {
                         while (stack.length) {
                             var punctuator = stack[0];
 
-                            if (punctuator === "(") break;
+                            if (punctuator.data === "(") break;
 
-                            var operator = table[token],
+                            var operator = table[token.data],
                                 precedence = operator.precedence,
-                                antecedence = table[punctuator].precedence;
+                                antecedence = table[punctuator.data].precedence;
 
                             if (
                                 precedence > antecedence ||
@@ -69,7 +68,7 @@ class Parser {
 
         while (stack.length) {
             var token = stack.shift();
-            if (token !== "(") output.push(token);
+            if (token.data !== "(") output.push(token);
             else throw new Error("Mismatched parentheses.");
         }
 
@@ -82,29 +81,22 @@ export default class DiceRoller extends Plugin {
     parser: Parser;
     async onload() {
         console.log("DiceRoller plugin loaded");
-
         this.registerMarkdownPostProcessor(
             (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
                 let nodeList = el.querySelectorAll("code");
                 if (!nodeList.length) return;
 
                 nodeList.forEach((node) => {
-                    if (
-                        !/^dice:\s*([0-9]+[dD]?[0-9]*[-+*^\(\)]*)\s*?/.test(
-                            node.innerText
-                        )
-                    )
-                        return;
+                    if (!/^dice:\s*([\s\S]+)\s*?/.test(node.innerText)) return;
                     let parent = node.parentElement;
 
                     try {
                         let [, dice] = node.innerText.match(
                             /^dice:\s*([\s\S]+)\s*?/
                         );
-                        
 
                         dice = dice.split(" ").join("").trim();
-                        let { result, map } = this.parseDice(dice);
+                        let { result, text } = this.parseDice(dice);
 
                         let container = createDiv().createDiv({
                             cls: "dice-roller"
@@ -112,7 +104,10 @@ export default class DiceRoller extends Plugin {
                         container.setAttr("data-dice", dice);
 
                         let diceSpan = container.createSpan();
-                        diceSpan.innerText = `${result}`;
+                        diceSpan.innerText = `${result.toLocaleString(
+                            navigator.language,
+                            { maximumFractionDigits: 2 }
+                        )}`;
 
                         container
                             .createDiv({ cls: "dice-roller-button" })
@@ -121,16 +116,14 @@ export default class DiceRoller extends Plugin {
                         parent.replaceChild(container, node);
 
                         container.addEventListener("click", () => {
-                            let { result, map } = this.parseDice(dice);
+                            let { result, /* map, */ text } = this.parseDice(
+                                dice
+                            );
 
-                            diceSpan.innerText = `${result}`;
-                            let text = `${dice}`;
-                            map.forEach(([roll, result]) => {
-                                text = text.replace(
-                                    roll,
-                                    `[${result.join(", ")}]`
-                                );
-                            });
+                            diceSpan.innerText = `${result.toLocaleString(
+                                navigator.language,
+                                { maximumFractionDigits: 2 }
+                            )}`;
 
                             this.buildTooltip(container, `${dice}\n${text}`, {
                                 delay: 0,
@@ -141,14 +134,6 @@ export default class DiceRoller extends Plugin {
                         container.addEventListener(
                             "mouseenter",
                             (evt: MouseEvent) => {
-                                let text = `${dice}`;
-                                map.forEach(([roll, result]) => {
-                                    text = text.replace(
-                                        roll,
-                                        `[${result.join(", ")}]`
-                                    );
-                                });
-
                                 this.buildTooltip(
                                     container,
                                     `${dice}\n${text}`,
@@ -180,14 +165,38 @@ export default class DiceRoller extends Plugin {
         });
 
         this.lexer.addRule(
-            /([0-9]\d*)+[Dd]?([0-9]\d*)?/,
+            /([0-9]\d*)?[Dd]?([0-9]\d*)/,
             function (lexeme: string) {
-                return lexeme; // symbols
+                return {
+                    type: "dice",
+                    data: lexeme
+                }; // symbols
             }
         );
 
         this.lexer.addRule(/[\(\^\+\-\*\/\)]/, function (lexeme: string) {
-            return lexeme; // punctuation (i.e. "(", "+", "-", "*", "/", ")")
+            return {
+                type: "math",
+                data: lexeme
+            }; // punctuation ("^", "(", "+", "-", "*", "/", ")")
+        });
+
+        this.lexer.addRule(/kh?[^l]\d*/, function (lexeme: string) {
+            return { type: "kh", data: lexeme.replace(/^\D+/g, "") };
+        });
+        this.lexer.addRule(/dl[^h]\d*/, function (lexeme: string) {
+            return { type: "dl", data: lexeme.replace(/^\D+/g, "") };
+        });
+
+        this.lexer.addRule(/kl\d*/, function (lexeme: string) {
+            return { type: "kl", data: lexeme.replace(/^\D+/g, "") };
+        });
+        this.lexer.addRule(/dh\d*/, function (lexeme: string) {
+            return { type: "dh", data: lexeme.replace(/^\D+/g, "") };
+        });
+
+        this.lexer.addRule(/!/, function (lexeme: string) {
+            return { type: "!", data: "" };
         });
 
         var exponent = {
@@ -228,29 +237,119 @@ export default class DiceRoller extends Plugin {
             return Math.pow(a, b);
         }
     };
-    parseDice(text: string): { result: number; map: any[] } {
-        let stack: number[] = [],
-            diceMap: Array<[string, number[]]> = [];
+    parseDice(text: string): { result: number; text: string } {
+        let stack: number[][] = [],
+            diceMap: Array<[string, any[]]> = [];
+
         this.parse(text).forEach((d) => {
-            switch (d) {
+            switch (d.type) {
                 case "+":
                 case "-":
                 case "*":
                 case "/":
                 case "^":
-                    let b = stack.pop();
-                    let a = stack.pop();
-                    stack.push(this.operators[d](a, b));
+                case "math":
+                    let b = stack
+                        .pop()
+                        .reduce((acc: number, curr: number) => acc + curr, 0);
+                    let a = stack
+                        .pop()
+                        .reduce((acc: number, curr: number) => acc + curr, 0);
+                    stack.push([this.operators[d.data](a, b)]);
                     break;
-                default:
-                    const res = this.roll(d);
-                    if (!Number(d)) diceMap.push([d, res]);
-                    stack.push(
-                        res.reduce((acc: number, curr: number) => acc + curr, 0)
+                case "kh":
+                case "dl": {
+                    const order = [...stack[stack.length - 1]].map((s, i) => [
+                        s,
+                        i
+                    ]);
+                    let num = Number(d.data) || 1;
+
+                    if (d.type === "dl") num = order.length - num;
+                    stack[stack.length - 1] = order
+                        .sort((a, b) => a[0] - b[0])
+                        .slice(-1 * num)
+                        .sort((a, b) => a[1] - b[1])
+                        .map((s) => s[0]);
+
+                    const diceOrder = diceMap[
+                        diceMap.length - 1
+                    ][1].map((s, i) => [s, i]);
+
+                    diceMap[diceMap.length - 1][1] = diceOrder
+                        .sort((a, b) => a[0] - b[0])
+                        .map((n, i, a) =>
+                            i < a.length - num ? [`${n[0]}d`, n[1]] : n
+                        )
+                        .sort((a, b) => a[1] - b[1])
+                        .map((s) => s[0]);
+
+                    text = text.replace(/(kh?|dl)\d*/, "");
+
+                    break;
+                }
+                case "kl":
+                case "dh": {
+                    const order = [...stack[stack.length - 1]].map((s, i) => [
+                        s,
+                        i
+                    ]);
+                    let num = Number(d.data) || 1;
+                    if (d.type === "dh") num = order.length - num;
+
+                    stack[stack.length - 1] = order
+                        .sort((a, b) => b[0] - a[0])
+                        .slice(-1 * num)
+                        .sort((a, b) => a[1] - b[1])
+                        .map((s) => s[0]);
+
+                    const diceOrder = diceMap[
+                        diceMap.length - 1
+                    ][1].map((s, i) => [s, i]);
+
+                    diceMap[diceMap.length - 1][1] = diceOrder
+                        .sort((a, b) => b[0] - a[0])
+                        .map((n, i, a) =>
+                            i < a.length - num ? [`${n[0]}d`, n[1]] : n
+                        )
+                        .sort((a, b) => a[1] - b[1])
+                        .map((s) => s[0]);
+                    text = text.replace(/(kl?|dh)\d*/, "");
+                    break;
+                }
+                case "!": {
+                    let roll = stack[stack.length - 1];
+                    let d = diceMap[diceMap.length - 1][0].match(
+                        /\d*[dD](\d+)/
                     );
+                    let dice = Number(d[1]);
+                    roll.forEach((result) => {
+                        if (result == dice) {
+                            roll.push(this.roll(`1d${dice}`)[0]);
+                        }
+                    });
+
+                    console.log(roll, dice);
+
+                    break;
+                }
+                case "dice":
+                    const res = this.roll(d.data);
+                    if (!Number(d.data)) diceMap.push([d.data, res]);
+                    stack.push(res);
+                    break;
             }
         });
-        return { result: stack[0], map: diceMap };
+        diceMap.forEach(([roll, result]) => {
+            text = text.replace(roll, `[${result.join(", ")}]`);
+        });
+        return {
+            result: stack[0].reduce(
+                (acc: number, curr: number) => acc + curr,
+                0
+            ),
+            text: text
+        };
     }
 
     roll(dice: string): number[] {
@@ -264,7 +363,7 @@ export default class DiceRoller extends Plugin {
         return result;
     }
 
-    parse(input: string): string[] {
+    parse(input: string): Lexeme[] {
         this.lexer.setInput(input);
         var tokens = [],
             token;
