@@ -19,6 +19,43 @@ There is full order-of-operations support, so it can even nested into parenthese
 | `` `dice: 1d12 + 1d10 + 5` ``             |
 | `` `dice: 3d4+3d4-(3d4 * 1d4) - 2^1d7` `` |
 
+### Percentile Dice
+
+The parser supports percentile dice. `` `dice: Xd%` `` will roll X d100 dice.
+
+## Dice Modifiers
+
+The parser supports several modifiers.
+
+If a modifier has a parameter, it will default to 1 if not provided.
+
+| Modifier          | Syntax         | Description                                                                                        |
+| ----------------- | -------------- | -------------------------------------------------------------------------------------------------- |
+| Min/Max           | `Xd[Y, Z]`     | Roll a dice with minimum Y, maximum Z.                                                             |
+| Keep Highest      | `k{n}`/`kh{n}` | Keep highest `{n}` dice.                                                                           |
+| Keep Lowest       | `kl{n}`        | Keep lowest `{n}` dice.                                                                            |
+| Drop Lowest       | `d{n}`/`dl{n}` | Drop lowest `{n}` dice.                                                                            |
+| Drop Highest      | `dh{n}`        | Drop highest `{n}` dice.                                                                           |
+| Explode           | `!{n}`, `!i`   | Explode dice `{n}` times. If `i` is provided, will explode "infinitely" (capped at 100).           |
+| Explode & Combine | `!!{n}`, `!!i` | Same as explode, but exploded dice are summed in the display instead of being shown individually.  |
+| Re-roll           | `r{n}`, `ri`   | Re-roll a minimum dice `{n}` times. If `i` is provided, will re-roll "infinitely" (capped at 100). |
+
+### Min/Max
+
+### Keep Highest
+
+### Keep Lowest
+
+### Drop Lowest
+
+### Drop Highest
+
+### Explode
+
+### Explode & Combine
+
+### Re-roll
+
 ### Customization
 
 The result is given the `.dice-roller` class. Override it to customize the look of the result.
