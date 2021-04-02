@@ -6,6 +6,12 @@ Inline dice rolling for Obsidian.md.
 
 Simply place a code block with your formula in your note (such as `` `dice: XdX` ``) and in preview mode it will be replaced with the result of the dice rolls. The result can then be re-rolled by clicking on it.
 
+### Tooltip
+
+The result in preview mode has a tooltip that will appear when you hover over it.
+
+It displays the formula used to calculate the result on the top line, and displays the calculated rolls on the bottom line.
+
 ### Dice Formula
 
 The parser supports addition, subtraction, multiplication, division, and exponents of an arbitrary number of dice or static numbers. Spaces are removed before the formula is parsed.
@@ -25,7 +31,7 @@ The parser supports percentile dice. `` `dice: Xd%` `` will roll X d100 dice.
 
 ## Dice Modifiers
 
-The parser supports several modifiers.
+The parser supports several modifiers. If a die has been modified, it will display _how_ it has been modified in the tooltip.
 
 If a modifier has a parameter, it will default to 1 if not provided.
 
@@ -42,19 +48,116 @@ If a modifier has a parameter, it will default to 1 if not provided.
 
 ### Min/Max
 
+#### Syntax: Xd[Y, Z]
+
+Create a custom die, with a minimum of Y and a maximum of Z.
+
+#### Example
+
+| Formula            | Result         |
+| ------------------ | -------------- |
+| `dice: 4d[7, 8]`   | `[7, 7, 8, 7]` |
+| `dice: 1d[20, 20]` | `[20]`         |
+
 ### Keep Highest
+
+#### Syntax: XdXk{n} / XdXkh{n}
+
+Keeps highest `{n}` rolls. `{n}` is optional, and will default to 1. Dropped dice will display as `Nd`.
+
+#### Example
+
+| Formula                          | Result                 |
+| -------------------------------- | ---------------------- |
+| `dice: 2d20k` / `dice: 2d20kh`   | `[7d, 18] = 18`        |
+| `dice: 4d20k2` / `dice: 4d20kh2` | `[4d, 12, 15, 3d = 27` |
 
 ### Keep Lowest
 
+#### Syntax: XdXkl{n}
+
+Keeps lowest `{n}` rolls. `{n}` is optional, and will default to 1. Dropped dice will display as `Nd`.
+
+#### Example
+
+| Formula         | Result                 |
+| --------------- | ---------------------- |
+| `dice: 2d20kl`  | `[7, 18d] = 7`         |
+| `dice: 4d20kl2` | `[4, 12d, 15d, 3] = 7` |
+
 ### Drop Lowest
+
+#### Syntax: XdXd{n} / XdXdl{n}
+
+Drops lowest `{n}` rolls. `{n}` is optional, and will default to 1. Dropped dice will display as `Nd`.
+
+#### Example
+
+| Formula                          | Result                 |
+| -------------------------------- | ---------------------- |
+| `dice: 2d20d` / `dice: 2d20dl`   | `[7d, 18] = 18`        |
+| `dice: 4d20d2` / `dice: 4d20dl2` | `[4d, 12, 15, 3d = 27` |
 
 ### Drop Highest
 
+#### Syntax: XdXdh{n}
+
+Keeps lowest `{n}` rolls. `{n}` is optional, and will default to 1. Dropped dice will display as `Nd`.
+
+#### Example
+
+| Formula         | Result                |
+| --------------- | --------------------- |
+| `dice: 2d20dh`  | `[7, 18d] = 7`        |
+| `dice: 4d20dh2` | `[4, 12d, 15d, 3 = 7` |
+
 ### Explode
+
+#### Syntax: XdX!{n|i}
+
+Explode will roll an additional die for each maximum die roll. If `{n}` or `{i}` is provided, it will continue exploding until a number less than the maximum is rolled, or `{n}` attempts have been made. `{i}` is capped at 100 rolls to prevent abuse.
+
+Exploded dice will display as `N!`.
+
+#### Examples
+
+| Formula       | Result                                |
+| ------------- | ------------------------------------- |
+| `dice: 2d20!` | `[7, 20!, 8] = 35`                    |
+| `dice: 2d4!3` | `[3, 4!, 4!, 2] = 13`                 |
+| `dice: 1d1!i` | `[1!, 1!, 1!, ... , 1!, 1!, 1] = 100` |
 
 ### Explode & Combine
 
+#### Syntax: XdX!!{n|i}
+
+Equivalent to explode, but exploded dice are combined in the tooltip display.
+
+#### Examples
+
+| Formula        | Result          |
+| -------------- | --------------- |
+| `dice: 2d20!!` | `[7, 28!] = 34` |
+| `dice: 2d4!!3` | `[3, 10!] = 13` |
+| `dice: 1d1!!i` | `[100!] = 100`  |
+
 ### Re-roll
+
+#### Syntax: XdXr{n|i}
+
+Re-roll a minimum dice. If `{n}` or `{i}` is provided, it will continue re-rolling until a number greater than the minimum is rolled, or `{n}` attempts have been made.
+
+Re-rolled dice _replace_ their original roll, unlike explode, which _add_ new rolls.
+
+Re-rolled dice will display as `Xr` in the tooltip.
+
+#### Examples
+
+| Formula       | Result          |
+| ------------- | --------------- |
+| `dice: 2d20r` | `[7r, 18] = 15` |
+| `dice: 2d4r3` | `[3, 3r] = 6`   |
+| `dice: 1d2ri` | `[2r] = 2`      |
 
 ### Customization
 
@@ -65,8 +168,10 @@ The dice button has the `.dice-roller-button` class. The button icon cannot be c
 ## Coming Soon
 
 -   [x] Preview of actual dice results when hovered
--   [ ] Set success and failure states (e.g., 1d20, above 10 passes)
--   [ ] Drop X number of lowest or highest results
+-   [x] Drop X number of lowest or highest results
+-   [ ] Conditionals for modifiers (e.g., changing "maximum" to explode on)
+-   [ ] Pass/fail states for entire result
+-   [ ] Fudge/fate die
 
 # Installation
 
