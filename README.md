@@ -159,11 +159,30 @@ Re-rolled dice will display as `Xr` in the tooltip.
 | `dice: 2d4r3` | `[3, 3r] = 6`   |
 | `dice: 1d2ri` | `[2r] = 2`      |
 
-## Customization
+# Customization
 
-The result is given the `.dice-roller` class. Override it to customize the look of the result.
+The following CSS is applied:
 
-The dice button has the `.dice-roller-button` class. The button icon cannot be customized, but you can use this class to change how it is displayed.
+```css
+.dice-roller {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    margin: 0 0.25em 0 0;
+    font-weight: bolder;
+}
+.dice-roller > .dice-roller-button {
+    display: inline-block;
+    position: relative;
+    font-size: inherit;
+    margin-left: 0.25em;
+}
+.dice.tooltip {
+    max-width: unset !important;
+}
+```
+
+The dice icon cannot be changed, but setting the `.dice-roller-button` to to `display: none` will hide it.  
 
 # Coming Soon
 
