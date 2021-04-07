@@ -8,6 +8,7 @@ import { icon } from "@fortawesome/fontawesome-svg-core";
 import "./main.css";
 
 interface Lexeme {
+    original: string;
     type: string;
     data: string;
 }
@@ -156,79 +157,7 @@ export default class DiceRoller extends Plugin {
 
         this.lexer = new lexer();
 
-        this.lexer.addRule(/\s+/, function () {
-            /* skip whitespace */
-        });
-        this.lexer.addRule(/[{}]+/, function () {
-            /* skip brackets */
-        });
-
-        this.lexer.addRule(
-            /([0-9]\d*)?[Dd]?([0-9]\d*|%|\[\d+,\s?\d+\])/,
-            function (lexeme: string) {
-                return {
-                    type: "dice",
-                    data: lexeme
-                }; // symbols
-            }
-        );
-        /* this.lexer.addRule(/([0-9]\d*)[Dd]%/, function (lexeme: string) {
-            return {
-                type: "dice",
-                data: lexeme.replace("%", "100")
-            };
-        }); */
-
-        this.lexer.addRule(/[\(\^\+\-\*\/\)]/, function (lexeme: string) {
-            return {
-                type: "math",
-                data: lexeme
-            }; // punctuation ("^", "(", "+", "-", "*", "/", ")")
-        });
-
-        this.lexer.addRule(/kh?[^l]\d*/, function (lexeme: string) {
-            return { type: "kh", data: lexeme.replace(/^\D+/g, "") };
-        });
-        this.lexer.addRule(/dl[^h]\d*/, function (lexeme: string) {
-            return { type: "dl", data: lexeme.replace(/^\D+/g, "") };
-        });
-
-        this.lexer.addRule(/kl\d*/, function (lexeme: string) {
-            return { type: "kl", data: lexeme.replace(/^\D+/g, "") };
-        });
-        this.lexer.addRule(/dh\d*/, function (lexeme: string) {
-            return { type: "dh", data: lexeme.replace(/^\D+/g, "") };
-        });
-        this.lexer.addRule(/!!(i|\d+)?/, function (lexeme: string) {
-            let data = 1;
-            if (/!i/.test(lexeme)) {
-                data = 100;
-            } else if (/!\d+/.test(lexeme)) {
-                data = +lexeme.match(/!(\d+)/)[1];
-            }
-
-            return { type: "!!", data: data };
-        });
-        this.lexer.addRule(/!(i|\d)?/, function (lexeme: string) {
-            let data = 1;
-            if (/!i/.test(lexeme)) {
-                data = 100;
-            } else if (/!\d+/.test(lexeme)) {
-                data = +lexeme.match(/!(\d+)/)[1];
-            }
-
-            return { type: "!", data: data };
-        });
-
-        this.lexer.addRule(/r(i|\d+)?/, function (lexeme: string) {
-            let data = 1;
-            if (/ri/.test(lexeme)) {
-                data = 100;
-            } else if (/r\d+/.test(lexeme)) {
-                data = +lexeme.match(/r(\d+)/)[1];
-            }
-            return { type: "r", data: data };
-        });
+        this.addLexerRules();
 
         var exponent = {
             precedence: 3,
@@ -253,6 +182,96 @@ export default class DiceRoller extends Plugin {
             "^": exponent
         });
     }
+    addLexerRules() {
+        this.lexer.addRule(/\s+/, function () {
+            /* skip whitespace */
+        });
+        this.lexer.addRule(/[{}]+/, function () {
+            /* skip brackets */
+        });
+        this.lexer.addRule(/[\(\^\+\-\*\/\)]/, function (lexeme: string) {
+            return {
+                type: "math",
+                data: lexeme
+            }; // punctuation ("^", "(", "+", "-", "*", "/", ")")
+        });
+
+        this.lexer.addRule(
+            /(\d+)([Dd](\d+|%|\[\d+,\s?\d+\]))?/,
+            function (lexeme: string) {
+                return {
+                    type: "dice",
+                    data: lexeme
+                }; // symbols
+            }
+        );
+        /* this.lexer.addRule(/([0-9]\d*)[Dd]%/, function (lexeme: string) {
+            return {
+                type: "dice",
+                data: lexeme.replace("%", "100")
+            };
+        }); */
+
+        this.lexer.addRule(/kh?(?!:l)\d*/, function (lexeme: string) {
+            return {
+                type: "kh",
+                data: lexeme.replace(/^\D+/g, ""),
+                original: lexeme
+            };
+        });
+        this.lexer.addRule(/dl?(?!:h)\d*/, function (lexeme: string) {
+            return {
+                type: "dl",
+                data: lexeme.replace(/^\D+/g, ""),
+                original: lexeme
+            };
+        });
+
+        this.lexer.addRule(/kl\d*/, function (lexeme: string) {
+            return {
+                type: "kl",
+                data: lexeme.replace(/^\D+/g, ""),
+                original: lexeme
+            };
+        });
+        this.lexer.addRule(/dh\d*/, function (lexeme: string) {
+            return {
+                type: "dh",
+                data: lexeme.replace(/^\D+/g, ""),
+                original: lexeme
+            };
+        });
+        this.lexer.addRule(/!!(i|\d+)?/, function (lexeme: string) {
+            let data = 1;
+            if (/!i/.test(lexeme)) {
+                data = 100;
+            } else if (/!\d+/.test(lexeme)) {
+                data = +lexeme.match(/!(\d+)/)[1];
+            }
+
+            return { type: "!!", data: data, original: lexeme };
+        });
+        this.lexer.addRule(/!(i|\d)?/, function (lexeme: string) {
+            let data = 1;
+            if (/!i/.test(lexeme)) {
+                data = 100;
+            } else if (/!\d+/.test(lexeme)) {
+                data = +lexeme.match(/!(\d+)/)[1];
+            }
+
+            return { type: "!", data: data, original: lexeme };
+        });
+
+        this.lexer.addRule(/r(i|\d+)?/, function (lexeme: string) {
+            let data = 1;
+            if (/ri/.test(lexeme)) {
+                data = 100;
+            } else if (/r\d+/.test(lexeme)) {
+                data = +lexeme.match(/r(\d+)/)[1];
+            }
+            return { type: "r", data: data, original: lexeme };
+        });
+    }
 
     onunload() {
         this.clearTooltip();
@@ -269,10 +288,15 @@ export default class DiceRoller extends Plugin {
         }
     };
     parseDice(text: string): { result: number; text: string } {
-        let stack: number[][] = [],
-            diceMap: Array<[string, any[]]> = [];
+        let stack: DiceRoll[] = [],
+            diceMap: DiceRoll[] = [];
 
         this.parse(text).forEach((d) => {
+            console.log(
+                "🚀 ~ file: main.ts ~ line 296 ~ DiceRoller ~ this.parse ~ d.type",
+                d.type,
+                d.data
+            );
             switch (d.type) {
                 case "+":
                 case "-":
@@ -280,234 +304,105 @@ export default class DiceRoller extends Plugin {
                 case "/":
                 case "^":
                 case "math":
-                    let b = stack
-                        .pop()
-                        .reduce((acc: number, curr: number) => acc + curr, 0);
-                    let a = stack
-                        .pop()
-                        .reduce((acc: number, curr: number) => acc + curr, 0);
-                    stack.push([this.operators[d.data](a, b)]);
+                    const b = stack.pop().sum,
+                        a = stack.pop().sum,
+                        result = this.operators[d.data](a, b);
+                    console.log(result);
+                    stack.push(new DiceRoll(`${result}`));
                     break;
-                case "kh":
-                case "dl": {
-                    const order = [...stack[stack.length - 1]].map((s, i) => [
-                        s,
-                        i
-                    ]);
-                    let num = Number(d.data) || 1;
+                case "kh": {
+                    let diceInstance = diceMap[diceMap.length - 1];
+                    let data = d.data ? Number(d.data) : 1;
 
-                    if (d.type === "dl") num = order.length - num;
-                    stack[stack.length - 1] = order
-                        .sort((a, b) => a[0] - b[0])
-                        .slice(-1 * num)
-                        .sort((a, b) => a[1] - b[1])
-                        .map((s) => s[0]);
-
-                    const diceOrder = diceMap[
-                        diceMap.length - 1
-                    ][1].map((s, i) => [s, i]);
-
-                    diceMap[diceMap.length - 1][1] = diceOrder
-                        .sort((a, b) => a[0] - b[0])
-                        .map((n, i, a) =>
-                            i < a.length - num ? [`${n[0]}d`, n[1]] : n
-                        )
-                        .sort((a, b) => a[1] - b[1])
-                        .map((s) => s[0]);
-
-                    text = text.replace(/(kh?|dl)\d*/, "");
-
+                    diceInstance.keepHigh(data);
+                    diceInstance.modifiers.push(d.original);
                     break;
                 }
-                case "kl":
+                case "dl": {
+                    let diceInstance = diceMap[diceMap.length - 1];
+                    let data = d.data ? Number(d.data) : 1;
+
+                    data = diceInstance.results.size - data;
+
+                    diceInstance.keepHigh(data);
+                    diceInstance.modifiers.push(d.original);
+                    break;
+                }
+                case "kl": {
+                    let diceInstance = diceMap[diceMap.length - 1];
+                    let data = d.data ? Number(d.data) : 1;
+
+                    diceInstance.keepLow(data);
+                    diceInstance.modifiers.push(d.original);
+                    break;
+                }
                 case "dh": {
-                    const order = [...stack[stack.length - 1]].map((s, i) => [
-                        s,
-                        i
-                    ]);
-                    let num = Number(d.data) || 1;
-                    if (d.type === "dh") num = order.length - num;
+                    let diceInstance = diceMap[diceMap.length - 1];
+                    let data = d.data ? Number(d.data) : 1;
 
-                    stack[stack.length - 1] = order
-                        .sort((a, b) => b[0] - a[0])
-                        .slice(-1 * num)
-                        .sort((a, b) => a[1] - b[1])
-                        .map((s) => s[0]);
+                    data = diceInstance.results.size - data;
 
-                    const diceOrder = diceMap[
-                        diceMap.length - 1
-                    ][1].map((s, i) => [s, i]);
-
-                    diceMap[diceMap.length - 1][1] = diceOrder
-                        .sort((a, b) => b[0] - a[0])
-                        .map((n, i, a) =>
-                            i < a.length - num ? [`${n[0]}d`, n[1]] : n
-                        )
-                        .sort((a, b) => a[1] - b[1])
-                        .map((s) => s[0]);
-                    text = text.replace(/(kl?|dh)\d*/, "");
+                    diceInstance.keepLow(data);
+                    diceInstance.modifiers.push(d.original);
                     break;
                 }
                 case "!": {
-                    let roll = stack[stack.length - 1];
-                    let dm = [...diceMap[diceMap.length - 1]];
-                    let face = this.getFaces(dm[0] as string);
+                    let diceInstance = diceMap[diceMap.length - 1];
+                    let data = d.data
+                        ? d.data === "i"
+                            ? 100
+                            : Number(d.data)
+                        : 1;
 
-                    let dmRolls = dm[1];
+                    diceInstance.explode(data);
+                    diceInstance.modifiers.push(d.original);
 
-                    let times = Number(d.data);
-                    roll.forEach((result, index) => {
-                        if (result == face.max) {
-                            let i = 0,
-                                newRoll = this.roll(
-                                    `1d[${face.min}, ${face.max}]`
-                                )[0];
-                            roll.push(newRoll);
-                            (dmRolls as any[]).splice(
-                                index,
-                                1,
-                                `${face.max}!`,
-                                `${newRoll}!`
-                            );
-
-                            while (i < times - 1 && newRoll == face.max) {
-                                i++;
-                                newRoll = this.roll(
-                                    `1d[${face.min}, ${face.max}]`
-                                )[0];
-                                roll.push(newRoll);
-
-                                (dmRolls as any[]).splice(
-                                    index + 1 + i,
-                                    0,
-                                    newRoll == face.max && i != times - 1
-                                        ? `${newRoll}!`
-                                        : newRoll
-                                );
-                            }
-                        }
-                    });
-
-                    text = text.replace(/!(i|\d)?/, "");
                     break;
                 }
                 case "!!": {
-                    let roll = stack[stack.length - 1];
-                    let dm = diceMap[diceMap.length - 1];
-                    let face = this.getFaces(dm[0] as string);
+                    let diceInstance = diceMap[diceMap.length - 1];
+                    let data = d.data
+                        ? d.data === "i"
+                            ? 100
+                            : Number(d.data)
+                        : 1;
 
-                    let dmRolls = dm[1];
+                    diceInstance.explodeAndCombine(data);
+                    diceInstance.modifiers.push(d.original);
 
-                    let times = Number(d.data);
-                    roll.forEach((result, index) => {
-                        if (result == face.max) {
-                            let i = 0,
-                                newRoll = this.roll(
-                                    `1d[${face.min}, ${face.max}]`
-                                )[0];
-                            roll[roll.length - 1] += newRoll;
-                            (dmRolls as any[]).splice(
-                                index,
-                                1,
-                                `${face}!`,
-                                newRoll
-                            );
-
-                            while (i < times - 1 && newRoll == face.max) {
-                                i++;
-                                newRoll = this.roll(
-                                    `1d[${face.min}, ${face.max}]`
-                                )[0];
-                                roll[roll.length - 1] += newRoll;
-
-                                dmRolls[index + 1] += newRoll;
-                            }
-                        }
-                    });
-
-                    text = text.replace(/!!(i|\d)?/, "");
                     break;
                 }
                 case "r": {
-                    let roll = stack[stack.length - 1];
+                    let diceInstance = diceMap[diceMap.length - 1];
+                    let data = d.data
+                        ? d.data === "i"
+                            ? 100
+                            : Number(d.data)
+                        : 1;
 
-                    let dm = diceMap[diceMap.length - 1];
-                    let face = this.getFaces(dm[0] as string);
-
-                    let dmRolls = dm[1];
-
-                    let times = Number(d.data);
-                    roll.forEach((result, index) => {
-                        if (result == face.min) {
-                            let i = 0,
-                                newRoll = this.roll(
-                                    `1d[${face.min}, ${face.max}]`
-                                )[0];
-                            roll[index] = newRoll;
-                            dmRolls[index] = `${newRoll}r`;
-
-                            while (i < times - 1 && newRoll == face.min) {
-                                i++;
-                                newRoll = this.roll(
-                                    `1d[${face.min}, ${face.max}]`
-                                )[0];
-                                roll[index] = newRoll;
-
-                                dmRolls[index] = `${newRoll}r`;
-                            }
-                        }
-                    });
-
-                    text = text.replace(/r(i|\d)?/, "");
+                    diceInstance.reroll(data);
+                    diceInstance.modifiers.push(d.original);
                     break;
                 }
                 case "dice":
-                    const res = this.roll(d.data);
-                    if (!Number(d.data)) diceMap.push([d.data, res]);
-                    stack.push([...res]);
+                    ///const res = this.roll(d.data);
+
+                    diceMap.push(new DiceRoll(d.data));
+                    stack.push(diceMap[diceMap.length - 1]);
                     break;
             }
         });
-        diceMap.forEach(([roll, result]) => {
-            text = text.replace(roll, `[${result.join(", ")}]`);
+        diceMap.forEach((diceInstance) => {
+            text = text.replace(
+                `${diceInstance.dice}${diceInstance.modifiers.join("")}`,
+                `[${diceInstance.display}]`
+            );
         });
         return {
-            result: stack[0].reduce(
-                (acc: number, curr: number) => acc + curr,
-                0
-            ),
+            result: stack[0].sum,
             text: text
         };
     }
-    getFaces(dice: string): { min: number; max: number } {
-        if (!/[dD](\d+|%|\[\d+,\s?\d+\])/.test(dice)) {
-            return void 0;
-        }
-        if (/[dD]\[\d+,\s?\d+\]/.test(dice)) {
-            let [, min, max] = dice.match(/[dD]\[(\d+),\s?(\d+)\]/);
-            return { min: Number(min), max: Number(max) };
-        }
-        let [, ret] = dice.match(/\d*[dD](\d+|%)/);
-
-        return ret === "%"
-            ? { min: 1, max: 100 }
-            : { min: 1, max: Number(ret) };
-    }
-
-    roll(dice: string): number[] {
-        if (!/([0-9]\d*)[dD]?([0-9]\d*|%)?/.test(dice)) return;
-        let [, amount] = dice.match(/([0-9]\d*)[dD]?/);
-        let faces = this.getFaces(dice);
-        if (!faces) return [Number(amount)];
-        let result = [...Array(Number(amount))].map(
-            () =>
-                Math.floor(Math.random() * (faces.max - faces.min + 1)) +
-                faces.min
-        );
-
-        return result;
-    }
-
     parse(input: string): Lexeme[] {
         this.lexer.setInput(input);
         var tokens = [],
@@ -562,6 +457,10 @@ export default class DiceRoller extends Plugin {
 
         let bottom = 0;
         let middle = 0;
+
+        if (top - this.tooltip.getBoundingClientRect().height < 0) {
+            placement = "bottom";
+        }
         switch (placement) {
             case "bottom": {
                 bottom = top + height + gap;
@@ -593,7 +492,6 @@ export default class DiceRoller extends Plugin {
         this.tooltip.style.left = "0px";
         this.tooltip.style.width = "";
         this.tooltip.style.height = "";
-
         const {
             width: ttWidth,
             height: ttHeight
@@ -604,6 +502,7 @@ export default class DiceRoller extends Plugin {
         const actualHeight = ["left", "right"].contains(placement)
             ? ttHeight / 2
             : ttHeight;
+
         if (
             ("left" === placement
                 ? (middle -= actualWidth)
@@ -653,5 +552,241 @@ export default class DiceRoller extends Plugin {
             this.tooltip = null;
             this.tooltipTarget = null;
         }
+    }
+}
+
+type ResultMapInterface = Map<number, ResultInterface>;
+type ResultInterface = {
+    usable: boolean;
+    value: number;
+    modifiers: Set<string>;
+};
+class DiceRoll {
+    dice: string;
+    result: number;
+    modifiers: string[] = [];
+    rolls: number;
+    faces: { min: number; max: number };
+    results: ResultMapInterface;
+    resultArray: number[];
+    originalRoll: number[];
+    modifiersAllowed: boolean = true;
+    static: boolean = false;
+    toString(): string {
+        return this.display;
+    }
+    constructor(dice: string) {
+        if (!/(-?\d+)[dD]?(\d+|%|\[\d+,\s?\d+\])?/.test(dice)) {
+            throw new Error("Non parseable dice string passed to DiceRoll.");
+        }
+        this.dice = dice.split(" ").join("");
+
+        if (/^-?\d+$/.test(this.dice)) {
+            this.static = true;
+            this.modifiersAllowed = false;
+        }
+        let [, rolls, faces = ""] = this.dice.match(
+            /(-?\d+)([Dd](?:\d+|%|\[\d+,\s?\d+\]))?/
+        ) || [, "1", ""];
+        this.rolls = Number(rolls) || 1;
+
+        let [, min = 1, max = 1] = faces.match(
+            /[dD]\[?(?:(\d+)\s?,)?\s?(\d+|%)\]?/
+        ) || [, 1, 1];
+
+        if (max === "%") max = 100;
+        if (Number(max) < Number(min)) {
+            [max, min] = [min, max];
+        }
+
+        this.faces = { max: max ? Number(max) : 1, min: min ? Number(min) : 1 };
+        this.originalRoll = this.roll();
+        this.results = new Map(
+            [...this.originalRoll].map((n, i) => {
+                return [i, { usable: true, value: n, modifiers: new Set() }];
+            })
+        );
+    }
+    replaceSelf(text: string): string {
+        return text.replace(
+            `${this.dice}${this.modifiers.join("")}`,
+            `[${this.display}]`
+        );
+    }
+    keepLow(drop: number = 1) {
+        if (!this.modifiersAllowed) {
+            new Notice("Modifiers are only allowed on dice rolls.");
+            return;
+        }
+        [...this.results]
+            .sort((a, b) => a[1].value - b[1].value)
+            .slice(drop - this.results.size)
+            .forEach(([index]) => {
+                const previous = this.results.get(index);
+                previous.usable = false;
+                previous.modifiers.add("d");
+                this.results.set(index, { ...previous });
+            });
+    }
+    keepHigh(drop: number = 1) {
+        if (!this.modifiersAllowed) {
+            new Notice("Modifiers are only allowed on dice rolls.");
+            return;
+        }
+        [...this.results]
+            .sort((a, b) => b[1].value - a[1].value)
+            .slice(drop)
+            .forEach(([index]) => {
+                const previous = this.results.get(index);
+                previous.usable = false;
+                previous.modifiers.add("d");
+                this.results.set(index, { ...previous });
+            });
+    }
+    reroll(times: number) {
+        if (!this.modifiersAllowed) {
+            new Notice("Modifiers are only allowed on dice rolls.");
+            return;
+        }
+        let i = 0,
+            toReroll = [...this.results].filter(
+                ([, { value }]) => value === this.faces.min
+            );
+        while (
+            i < times &&
+            toReroll.filter(([, { value }]) => value === this.faces.min)
+                .length > 0
+        ) {
+            i++;
+            toReroll.map(([, roll]) => {
+                roll.modifiers.add("r");
+                roll.value = this._getRandomBetween();
+            });
+        }
+
+        toReroll.forEach(([index, value]) => {
+            this.results.set(index, value);
+        });
+    }
+    explodeAndCombine(times: number) {
+        if (!this.modifiersAllowed) {
+            new Notice("Modifiers are only allowed on dice rolls.");
+            return;
+        }
+        let i = 0,
+            toExplode = [...this.results].filter(
+                ([, { value }]) => value === this.faces.max
+            );
+
+        toExplode.forEach(([index, value]) => {
+            let newRoll = this._getRandomBetween();
+            i++;
+            value.modifiers.add("!");
+            value.value += newRoll;
+            this.results.set(index, value);
+            while (i < times && newRoll === this.faces.max) {
+                i++;
+                newRoll = this._getRandomBetween();
+                value.value += newRoll;
+                this.results.set(index, value);
+            }
+        });
+    }
+    explode(times: number) {
+        if (!this.modifiersAllowed) {
+            new Notice("Modifiers are only allowed on dice rolls.");
+            return;
+        }
+        /**
+         * Find values that are equal to max
+         */
+        let toExplode = [...this.results].filter(
+            ([, { value }]) => value === this.faces.max
+        );
+
+        /** Track how many have been inserted */
+        let inserted = 0;
+
+        /** Loop through values that need to explode */
+        toExplode.forEach(([key, value]) => {
+            /** newRoll is the new value to check against the max face value */
+            let newRoll = value.value;
+            /** i tracks how many times this roll has been exploded */
+            let i = 0;
+
+            /**
+             * Explode max rolls.
+             */
+            while (i < times && newRoll === this.faces.max) {
+                let previous = this.results.get(key + inserted + i);
+                previous.modifiers.add("!");
+
+                newRoll = this._getRandomBetween();
+
+                /** Insert the new roll into the results map */
+                this._insertIntoMap(this.results, key + inserted + i + 1, {
+                    usable: true,
+                    value: newRoll,
+                    modifiers: new Set()
+                });
+                i++;
+            }
+            /** Update how many have been inserted. */
+            inserted += i;
+        });
+    }
+
+    /**
+     * Inserts a new result into a results map.
+     *
+     * @private
+     * @param {ResultMapInterface} map Results map to modify.
+     * @param {number} index Index to insert the new value.
+     * @param {ResultInterface} value Value to insert.
+     * @memberof DiceRoll
+     */
+    private _insertIntoMap(
+        map: ResultMapInterface,
+        index: number,
+        value: ResultInterface
+    ) {
+        /** Get all values above index, then reverse them */
+        let toUpdate = [...map].slice(index).reverse();
+        /** Loop through the values and re-insert them into the map at key + 1 */
+        toUpdate.forEach(([key, value]) => {
+            map.set(key + 1, value);
+        });
+        /** Insert the new value at the specified index */
+        map.set(index, value);
+    }
+
+    get sum() {
+        if (this.static) {
+            return Number(this.dice);
+        }
+        const results = [...this.results].map(([, { usable, value }]) =>
+            usable ? value : 0
+        );
+        return results.reduce((a, b) => a + b, 0);
+    }
+    get display() {
+        return [...this.results]
+            .map(
+                ([, { modifiers, value }]) =>
+                    `${value}${[...modifiers].join("")}`
+            )
+            .join(", ");
+    }
+    roll() {
+        if (this.static) {
+            return [Number(this.dice)];
+        }
+        return [...Array(this.rolls)].map(() => this._getRandomBetween());
+    }
+    private _getRandomBetween(
+        min: number = this.faces.min,
+        max: number = this.faces.max
+    ): number {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 }
