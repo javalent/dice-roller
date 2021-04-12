@@ -159,6 +159,35 @@ Re-rolled dice will display as `Xr` in the tooltip.
 | `dice: 2d4r3` | `[3, 3r] = 6`   |
 | `dice: 1d2ri` | `[2r] = 2`      |
 
+# Conditions
+
+The [Explode](#explode), [Explode and Combine](#explode--combine) and [Re-roll](#re-roll) modifiers each support an optional _condition_ operator. If provided, the condition operator
+changes the die rolls that the modifier is applied to.
+
+Supported Conditions:
+
+| Condition           | Effect                                                           |
+| ------------------- | ---------------------------------------------------------------- |
+| `={n}`              | Only rolls that are equal to `{n}` are modified.                 |
+| `!={n}*` or `=!{n}` | Only rolls that are not equal to `{n}` are modified.             |
+| `>{n}`              | Only rolls that are greater than `{n}` are modified.             |
+| `<{n}`              | Only rolls that are less than `{n}` are modified.                |
+| `>={n}`             | Only rolls that are greater than or equal to `{n}` are modified. |
+| `<={n}`             | Only rolls that are less than or equal to `{n}` are modified.    |
+
+\*Not supported as the first conditional on a parameterless [Explode](#explode) due to a collision with [Explode and Combine](#explode--combine). If necessary, use `=!{n}`.
+
+These conditions are fully chainable.
+
+## Examples
+
+| Formula          | Description                               | Result                                   |
+| ---------------- | ----------------------------------------- | ---------------------------------------- |
+| `dice: 1d4!=3`   | Explode rolls equal to 3                  | `[4, 2, 3!, 2] = 11`                     |
+| `dice: 1d4!i!=3` | Explode rolls not equal to 3 infinitely   | `[4!, 2!, 3, 2!, 3, 2!, 1!, 4!, 3] = 24` |
+| `dice: 1d4r<3`   | Re-roll rolls less than 3                 | `[4, 1, 2, 4] -> [4, 4r, 3r, 4] = 15`    |
+| `dice: 1d4r<2>3` | Re-roll rolls less than 2, greater than 3 | `[4, 1, 2, 4] -> [3r, 2r, 2, 2r] = 9`    |
+
 # Customization
 
 The following CSS is applied:
@@ -182,15 +211,16 @@ The following CSS is applied:
 }
 ```
 
-The dice icon cannot be changed, but setting the `.dice-roller-button` to to `display: none` will hide it.  
+The dice icon cannot be changed, but setting the `.dice-roller-button` to to `display: none` will hide it.
 
 # Coming Soon
 
 -   [x] Preview of actual dice results when hovered
 -   [x] Drop X number of lowest or highest results
--   [ ] Conditionals for modifiers (e.g., changing "maximum" to explode on)
+-   [x] Conditionals for modifiers (e.g., changing "maximum" to explode on)
+-   [x] Fudge/fate die
 -   [ ] Pass/fail states for entire result
--   [ ] Fudge/fate die
+-   [ ] Pass/fail states for individual rolls
 
 # Installation
 

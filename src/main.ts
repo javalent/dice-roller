@@ -7,10 +7,27 @@ import { icon } from "@fortawesome/fontawesome-svg-core";
 
 import "./main.css";
 
+String.prototype.matchAll =
+    String.prototype.matchAll ||
+    function* matchAll(regexp: RegExp): IterableIterator<RegExpMatchArray> {
+        const flags = regexp.global ? regexp.flags : regexp.flags + "g";
+        const re = new RegExp(regexp, flags);
+        let match;
+        while ((match = re.exec(this))) {
+            yield match;
+        }
+    };
+
 interface Lexeme {
     original: string;
     type: string;
     data: string;
+    conditionals: Conditional[];
+}
+
+interface Conditional {
+    operator: string;
+    comparer: number;
 }
 
 class Parser {
@@ -189,88 +206,171 @@ export default class DiceRoller extends Plugin {
         this.lexer.addRule(/[{}]+/, function () {
             /* skip brackets */
         });
-        this.lexer.addRule(/[\(\^\+\-\*\/\)]/, function (lexeme: string) {
-            return {
-                type: "math",
-                data: lexeme
-            }; // punctuation ("^", "(", "+", "-", "*", "/", ")")
-        });
+        this.lexer.addRule(
+            /[\(\^\+\-\*\/\)]/,
+            function (lexeme: string): Lexeme {
+                return {
+                    type: "math",
+                    data: lexeme,
+                    original: lexeme,
+                    conditionals: null
+                }; // punctuation ("^", "(", "+", "-", "*", "/", ")")
+            }
+        );
 
         this.lexer.addRule(
-            /(\d+)([Dd](\d+|%|\[\d+,\s?\d+\]))?/,
-            function (lexeme: string) {
+            /(\d+)[Dd]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?(?:(!?=|=!|>=?|<=?)(\d+))*/,
+            function (lexeme: string): Lexeme {
+                let [, dice] = lexeme.match(
+                        /(\d+[Dd]?\[?(?:-?\d+\s?,)?\s?(?:-?\d+|%|F)\]?)/
+                    ),
+                    conditionals: Conditional[] = [];
+                if (/(?:(!?=|=!|>=?|<=?)(\d+))+/.test(lexeme)) {
+                    for (const [, operator, comparer] of lexeme.matchAll(
+                        /(?:(!?=|=!|>=?|<=?)(\d+))/g
+                    )) {
+                        conditionals.push({
+                            operator: operator,
+                            comparer: Number(comparer)
+                        });
+                    }
+                }
                 return {
                     type: "dice",
-                    data: lexeme
+                    data: dice,
+                    original: lexeme,
+                    conditionals: conditionals
                 }; // symbols
             }
         );
-        /* this.lexer.addRule(/([0-9]\d*)[Dd]%/, function (lexeme: string) {
-            return {
-                type: "dice",
-                data: lexeme.replace("%", "100")
-            };
-        }); */
 
-        this.lexer.addRule(/kh?(?!:l)\d*/, function (lexeme: string) {
+        this.lexer.addRule(/kh?(?!:l)(\d*)/, function (lexeme: string): Lexeme {
+            /** keep high */
             return {
                 type: "kh",
                 data: lexeme.replace(/^\D+/g, ""),
-                original: lexeme
+                original: lexeme,
+                conditionals: null
             };
         });
-        this.lexer.addRule(/dl?(?!:h)\d*/, function (lexeme: string) {
+        this.lexer.addRule(/dl?(?!:h)\d*/, function (lexeme: string): Lexeme {
+            /** drop low */
             return {
                 type: "dl",
                 data: lexeme.replace(/^\D+/g, ""),
-                original: lexeme
+                original: lexeme,
+                conditionals: null
             };
         });
 
-        this.lexer.addRule(/kl\d*/, function (lexeme: string) {
+        this.lexer.addRule(/kl\d*/, function (lexeme: string): Lexeme {
+            /** keep low */
             return {
                 type: "kl",
                 data: lexeme.replace(/^\D+/g, ""),
-                original: lexeme
+                original: lexeme,
+                conditionals: null
             };
         });
-        this.lexer.addRule(/dh\d*/, function (lexeme: string) {
+        this.lexer.addRule(/dh\d*/, function (lexeme: string): Lexeme {
+            /** drop high */
             return {
                 type: "dh",
                 data: lexeme.replace(/^\D+/g, ""),
-                original: lexeme
+                original: lexeme,
+                conditionals: null
             };
         });
-        this.lexer.addRule(/!!(i|\d+)?/, function (lexeme: string) {
-            let data = 1;
-            if (/!i/.test(lexeme)) {
-                data = 100;
-            } else if (/!\d+/.test(lexeme)) {
-                data = +lexeme.match(/!(\d+)/)[1];
-            }
+        this.lexer.addRule(
+            /!!(i|\d+)?(?:(!?=|=!|>=?|<=?)(-?\d+))*/,
+            function (lexeme: string): Lexeme {
+                /** explode and combine */
+                let [, data = `1`] = lexeme.match(
+                        /!!(i|\d+)?(?:(!?=|=!|>=?|<=?)(-?\d+))*/
+                    ),
+                    conditionals: Conditional[] = [];
+                if (/(?:(!?=|=!|>=?|<=?)(-?\d+))+/.test(lexeme)) {
+                    for (const [, operator, comparer] of lexeme.matchAll(
+                        /(?:(!?=|=!|>=?|<=?)(-?\d+))/g
+                    )) {
+                        conditionals.push({
+                            operator: operator,
+                            comparer: Number(comparer)
+                        });
+                    }
+                }
+                if (/!!i/.test(lexeme)) {
+                    data = `100`;
+                }
 
-            return { type: "!!", data: data, original: lexeme };
-        });
-        this.lexer.addRule(/!(i|\d)?/, function (lexeme: string) {
-            let data = 1;
-            if (/!i/.test(lexeme)) {
-                data = 100;
-            } else if (/!\d+/.test(lexeme)) {
-                data = +lexeme.match(/!(\d+)/)[1];
+                return {
+                    type: "!!",
+                    data: data,
+                    original: lexeme,
+                    conditionals: conditionals
+                };
             }
+        );
+        this.lexer.addRule(
+            /!(i|\d+)?(?:(!?=|=!?|>=?|<=?)(-?\d+))*/,
+            function (lexeme: string): Lexeme {
+                /** explode */
+                let [, data = `1`] = lexeme.match(
+                        /!(i|\d+)?(?:(!?=|=!?|>=?|<=?)(-?\d+))*/
+                    ),
+                    conditionals: Conditional[] = [];
+                if (/(?:(!?=|=!|>=?|<=?)(\d+))+/.test(lexeme)) {
+                    for (const [, operator, comparer] of lexeme.matchAll(
+                        /(?:(!?=|=!?|>=?|<=?)(-?\d+))/g
+                    )) {
+                        conditionals.push({
+                            operator: operator,
+                            comparer: Number(comparer)
+                        });
+                    }
+                }
+                if (/!i/.test(lexeme)) {
+                    data = `100`;
+                }
 
-            return { type: "!", data: data, original: lexeme };
-        });
-
-        this.lexer.addRule(/r(i|\d+)?/, function (lexeme: string) {
-            let data = 1;
-            if (/ri/.test(lexeme)) {
-                data = 100;
-            } else if (/r\d+/.test(lexeme)) {
-                data = +lexeme.match(/r(\d+)/)[1];
+                return {
+                    type: "!",
+                    data: data,
+                    original: lexeme,
+                    conditionals: conditionals
+                };
             }
-            return { type: "r", data: data, original: lexeme };
-        });
+        );
+
+        this.lexer.addRule(
+            /r(i|\d+)?(?:(!?=|=!|>=?|<=?)(-?\d+))*/,
+            function (lexeme: string): Lexeme {
+                /** reroll */
+                let [, data = `1`] = lexeme.match(
+                        /r(i|\d+)?(?:(!?=|=!|>=?|<=?)(-?\d+))*/
+                    ),
+                    conditionals: Conditional[] = [];
+                if (/(?:(!?={1,2}|>=?|<=?)(-?\d+))+/.test(lexeme)) {
+                    for (const [, operator, comparer] of lexeme.matchAll(
+                        /(?:(!?=|=!|>=?|<=?)(-?\d+))/g
+                    )) {
+                        conditionals.push({
+                            operator: operator,
+                            comparer: Number(comparer)
+                        });
+                    }
+                }
+                if (/ri/.test(lexeme)) {
+                    data = `100`;
+                }
+                return {
+                    type: "r",
+                    data: data,
+                    original: lexeme,
+                    conditionals: conditionals
+                };
+            }
+        );
     }
 
     onunload() {
@@ -292,11 +392,6 @@ export default class DiceRoller extends Plugin {
             diceMap: DiceRoll[] = [];
 
         this.parse(text).forEach((d) => {
-            console.log(
-                "🚀 ~ file: main.ts ~ line 296 ~ DiceRoller ~ this.parse ~ d.type",
-                d.type,
-                d.data
-            );
             switch (d.type) {
                 case "+":
                 case "-":
@@ -307,7 +402,7 @@ export default class DiceRoller extends Plugin {
                     const b = stack.pop().sum,
                         a = stack.pop().sum,
                         result = this.operators[d.data](a, b);
-                    console.log(result);
+
                     stack.push(new DiceRoll(`${result}`));
                     break;
                 case "kh": {
@@ -348,39 +443,27 @@ export default class DiceRoller extends Plugin {
                 }
                 case "!": {
                     let diceInstance = diceMap[diceMap.length - 1];
-                    let data = d.data
-                        ? d.data === "i"
-                            ? 100
-                            : Number(d.data)
-                        : 1;
+                    let data = Number(d.data) || 1;
 
-                    diceInstance.explode(data);
+                    diceInstance.explode(data, d.conditionals);
                     diceInstance.modifiers.push(d.original);
 
                     break;
                 }
                 case "!!": {
                     let diceInstance = diceMap[diceMap.length - 1];
-                    let data = d.data
-                        ? d.data === "i"
-                            ? 100
-                            : Number(d.data)
-                        : 1;
+                    let data = Number(d.data) || 1;
 
-                    diceInstance.explodeAndCombine(data);
+                    diceInstance.explodeAndCombine(data, d.conditionals);
                     diceInstance.modifiers.push(d.original);
 
                     break;
                 }
                 case "r": {
                     let diceInstance = diceMap[diceMap.length - 1];
-                    let data = d.data
-                        ? d.data === "i"
-                            ? 100
-                            : Number(d.data)
-                        : 1;
+                    let data = Number(d.data) || 1;
 
-                    diceInstance.reroll(data);
+                    diceInstance.reroll(data, d.conditionals);
                     diceInstance.modifiers.push(d.original);
                     break;
                 }
@@ -572,6 +655,7 @@ class DiceRoll {
     originalRoll: number[];
     modifiersAllowed: boolean = true;
     static: boolean = false;
+    conditions: Conditional[];
     toString(): string {
         return this.display;
     }
@@ -585,21 +669,24 @@ class DiceRoll {
             this.static = true;
             this.modifiersAllowed = false;
         }
-        let [, rolls, faces = ""] = this.dice.match(
-            /(-?\d+)([Dd](?:\d+|%|\[\d+,\s?\d+\]))?/
-        ) || [, "1", ""];
+        let [, rolls, min = null, max = 1] = this.dice.match(
+            /(\d+)[dD]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?/
+        ) || [, 1, null, 1];
         this.rolls = Number(rolls) || 1;
-
-        let [, min = 1, max = 1] = faces.match(
-            /[dD]\[?(?:(\d+)\s?,)?\s?(\d+|%)\]?/
-        ) || [, 1, 1];
-
+        if (Number(max) < 0 && !min) {
+            min = -1;
+        }
         if (max === "%") max = 100;
+        if (max === "F") {
+            max = 1;
+            min = -1;
+        }
         if (Number(max) < Number(min)) {
             [max, min] = [min, max];
         }
 
         this.faces = { max: max ? Number(max) : 1, min: min ? Number(min) : 1 };
+
         this.originalRoll = this.roll();
         this.results = new Map(
             [...this.originalRoll].map((n, i) => {
@@ -643,19 +730,33 @@ class DiceRoll {
                 this.results.set(index, { ...previous });
             });
     }
-    reroll(times: number) {
+    reroll(times: number, conditionals: Conditional[]) {
         if (!this.modifiersAllowed) {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
+        /**
+         * Build Conditional
+         */
+        if (!conditionals.length) {
+            conditionals.push({
+                operator: "=",
+                comparer: this.faces.min
+            });
+        }
+
+        /**
+         * Find values that pass the conditional.
+         */
         let i = 0,
-            toReroll = [...this.results].filter(
-                ([, { value }]) => value === this.faces.min
+            toReroll = [...this.results].filter(([, { value }]) =>
+                DiceRoll._checkCondition(value, conditionals)
             );
         while (
             i < times &&
-            toReroll.filter(([, { value }]) => value === this.faces.min)
-                .length > 0
+            toReroll.filter(([, { value }]) =>
+                DiceRoll._checkCondition(value, conditionals)
+            ).length > 0
         ) {
             i++;
             toReroll.map(([, roll]) => {
@@ -668,14 +769,28 @@ class DiceRoll {
             this.results.set(index, value);
         });
     }
-    explodeAndCombine(times: number) {
+    explodeAndCombine(times: number, conditionals: Conditional[]) {
         if (!this.modifiersAllowed) {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
+
+        /**
+         * Build Conditional
+         */
+        if (!conditionals.length) {
+            conditionals.push({
+                operator: "=",
+                comparer: this.faces.max
+            });
+        }
+
+        /**
+         * Find values that pass the conditional
+         */
         let i = 0,
-            toExplode = [...this.results].filter(
-                ([, { value }]) => value === this.faces.max
+            toExplode = [...this.results].filter(([, { value }]) =>
+                DiceRoll._checkCondition(value, conditionals)
             );
 
         toExplode.forEach(([index, value]) => {
@@ -684,7 +799,10 @@ class DiceRoll {
             value.modifiers.add("!");
             value.value += newRoll;
             this.results.set(index, value);
-            while (i < times && newRoll === this.faces.max) {
+            while (
+                i < times &&
+                DiceRoll._checkCondition(newRoll, conditionals)
+            ) {
                 i++;
                 newRoll = this._getRandomBetween();
                 value.value += newRoll;
@@ -692,16 +810,27 @@ class DiceRoll {
             }
         });
     }
-    explode(times: number) {
+    explode(times: number, conditionals: Conditional[]) {
         if (!this.modifiersAllowed) {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
+
         /**
-         * Find values that are equal to max
+         * Build Conditional
          */
-        let toExplode = [...this.results].filter(
-            ([, { value }]) => value === this.faces.max
+        if (!conditionals.length) {
+            conditionals.push({
+                operator: "=",
+                comparer: this.faces.max
+            });
+        }
+
+        /**
+         * Find values that pass the conditional
+         */
+        let toExplode = [...this.results].filter(([, { value }]) =>
+            DiceRoll._checkCondition(value, conditionals)
         );
 
         /** Track how many have been inserted */
@@ -717,7 +846,10 @@ class DiceRoll {
             /**
              * Explode max rolls.
              */
-            while (i < times && newRoll === this.faces.max) {
+            while (
+                i < times &&
+                DiceRoll._checkCondition(newRoll, conditionals)
+            ) {
                 let previous = this.results.get(key + inserted + i);
                 previous.modifiers.add("!");
 
@@ -788,5 +920,40 @@ class DiceRoll {
         max: number = this.faces.max
     ): number {
         return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    private static _checkCondition(
+        value: number,
+        conditions: Conditional[]
+    ): boolean {
+        return conditions.every(({ operator, comparer }) => {
+            if (Number.isNaN(value) || Number.isNaN(comparer)) {
+                return false;
+            }
+            let result = false;
+            switch (operator) {
+                case "=":
+                    result = value === comparer;
+                    break;
+                case "!=":
+                case "=!":
+                    result = value !== comparer;
+                    break;
+                case "<":
+                    result = value < comparer;
+                    break;
+                case "<=":
+                    result = value <= comparer;
+                    break;
+                case ">":
+                    result = value > comparer;
+                    break;
+                case ">=":
+                    result = value >= comparer;
+                    break;
+            }
+
+            return result;
+        });
     }
 }
