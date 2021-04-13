@@ -219,10 +219,11 @@ export default class DiceRoller extends Plugin {
         );
 
         this.lexer.addRule(
-            /(\d+)[Dd]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?(?:(!?=|=!|>=?|<=?)(\d+))*/,
+            /(\d+)([Dd]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?)?/,
             function (lexeme: string): Lexeme {
+            console.log("🚀 ~ file: main.ts ~ line 224 ~ DiceRoller ~ addLexerRules ~ lexeme", lexeme)
                 let [, dice] = lexeme.match(
-                        /(\d+[Dd]?\[?(?:-?\d+\s?,)?\s?(?:-?\d+|%|F)\]?)/
+                        /(\d+(?:[Dd]?\[?(?:-?\d+\s?,)?\s?(?:-?\d+|%|F)\]?)?)/
                     ),
                     conditionals: Conditional[] = [];
                 if (/(?:(!?=|=!|>=?|<=?)(\d+))+/.test(lexeme)) {
@@ -478,7 +479,7 @@ export default class DiceRoller extends Plugin {
         diceMap.forEach((diceInstance) => {
             text = text.replace(
                 `${diceInstance.dice}${diceInstance.modifiers.join("")}`,
-                `[${diceInstance.display}]`
+                diceInstance.display
             );
         });
         return {
@@ -902,12 +903,15 @@ class DiceRoll {
         return results.reduce((a, b) => a + b, 0);
     }
     get display() {
-        return [...this.results]
+        if (this.static) {
+            return `${this.sum}`
+        }
+        return `[${[...this.results]
             .map(
                 ([, { modifiers, value }]) =>
                     `${value}${[...modifiers].join("")}`
             )
-            .join(", ");
+            .join(", ")}]`;
     }
     roll() {
         if (this.static) {
