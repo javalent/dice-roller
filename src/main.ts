@@ -221,7 +221,6 @@ export default class DiceRoller extends Plugin {
         this.lexer.addRule(
             /(\d+)([Dd]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?)?/,
             function (lexeme: string): Lexeme {
-            console.log("🚀 ~ file: main.ts ~ line 224 ~ DiceRoller ~ addLexerRules ~ lexeme", lexeme)
                 let [, dice] = lexeme.match(
                         /(\d+(?:[Dd]?\[?(?:-?\d+\s?,)?\s?(?:-?\d+|%|F)\]?)?)/
                     ),
