@@ -19,6 +19,28 @@ There is full order-of-operations support, so it can even nested into parenthese
 | `` `dice: 1d12 + 1d10 + 5` ``             |
 | `` `dice: 3d4+3d4-(3d4 * 1d4) - 2^1d7` `` |
 
+### Random Tables
+
+The Dice Roller may also be given a link to a table in a note, which it will read and return a random result from the table.
+
+This feature is still under development and may not work as expected.
+
+Usage:
+
+In a note (such as `Note.md`), create a _single column table_:
+
+|     |
+| --- |
+| A   |
+| B   |
+| C   |
+
+Then, in the dice formula, use a wikilink to the block reference of the table:
+
+`` `dice: [[Note^block-id]]` ``
+
+The plugin will read the table and return a random result.
+
 ### Tooltip
 
 The result in preview mode has a tooltip that will appear when you hover over it.
