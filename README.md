@@ -47,6 +47,8 @@ To return multiple elements, use:
 
 `` `dice: Xd[[Note^block-id]]` ``
 
+Once in preview mode, you may <kbd>Ctrl</kbd> - click on the result to open the block reference in a new pane.
+
 #### Multiple Headers
 
 If a table provided to the plugin has multiple headers, the plugin will return the entire row unless you specify the header to use:
