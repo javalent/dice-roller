@@ -34,8 +34,6 @@ export default class DiceRoller extends Plugin {
 
                 for (const node of Array.from(nodeList)) {
                     if (!/^dice:\s*([\s\S]+)\s*?/.test(node.innerText)) return;
-                    let parent = node.parentElement;
-
                     try {
                         let [, content] = node.innerText.match(
                             /^dice:\s*([\s\S]+)\s*?/
@@ -59,7 +57,7 @@ export default class DiceRoller extends Plugin {
                             .createDiv({ cls: "dice-roller-button" })
                             .appendChild(icon(faDice).node[0]) as HTMLElement;
 
-                        parent.replaceChild(container, node);
+                        node.replaceWith(container);
 
                         container.addEventListener("click", async () => {
                             ({ result, text } = await this.parseDice(content));
