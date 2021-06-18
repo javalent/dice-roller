@@ -8,7 +8,7 @@ import { icon } from "@fortawesome/fontawesome-svg-core";
 import "./main.css";
 import { DiceRoll, LinkRoll } from "./roller";
 import { Parser } from "./parser";
-import { IConditional, ILexeme } from "@types";
+import { IConditional, ILexeme } from "src/types";
 
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -34,15 +34,15 @@ export default class DiceRoller extends Plugin {
 
                 for (const node of Array.from(nodeList)) {
                     if (!/^dice:\s*([\s\S]+)\s*?/.test(node.innerText)) return;
-                    let parent = node.parentElement;
-
                     try {
                         let [, content] = node.innerText.match(
                             /^dice:\s*([\s\S]+)\s*?/
                         );
 
                         /* dice = dice.split(" ").join("").trim(); */
-                        let { result, text } = await this.parseDice(content);
+                        let { result, text, link } = await this.parseDice(
+                            content
+                        );
 
                         let container = createDiv().createDiv({
                             cls: "dice-roller"
@@ -59,9 +59,17 @@ export default class DiceRoller extends Plugin {
                             .createDiv({ cls: "dice-roller-button" })
                             .appendChild(icon(faDice).node[0]) as HTMLElement;
 
-                        parent.replaceChild(container, node);
+                        node.replaceWith(container);
 
-                        container.addEventListener("click", async () => {
+                        container.addEventListener("click", async (evt) => {
+                            if (link && evt.getModifierState("Control")) {
+                                await this.app.workspace.openLinkText(
+                                    link.replace("^", "#^").split(/\|/).shift(),
+                                    this.app.workspace.getActiveFile()?.path,
+                                    true
+                                );
+                                return;
+                            }
                             ({ result, text } = await this.parseDice(content));
 
                             diceSpan.innerText = `${result.toLocaleString(
@@ -96,7 +104,8 @@ export default class DiceRoller extends Plugin {
                     } catch (e) {
                         console.error(e);
                         new Notice(
-                            `There was an error parsing the dice string: ${node.innerText}`
+                            `There was an error parsing the dice string: ${node.innerText}.\n\n${e}`,
+                            5000
                         );
                         return;
                     }
@@ -151,7 +160,7 @@ export default class DiceRoller extends Plugin {
         );
 
         this.lexer.addRule(
-            /\d+[Dd]\[\[[\s\S]+?\]\]/,
+            /(\d+)[Dd]\[\[([\s\S]+?)#\^([\s\S]+?)\]\]\|?([\s\S]+)?/,
             function (lexeme: string): ILexeme {
                 /* let [, link] = lexeme.match(/\d+[Dd]\[\[([\s\S]+?)\]\]/); */
 
@@ -338,13 +347,13 @@ export default class DiceRoller extends Plugin {
     };
     async parseDice(
         text: string
-    ): Promise<{ result: string | number; text: string }> {
+    ): Promise<{ result: string | number; text: string; link?: string }> {
         return new Promise(async (resolve, reject) => {
             let stack: Array<string | number> = [],
                 diceMap: DiceRoll[] = [],
-                linkMap: LinkRoll[] = [];
+                linkMap: LinkRoll;
 
-            for (const d of this.parse(text)) {
+            parse: for (const d of this.parse(text)) {
                 switch (d.type) {
                     case "+":
                     case "-":
@@ -427,8 +436,8 @@ export default class DiceRoller extends Plugin {
                         stack.push(diceMap[diceMap.length - 1].result);
                         break;
                     case "link":
-                        const [, roll, link, block] = d.data.match(
-                                /(\d+)[Dd]\[\[([\s\S]+?)#\^([\s\S]+?)\]\]/
+                        const [, roll, link, block, header] = d.data.match(
+                                /(\d+)[Dd]\[\[([\s\S]+?)#\^([\s\S]+?)\]\]\|?([\s\S]+)?/
                             ),
                             file =
                                 await this.app.metadataCache.getFirstLinkpathDest(
@@ -436,15 +445,17 @@ export default class DiceRoller extends Plugin {
                                     ""
                                 );
                         if (!file || !(file instanceof TFile))
-                            throw new Error(
-                                "Could not read file. Is the link correct?"
+                            reject(
+                                "Could not read file cache. Is the link correct?\n\n" +
+                                    link
                             );
                         const cache = await this.app.metadataCache.getFileCache(
                             file
                         );
-                        if (!cache)
-                            throw new Error(
-                                "Could not read file cache. Is the link correct?"
+                        if (!cache || !cache.blocks || !cache.blocks[block])
+                            reject(
+                                "Could not read file cache. Does the block reference exist?\n\n" +
+                                    `${link} > ${block}`
                             );
                         const data = cache.blocks[block];
 
@@ -454,16 +465,30 @@ export default class DiceRoller extends Plugin {
                             data.position.start.offset,
                             data.position.end.offset
                         );
+                        let table = extract(content);
+                        let opts: string[];
+                        if (header && table[header]) {
+                            opts = table[header];
+                        } else {
+                            if (header)
+                                reject(
+                                    `Header ${header} was not found in table ${link} > ${block}.`
+                                );
+                            opts = Object.entries(table)
+                                .map(([, entries]) => entries)
+                                .flat(Infinity);
+                        }
 
-                        const options = content
-                            .replace(/(^\s*\|\s*|\s*\|\s*$)/gm, "")
-                            .split("\n")
-                            .slice(2);
+                        linkMap = new LinkRoll(
+                            Number(roll),
+                            opts,
+                            d.data,
+                            link,
+                            block
+                        );
+                        stack = [linkMap.result];
 
-                        linkMap.push(new LinkRoll(Number(roll), options));
-                        stack.push(linkMap[linkMap.length - 1].result);
-
-                        break;
+                        break parse;
                 }
             }
             diceMap.forEach((diceInstance) => {
@@ -472,12 +497,17 @@ export default class DiceRoller extends Plugin {
                     diceInstance.display
                 );
             });
-            /* linkMap.forEach((linkInstance) => {
-            text = text.replace(`${linkInstance.rolls}d`, linkInstance.display);
-        }); */
+            if (linkMap) {
+                text = text.replace(
+                    linkMap.text,
+                    `${linkMap.link} > ${linkMap.block}`
+                );
+            }
+
             resolve({
                 result: stack[0],
-                text: text
+                text: text,
+                link: `${linkMap?.link}#^${linkMap?.block}` ?? null
             });
         });
     }
@@ -629,4 +659,23 @@ export default class DiceRoller extends Plugin {
             this.tooltipTarget = null;
         }
     }
+}
+function extract(content: string) {
+    const lines = content.split("\n");
+    const headers = lines[0].split("|").slice(1, -1);
+    const ret: [string, string[]][] = [];
+    for (let index in headers) {
+        let header = headers[index];
+        if (!header.trim().length) header = index;
+        ret.push([header.trim(), []]);
+    }
+
+    for (let line of lines.slice(2)) {
+        const entries = line.split("|").slice(1, -1);
+        for (let index in entries) {
+            const entry = entries[index].trim();
+            ret[index][1].push(entry);
+        }
+    }
+    return Object.fromEntries(ret);
 }

@@ -1,4 +1,4 @@
-import { ILexeme } from "@types";
+import { ILexeme } from "src/types";
 
 export class Parser {
     table: any;

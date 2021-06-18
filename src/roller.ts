@@ -1,5 +1,5 @@
-import { IConditional, ResultMapInterface, Roller } from "@types";
-import { Notice } from "obsidian";
+import { IConditional, ResultMapInterface, Roller } from "src/types";
+import { Notice, TFile } from "obsidian";
 import { _checkCondition, _getRandomBetween, _insertIntoMap } from "./util";
 
 export class DiceRoll implements Roller<number> {
@@ -246,24 +246,24 @@ export class DiceRoll implements Roller<number> {
 
 export class LinkRoll implements Roller<string> {
     resultArray: string[];
-    rolls: number;
-    options: string[];
     get result() {
         return this.resultArray.join("|");
     }
     get display() {
         return `${this.result}`;
     }
-    constructor(rolls: number, options: string[]) {
-        this.rolls = rolls;
-
-        this.options = options;
-
+    constructor(
+        public rolls: number,
+        public options: string[],
+        public text: string,
+        public link: string,
+        public block: string
+    ) {
         this.resultArray = this.roll();
     }
     roll(): string[] {
         return [...Array(this.rolls)].map(
-            () => this.options[_getRandomBetween(0, this.options.length)]
+            () => this.options[_getRandomBetween(0, this.options.length - 1)]
         );
     }
 }
