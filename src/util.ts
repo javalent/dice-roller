@@ -1,4 +1,4 @@
-import { IConditional, ResultInterface, ResultMapInterface } from "@types";
+import { IConditional, ResultInterface, ResultMapInterface } from "src/types";
 
 /**
  * Inserts a new result into a results map.

@@ -27,19 +27,35 @@ This feature is still under development and may not work as expected.
 
 Usage:
 
-In a note (such as `Note.md`), create a _single column table_:
+In a note (such as `Note.md`), create a table & optionally give it a block id:
 
-|     |
-| --- |
-| A   |
-| B   |
-| C   |
+| Header |
+| ------ |
+| A      |
+| B      |
+| C      |
+
+^block-id
 
 Then, in the dice formula, use a wikilink to the block reference of the table:
 
 `` `dice: [[Note^block-id]]` ``
 
 The plugin will read the table and return a random result.
+
+#### Multiple Headers
+
+If a table provided to the plugin has multiple headers, the plugin will combine all of the values in the table as options unless you specify the header to use:
+
+| Header | Header 2 |
+| ------ | -------- |
+| A      | D        |
+| B      | E        |
+| C      | F        |
+
+^block-id
+
+`` `dice: [[Note^block-id]]|Header 2` ``
 
 ### Tooltip
 
