@@ -43,9 +43,13 @@ Then, in the dice formula, use a wikilink to the block reference of the table:
 
 The plugin will read the table and return a random result.
 
+To return multiple elements, use:
+
+`` `dice: Xd[[Note^block-id]]` ``
+
 #### Multiple Headers
 
-If a table provided to the plugin has multiple headers, the plugin will combine all of the values in the table as options unless you specify the header to use:
+If a table provided to the plugin has multiple headers, the plugin will return the entire row unless you specify the header to use:
 
 | Header | Header 2 |
 | ------ | -------- |
