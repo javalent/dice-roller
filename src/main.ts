@@ -1,4 +1,11 @@
-import { Plugin, MarkdownPostProcessorContext, Notice, TFile } from "obsidian";
+import {
+    Plugin,
+    MarkdownPostProcessorContext,
+    Notice,
+    TFile,
+    addIcon,
+    setIcon
+} from "obsidian";
 //@ts-ignore
 import lexer from "lex";
 
@@ -9,6 +16,7 @@ import "./main.css";
 import { DiceRoll, LinkRoll } from "./roller";
 import { Parser } from "./parser";
 import { IConditional, ILexeme } from "src/types";
+import { extract } from "./util";
 
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -27,6 +35,11 @@ export default class DiceRoller extends Plugin {
     async onload() {
         console.log("DiceRoller plugin loaded");
 
+        const ICON_DEFINITION = Symbol("dice-roller-icon").toString();
+        const ICON_SVG = icon(faDice).html[0];
+
+        addIcon(ICON_DEFINITION, ICON_SVG);
+
         this.registerMarkdownPostProcessor(
             async (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
                 let nodeList = el.querySelectorAll("code");
@@ -39,7 +52,6 @@ export default class DiceRoller extends Plugin {
                             /^dice:\s*([\s\S]+)\s*?/
                         );
 
-                        /* dice = dice.split(" ").join("").trim(); */
                         let { result, text, link } = await this.parseDice(
                             content
                         );
@@ -55,9 +67,10 @@ export default class DiceRoller extends Plugin {
                             { maximumFractionDigits: 2 }
                         )}`;
 
-                        container
-                            .createDiv({ cls: "dice-roller-button" })
-                            .appendChild(icon(faDice).node[0]) as HTMLElement;
+                        setIcon(
+                            container.createDiv({ cls: "dice-roller-button" }),
+                            ICON_DEFINITION
+                        );
 
                         node.replaceWith(container);
 
@@ -659,23 +672,4 @@ export default class DiceRoller extends Plugin {
             this.tooltipTarget = null;
         }
     }
-}
-function extract(content: string) {
-    const lines = content.split("\n");
-    const headers = lines[0].split("|").slice(1, -1);
-    const ret: [string, string[]][] = [];
-    for (let index in headers) {
-        let header = headers[index];
-        if (!header.trim().length) header = index;
-        ret.push([header.trim(), []]);
-    }
-
-    for (let line of lines.slice(2)) {
-        const entries = line.split("|").slice(1, -1);
-        for (let index in entries) {
-            const entry = entries[index].trim();
-            ret[index][1].push(entry);
-        }
-    }
-    return Object.fromEntries(ret);
 }
