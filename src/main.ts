@@ -173,7 +173,7 @@ export default class DiceRoller extends Plugin {
         );
 
         this.lexer.addRule(
-            /(\d+)[Dd]\[\[([\s\S]+?)#\^([\s\S]+?)\]\]\|?([\s\S]+)?/,
+            /((\d+)[Dd])?\[\[([\s\S]+?)#?\^([\s\S]+?)\]\]\|?([\s\S]+)?/,
             function (lexeme: string): ILexeme {
                 /* let [, link] = lexeme.match(/\d+[Dd]\[\[([\s\S]+?)\]\]/); */
 
@@ -450,7 +450,7 @@ export default class DiceRoller extends Plugin {
                         break;
                     case "link":
                         const [, roll, link, block, header] = d.data.match(
-                                /(\d+)[Dd]\[\[([\s\S]+?)#\^([\s\S]+?)\]\]\|?([\s\S]+)?/
+                                /(?:(\d+)[Dd])?\[\[([\s\S]+?)#?\^([\s\S]+?)\]\]\|?([\s\S]+)?/
                             ),
                             file =
                                 await this.app.metadataCache.getFirstLinkpathDest(
@@ -480,20 +480,21 @@ export default class DiceRoller extends Plugin {
                         );
                         let table = extract(content);
                         let opts: string[];
-                        if (header && table[header]) {
-                            opts = table[header];
+                        if (header && table.columns[header]) {
+                            opts = table.columns[header];
                         } else {
                             if (header)
                                 reject(
                                     `Header ${header} was not found in table ${link} > ${block}.`
                                 );
-                            opts = Object.entries(table)
-                                .map(([, entries]) => entries)
-                                .flat(Infinity);
+                            opts = table.rows;
+                            /* opts = Object.entries(table).map(([, entries]) =>
+                                entries.join(", ")
+                            ); */
                         }
 
                         linkMap = new LinkRoll(
-                            Number(roll),
+                            Number(roll ?? 1),
                             opts,
                             d.data,
                             link,

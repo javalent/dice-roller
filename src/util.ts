@@ -3,6 +3,7 @@ import { IConditional, ResultInterface, ResultMapInterface } from "src/types";
 export function extract(content: string) {
     const lines = content.split("\n");
     const headers = lines[0].split("|").slice(1, -1);
+    const rows: string[] = [];
     const ret: [string, string[]][] = [];
     for (let index in headers) {
         let header = headers[index];
@@ -12,12 +13,18 @@ export function extract(content: string) {
 
     for (let line of lines.slice(2)) {
         const entries = line.split("|").slice(1, -1);
+
+        rows.push(entries.map((e) => e.trim()).join(" | "));
+
         for (let index in entries) {
             const entry = entries[index].trim();
             ret[index][1].push(entry);
         }
     }
-    return Object.fromEntries(ret);
+    return {
+        columns: Object.fromEntries(ret),
+        rows: rows
+    };
 }
 
 /**
