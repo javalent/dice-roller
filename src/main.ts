@@ -362,7 +362,7 @@ export default class DiceRoller extends Plugin {
         text: string
     ): Promise<{ result: string | number; text: string; link?: string }> {
         return new Promise(async (resolve, reject) => {
-            let stack: Array<string | number> = [],
+            let stack: Array<DiceRoll> = [],
                 diceMap: DiceRoll[] = [],
                 linkMap: LinkRoll;
 
@@ -378,7 +378,7 @@ export default class DiceRoller extends Plugin {
                             a = stack.pop(),
                             result = this.operators[d.data](a, b);
 
-                        stack.push(new DiceRoll(`${result}`).result);
+                        stack.push(new DiceRoll(`${result}`));
                         break;
                     case "kh": {
                         let diceInstance = diceMap[diceMap.length - 1];
@@ -446,7 +446,7 @@ export default class DiceRoller extends Plugin {
                         ///const res = this.roll(d.data);
 
                         diceMap.push(new DiceRoll(d.data));
-                        stack.push(diceMap[diceMap.length - 1].result);
+                        stack.push(diceMap[diceMap.length - 1]);
                         break;
                     case "link":
                         const [, roll, link, block, header] = d.data.match(
@@ -500,7 +500,6 @@ export default class DiceRoller extends Plugin {
                             link,
                             block
                         );
-                        stack = [linkMap.result];
 
                         break parse;
                 }
@@ -519,7 +518,7 @@ export default class DiceRoller extends Plugin {
             }
 
             resolve({
-                result: stack[0],
+                result: linkMap ? linkMap.result : stack[0].result,
                 text: text,
                 link: `${linkMap?.link}#^${linkMap?.block}` ?? null
             });
