@@ -376,7 +376,7 @@ export default class DiceRoller extends Plugin {
                     case "math":
                         const b = stack.pop(),
                             a = stack.pop(),
-                            result = this.operators[d.data](a, b);
+                            result = this.operators[d.data](a.result, b.result);
 
                         stack.push(new DiceRoll(`${result}`));
                         break;
