@@ -61,11 +61,63 @@ export default class DiceRoller extends Plugin {
                         });
                         container.setAttr("data-dice", content);
 
-                        let diceSpan = container.createSpan();
-                        diceSpan.innerText = `${result.toLocaleString(
-                            navigator.language,
-                            { maximumFractionDigits: 2 }
-                        )}`;
+                        let resultEl: HTMLElement;
+                        if (link && typeof result === "string") {
+                            resultEl = container.createDiv();
+                            const split = result.split(
+                                /(\[\[(?:[\s\S]+?)\]\])/
+                            );
+
+                            for (let str of split) {
+                                if (/\[\[(?:[\s\S]+?)\]\]/.test(str)) {
+                                    //link;
+                                    const [, match] =
+                                        str.match(/\[\[([\s\S]+?)\]\]/);
+                                    const internal = resultEl.createEl("a", {
+                                        cls: "internal-link",
+                                        text: match
+                                    });
+                                    internal.onmouseover = () => {
+                                        this.app.workspace.trigger(
+                                            "link-hover",
+                                            this, //not sure
+                                            internal, //targetEl
+                                            match
+                                                .replace("^", "#^")
+                                                .split("|")
+                                                .shift(), //linkText
+                                            this.app.workspace.getActiveFile()
+                                                ?.path //source
+                                        );
+                                    };
+                                    internal.onclick = async (
+                                        ev: MouseEvent
+                                    ) => {
+                                        ev.stopPropagation();
+                                        await this.app.workspace.openLinkText(
+                                            match
+                                                .replace("^", "#^")
+                                                .split(/\|/)
+                                                .shift(),
+                                            this.app.workspace.getActiveFile()
+                                                ?.path,
+                                            ev.getModifierState("Control")
+                                        );
+                                    };
+                                    continue;
+                                }
+                                resultEl.createSpan({ text: str });
+                            }
+                        } else {
+                            resultEl = container.createSpan({
+                                text: result.toLocaleString(
+                                    navigator.language,
+                                    {
+                                        maximumFractionDigits: 2
+                                    }
+                                )
+                            });
+                        }
 
                         setIcon(
                             container.createDiv({ cls: "dice-roller-button" }),
@@ -85,10 +137,62 @@ export default class DiceRoller extends Plugin {
                             }
                             ({ result, text } = await this.parseDice(content));
 
-                            diceSpan.innerText = `${result.toLocaleString(
-                                navigator.language,
-                                { maximumFractionDigits: 2 }
-                            )}`;
+                            if (link && typeof result === "string") {
+                                resultEl.empty();
+                                const split = result.split(
+                                    /(\[\[(?:[\s\S]+?)\]\])/
+                                );
+
+                                for (let str of split) {
+                                    if (/\[\[(?:[\s\S]+?)\]\]/.test(str)) {
+                                        //link;
+                                        const [, match] =
+                                            str.match(/\[\[([\s\S]+?)\]\]/);
+                                        const internal = resultEl.createEl(
+                                            "a",
+                                            {
+                                                cls: "internal-link",
+                                                text: match
+                                            }
+                                        );
+                                        internal.onmouseover = () => {
+                                            this.app.workspace.trigger(
+                                                "link-hover",
+                                                this, //not sure
+                                                internal, //targetEl
+                                                match
+                                                    .replace("^", "#^")
+                                                    .split("|")
+                                                    .shift(), //linkText
+                                                this.app.workspace.getActiveFile()
+                                                    ?.path //source
+                                            );
+                                        };
+                                        internal.onclick = async (
+                                            ev: MouseEvent
+                                        ) => {
+                                            ev.stopPropagation();
+                                            await this.app.workspace.openLinkText(
+                                                match
+                                                    .replace("^", "#^")
+                                                    .split(/\|/)
+                                                    .shift(),
+                                                this.app.workspace.getActiveFile()
+                                                    ?.path,
+                                                ev.getModifierState("Control")
+                                            );
+                                        };
+                                        continue;
+                                    }
+                                    resultEl.createSpan({ text: str });
+                                }
+                            } else {
+                                resultEl.setText(
+                                    result.toLocaleString(navigator.language, {
+                                        maximumFractionDigits: 2
+                                    })
+                                );
+                            }
 
                             this.buildTooltip(
                                 container,
@@ -480,6 +584,7 @@ export default class DiceRoller extends Plugin {
                         );
                         let table = extract(content);
                         let opts: string[];
+
                         if (header && table.columns[header]) {
                             opts = table.columns[header];
                         } else {
@@ -488,9 +593,6 @@ export default class DiceRoller extends Plugin {
                                     `Header ${header} was not found in table ${link} > ${block}.`
                                 );
                             opts = table.rows;
-                            /* opts = Object.entries(table).map(([, entries]) =>
-                                entries.join(", ")
-                            ); */
                         }
 
                         linkMap = new LinkRoll(
