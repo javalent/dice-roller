@@ -39,7 +39,7 @@ export class DiceRoll implements Roller<number> {
         return this.display;
     }
     constructor(dice: string) {
-        if (!/(-?\d+)[dD]?(\d+|%|\[\d+,\s?\d+\])?/.test(dice)) {
+        if (!/(\-?\d+)[dD]?(\d+|%|\[\d+,\s?\d+\])?/.test(dice)) {
             throw new Error("Non parseable dice string passed to DiceRoll.");
         }
         this.dice = dice.split(" ").join("");
@@ -49,7 +49,7 @@ export class DiceRoll implements Roller<number> {
             this.modifiersAllowed = false;
         }
         let [, rolls, min = null, max = 1] = this.dice.match(
-            /(\d+)[dD]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?/
+            /(\-?\d+)[dD]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?/
         ) || [, 1, null, 1];
         this.rolls = Number(rolls) || 1;
         if (Number(max) < 0 && !min) {
@@ -241,6 +241,38 @@ export class DiceRoll implements Roller<number> {
         return [...Array(this.rolls)].map(() =>
             _getRandomBetween(this.faces.min, this.faces.max)
         );
+    }
+}
+
+export class StuntRoll implements Roller<string> {
+    rolls: number = 3;
+    results: number[];
+    constructor() {
+        this.results = this.roll().map((v) => Number(v));
+    }
+    get display() {
+        let result = `[${[...this.results].join(", ")}]`;
+        return result;
+    }
+    get numberResult() {
+        return this.results.reduce((a, b) => a + b);
+    }
+    get result() {
+        let result = `${this.results.reduce((a, b) => a + b)}`;
+        if (this.doubles) result += ` - ${this.results[0]} Stunt Points`;
+        return result;
+    }
+    get resultArray() {
+        return this.results.map((v) => `${v}`);
+    }
+    get doubles() {
+        return new Set(this.results).size < this.results.length;
+    }
+    toString() {
+        return this.display;
+    }
+    roll() {
+        return [...Array(this.rolls)].map(() => `${_getRandomBetween(1, 6)}`);
     }
 }
 

@@ -13,7 +13,7 @@ import { faDice } from "@fortawesome/free-solid-svg-icons";
 import { icon } from "@fortawesome/fontawesome-svg-core";
 
 import "./main.css";
-import { DiceRoll, LinkRoll } from "./roller";
+import { DiceRoll, LinkRoll, StuntRoll } from "./roller";
 import { Parser } from "./parser";
 import { IConditional, ILexeme } from "src/types";
 import { extract } from "./util";
@@ -315,6 +315,15 @@ export default class DiceRoller extends Plugin {
                 }; // symbols
             }
         );
+        this.lexer.addRule(/1[Dd]S/, function (lexeme: string): ILexeme {
+            const [, dice] = lexeme.match(/1[Dd]S/) ?? [, "1"];
+            return {
+                type: "stunt",
+                data: dice,
+                original: lexeme,
+                conditionals: []
+            }; // symbols
+        });
 
         this.lexer.addRule(
             /kh?(?!:l)(\d*)/,
@@ -466,11 +475,12 @@ export default class DiceRoller extends Plugin {
         text: string
     ): Promise<{ result: string | number; text: string; link?: string }> {
         return new Promise(async (resolve, reject) => {
-            let stack: Array<DiceRoll> = [],
+            let stack: Array<DiceRoll | StuntRoll> = [],
                 diceMap: DiceRoll[] = [],
+                stuntMap: StuntRoll,
                 linkMap: LinkRoll;
-
-            parse: for (const d of this.parse(text)) {
+            const parsed = this.parse(text);
+            parse: for (const d of parsed) {
                 switch (d.type) {
                     case "+":
                     case "-":
@@ -552,6 +562,14 @@ export default class DiceRoller extends Plugin {
                         diceMap.push(new DiceRoll(d.data));
                         stack.push(diceMap[diceMap.length - 1]);
                         break;
+                    case "stunt":
+                        stuntMap = new StuntRoll();
+                        if (parsed.length > 1) {
+                            new Notice(
+                                `Stunt dice cannot be used with modifiers.`
+                            );
+                        }
+                        break parse;
                     case "link":
                         const [, roll, link, block, header] = d.data.match(
                                 /(?:(\d+)[Dd])?\[\[([\s\S]+?)#?\^([\s\S]+?)\]\]\|?([\s\S]+)?/
@@ -602,7 +620,12 @@ export default class DiceRoller extends Plugin {
                             link,
                             block
                         );
-
+                            
+                        if (parsed.length > 1) {
+                            new Notice(
+                                `Random tables cannot be used with modifiers.`
+                            );
+                        }
                         break parse;
                 }
             }
@@ -612,6 +635,9 @@ export default class DiceRoller extends Plugin {
                     diceInstance.display
                 );
             });
+            if (stuntMap) {
+                text = /* text.replace(/1[Dd]S/,  */ stuntMap.display;
+            }
             if (linkMap) {
                 text = text.replace(
                     linkMap.text,
@@ -620,7 +646,11 @@ export default class DiceRoller extends Plugin {
             }
 
             resolve({
-                result: linkMap ? linkMap.result : stack[0].result,
+                result: linkMap
+                    ? linkMap.result
+                    : stuntMap
+                    ? stuntMap.result
+                    : stack[0].result,
                 text: text,
                 link: `${linkMap?.link}#^${linkMap?.block}` ?? null
             });

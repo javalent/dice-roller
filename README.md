@@ -49,6 +49,8 @@ To return multiple elements, use:
 
 Once in preview mode, you may <kbd>Ctrl</kbd> - click on the result to open the block reference in a new pane.
 
+**Random tables cannot be used with modifiers. Any modifiers supplied will be ignored.**
+
 #### Multiple Headers
 
 If a table provided to the plugin has multiple headers, the plugin will return the entire row unless you specify the header to use:
@@ -72,6 +74,16 @@ It displays the formula used to calculate the result on the top line, and displa
 ### Percentile Dice
 
 The parser supports percentile dice. `` `dice: Xd%` `` will roll X d100 dice.
+
+### Fudge/Fate Dice
+
+Use `` `dice: XdF` `` to roll a fudge/fate dice. See [here](<https://en.wikipedia.org/wiki/Fudge_(role-playing_game_system)#Fudge_dice>) for more info on this type of dice.
+
+### Fantasy AGE Stunt Dice
+
+Use `` `dice: 1dS` `` to roll a Fantasy AGE stunt dice. The result will show the total roll and also the stunt points if successful.
+
+**Stunt dice cannot be used with modifiers. Any modifiers supplied will be ignored.**
 
 # Dice Modifiers
 

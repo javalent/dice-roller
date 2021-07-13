@@ -17,11 +17,11 @@ export type ResultInterface<T> = {
     modifiers?: Set<string>;
 };
 
-export declare class Roller<T> {
+export abstract class Roller<T> {
     display: string;
     result: T;
     resultArray: T[];
     rolls: number;
-    toString: () => string;
-    roll: () => T[];
+    abstract toString: () => string;
+    abstract roll: () => T[];
 }
