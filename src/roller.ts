@@ -1,5 +1,5 @@
 import { IConditional, ResultMapInterface, Roller } from "src/types";
-import { Notice, TFile } from "obsidian";
+import { Notice, SectionCache, TFile } from "obsidian";
 import { _checkCondition, _getRandomBetween, _insertIntoMap } from "./util";
 
 export class DiceRoll implements Roller<number> {
@@ -33,10 +33,6 @@ export class DiceRoll implements Roller<number> {
                     `${value}${[...modifiers].join("")}`
             )
             .join(", ")}]`;
-    }
-
-    toString(): string {
-        return this.display;
     }
     constructor(dice: string) {
         if (!/(\-?\d+)[dD]?(\d+|%|\[\d+,\s?\d+\])?/.test(dice)) {
@@ -268,9 +264,6 @@ export class StuntRoll implements Roller<string> {
     get doubles() {
         return new Set(this.results).size < this.results.length;
     }
-    toString() {
-        return this.display;
-    }
     roll() {
         return [...Array(this.rolls)].map(() => `${_getRandomBetween(1, 6)}`);
     }
@@ -293,7 +286,27 @@ export class LinkRoll implements Roller<string> {
     ) {
         this.resultArray = this.roll();
     }
-    roll(): string[] {
+    roll() {
+        return [...Array(this.rolls)].map(
+            () => this.options[_getRandomBetween(0, this.options.length - 1)]
+        );
+    }
+}
+
+export class SectionRoller implements Roller<SectionCache> {
+    resultArray: SectionCache[];
+
+    constructor(public rolls: number, public options: SectionCache[]) {
+        this.resultArray = this.roll();
+    }
+
+    get result() {
+        return this.resultArray[0];
+    }
+    get display() {
+        return `${this.result}`;
+    }
+    roll() {
         return [...Array(this.rolls)].map(
             () => this.options[_getRandomBetween(0, this.options.length - 1)]
         );

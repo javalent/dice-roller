@@ -289,6 +289,19 @@ export default class DiceRoller extends Plugin {
                 };
             }
         );
+        this.lexer.addRule(
+            /((\d+)[Dd])?\[\[([\s\S]+?)\]\]\|?([\s\S]+)?/,
+            function (lexeme: string): ILexeme {
+                /* let [, link] = lexeme.match(/\d+[Dd]\[\[([\s\S]+?)\]\]/); */
+
+                return {
+                    type: "section",
+                    data: lexeme,
+                    original: lexeme,
+                    conditionals: null
+                };
+            }
+        );
 
         this.lexer.addRule(
             /(\d+)([Dd]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?)?/,
@@ -620,13 +633,40 @@ export default class DiceRoller extends Plugin {
                             link,
                             block
                         );
-                            
+
                         if (parsed.length > 1) {
                             new Notice(
                                 `Random tables cannot be used with modifiers.`
                             );
                         }
                         break parse;
+
+                    case "section": {
+
+                        const [, roll, link] = d.data.match(
+                                /((\d+)[Dd])?\[\[([\s\S]+?)\]\]/
+                            ),
+                            file =
+                                await this.app.metadataCache.getFirstLinkpathDest(
+                                    link,
+                                    ""
+                                );
+                        if (!file || !(file instanceof TFile))
+                            reject(
+                                "Could not read file cache. Is the link correct?\n\n" +
+                                    link
+                            );
+                        const cache = await this.app.metadataCache.getFileCache(
+                            file
+                        );
+                        if (!cache || !cache.sections || !cache.sections.length)
+                            reject(
+                                "Could not read file cache."
+                            );
+                        const data = cache.sections;
+
+                        break parse;
+                    }
                 }
             }
             diceMap.forEach((diceInstance) => {

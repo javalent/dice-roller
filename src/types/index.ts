@@ -22,6 +22,5 @@ export abstract class Roller<T> {
     result: T;
     resultArray: T[];
     rolls: number;
-    abstract toString: () => string;
     abstract roll: () => T[];
 }
