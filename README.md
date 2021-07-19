@@ -19,6 +19,14 @@ There is full order-of-operations support, so it can even nested into parenthese
 | `` `dice: 1d12 + 1d10 + 5` ``             |
 | `` `dice: 3d4+3d4-(3d4 * 1d4) - 2^1d7` `` |
 
+### Random Blocks
+
+The Dice Roller can be given a link to a note, and it will return a random block from the note. 
+
+This feature is still under development and may not work as expected.
+
+Usage:
+`` `dice: [[Note]]` ``
 ### Random Tables
 
 The Dice Roller may also be given a link to a table in a note, which it will read and return a random result from the table.
