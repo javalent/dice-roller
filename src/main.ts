@@ -195,15 +195,6 @@ export default class DiceRoller extends Plugin {
         tableMap: TableRoll,
         type: "dice" | "table" | "render"
     ) {
-        if (link && evt && evt.getModifierState("Control")) {
-            await this.app.workspace.openLinkText(
-                link.replace("^", "#^").split(/\|/).shift(),
-                this.app.workspace.getActiveFile()?.path,
-                true
-            );
-            return;
-        }
-
         resultEl.empty();
         if (type === "dice") {
             let { result, text } = await this.parseDice(content);
@@ -216,6 +207,14 @@ export default class DiceRoller extends Plugin {
                 })
             );
         } else if (type === "table") {
+            if (link && evt && evt.getModifierState("Control")) {
+                await this.app.workspace.openLinkText(
+                    link.replace("^", "#^").split(/\|/).shift(),
+                    this.app.workspace.getActiveFile()?.path,
+                    true
+                );
+                return;
+            }
             resultEl.empty();
             tableMap.roll();
             const split = tableMap.result.split(/(\[\[(?:[\s\S]+?)\]\])/);
@@ -268,6 +267,15 @@ export default class DiceRoller extends Plugin {
                 for (let el of elements) {
                     el.roll();
                     el.element(holder.createDiv());
+                    el.on("open-link", async (link) => {
+                        if (link) {
+                            await this.app.workspace.openLinkText(
+                                link.replace("^", "#^").split(/\|/).shift(),
+                                this.app.workspace.getActiveFile()?.path,
+                                true
+                            );
+                        }
+                    });
                 }
             }
         }

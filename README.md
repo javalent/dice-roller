@@ -25,6 +25,8 @@ The Dice Roller can be given a link to a note or a tag, and it will return a ran
 
 This feature is still under development and may not work as expected.
 
+<kbd>Ctrl</kbd> / <kbd>Command</kbd> - clicking a result will open the associated note.
+
 Usage:
 | Example | Result |
 | ----------------------------------------- | ----------------------------------------------- |

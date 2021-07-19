@@ -38,6 +38,10 @@
     width: 100%;
 }
 
+.dice-roller.has-embed .internal-embed *:last-child {
+    margin-bottom: 15px;
+}
+
 .dice-roller.has-embed .dice-file-name {
     font-style: italic;
 }

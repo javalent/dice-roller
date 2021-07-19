@@ -4,7 +4,7 @@ import {
     Roller,
     SectionCacheWithFile
 } from "src/types";
-import { MarkdownRenderer, Notice } from "obsidian";
+import { Events, MarkdownRenderer, Notice } from "obsidian";
 import { _checkCondition, _getRandomBetween, _insertIntoMap } from "./util";
 
 export class DiceRoll implements Roller<number> {
@@ -298,7 +298,10 @@ export class TableRoll implements Roller<string> {
     }
 }
 
-export class SectionRoller implements Roller<SectionCacheWithFile> {
+export class SectionRoller
+    extends Events
+    implements Roller<SectionCacheWithFile>
+{
     resultArray: SectionCacheWithFile[];
     private selected: Set<SectionCacheWithFile> = new Set();
 
@@ -308,6 +311,7 @@ export class SectionRoller implements Roller<SectionCacheWithFile> {
         public content: Map<string, string>,
         public file: string
     ) {
+        super();
         if (!rolls) this.rolls = 1;
         this.roll();
     }
@@ -348,6 +352,16 @@ export class SectionRoller implements Roller<SectionCacheWithFile> {
                     text: result.file
                 });
             }
+            resultEl.onclick = async (evt) => {
+                if (
+                    (evt && evt.getModifierState("Control")) ||
+                    evt.getModifierState("Meta")
+                ) {
+                    evt.stopPropagation();
+                    this.trigger("open-link", result.file);
+                    return;
+                }
+            };
             const ret = resultEl.createDiv({
                 cls: "markdown-embed"
             });
@@ -375,6 +389,7 @@ export class SectionRoller implements Roller<SectionCacheWithFile> {
 
         holder.onclick = async (evt) => {
             evt.stopPropagation();
+
             this.roll();
             this.element(parent);
         };
