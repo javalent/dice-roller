@@ -21,12 +21,77 @@ There is full order-of-operations support, so it can even nested into parenthese
 
 ### Random Blocks
 
-The Dice Roller can be given a link to a note, and it will return a random block from the note. 
+The Dice Roller can be given a link to a note or a tag, and it will return a random block from the note/notes.
 
 This feature is still under development and may not work as expected.
 
 Usage:
-`` `dice: [[Note]]` ``
+| Example | Result |
+| ----------------------------------------- | ----------------------------------------------- |
+| `` `dice: [[Note]]` `` | Returns a single random block from `Note` |
+| `` `dice: 3d[[Note]]` `` | Returns 3 random blocks from `Note` |
+
+#### Tags
+
+The Dice Roller can also be told to return results from a tag if the [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugin is installed.
+
+By default, this will return 1 result from _every_ file that has the tag. You can change this behavior in settings, or by using the following optional `+` and `-` parameters as shown below.
+
+If results from multiple files are returned, the result **from that file** can be re-rolled by clicking on the block. Clicking on the container or the dice icon will re-roll **all returned results**.
+
+| Example               | Result                                                                                                   |
+| --------------------- | -------------------------------------------------------------------------------------------------------- |
+| `` `dice: #tag` ``    | Return a single random block from notes with `#tag`, behavior depends on settings (default to **every**) |
+| `` `dice: #tag\|-` `` | Return a single random block from **a single, random note** with `#tag`                                  |
+| `` `dice: #tag\|+` `` | Return a single random block from **every note** with `#tag`                                             |
+
+#### Block Types
+
+Obsidian has several "types" of blocks. Currently, the default behavior of the plugin is to filter out **thematicBreak** and **yaml** from the returned results.
+
+To return a specific block type, you may append `|<type>` to the end of any block roller.
+
+Usage:
+
+| Example                                      | Result                                                                         |
+| -------------------------------------------- | ------------------------------------------------------------------------------ |
+| `` `dice: [[Note]]\|paragraph` ``            | Return `paragraph` blocks                                                      |
+| `` `dice: #tag\|paragraph,header,yaml` ``    | Return `paragraph`, `header`, and `yaml` blocks                                |
+| `` `dice: #tag\|-\|paragraph,header,yaml` `` | Return `paragraph`, `header`, and `yaml` blocks from a **single, random note** |
+
+I do not have any control over what Obsidian consider's each block (for instance, images may be returned as `paragraph`).
+
+I _believe_ that this is a list of block types defined in Obsidian, but use this with a grain of salt.
+
+| Type                 |
+| -------------------- |
+| `blockquote`         |
+| `break`              |
+| `code`               |
+| `delete`             |
+| `emphasis`           |
+| `footnoteReference`  |
+| `footnote`           |
+| `heading`            |
+| `html`               |
+| `imageReference`     |
+| `image`              |
+| `inlineCode`         |
+| `linkReference`      |
+| `link`               |
+| `listItem`           |
+| `list`               |
+| `paragraph`          |
+| `root`               |
+| `strong`             |
+| `table`              |
+| `text`               |
+| `thematicBreak`      |
+| `toml`               |
+| `yaml`               |
+| `definition`         |
+| `footnoteDefinition` |
+
 ### Random Tables
 
 The Dice Roller may also be given a link to a table in a note, which it will read and return a random result from the table.
@@ -56,8 +121,6 @@ To return multiple elements, use:
 `` `dice: Xd[[Note^block-id]]` ``
 
 Once in preview mode, you may <kbd>Ctrl</kbd> - click on the result to open the block reference in a new pane.
-
-**Random tables cannot be used with modifiers. Any modifiers supplied will be ignored.**
 
 #### Multiple Headers
 
@@ -96,6 +159,8 @@ Use `` `dice: 1dS` `` to roll a Fantasy AGE stunt dice. The result will show the
 # Dice Modifiers
 
 The parser supports several modifiers. If a die has been modified, it will display _how_ it has been modified in the tooltip.
+
+**Modifiers are only supported on basic number dice.**
 
 If a modifier has a parameter, it will default to 1 if not provided.
 

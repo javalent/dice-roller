@@ -1,11 +1,16 @@
-export interface ILexeme {
+import { SectionCache } from "obsidian";
+
+export interface SectionCacheWithFile extends SectionCache {
+    file: string;
+}
+export interface Lexeme {
     original: string;
     type: string;
     data: string;
-    conditionals: IConditional[];
+    conditionals: Conditional[];
 }
 
-export interface IConditional {
+export interface Conditional {
     operator: string;
     comparer: number;
 }

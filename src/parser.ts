@@ -1,11 +1,11 @@
-import { ILexeme } from "src/types";
+import { Lexeme } from "src/types";
 
 export class Parser {
     table: any;
     constructor(table: any) {
         this.table = table;
     }
-    parse(input: ILexeme[]) {
+    parse(input: Lexeme[]) {
         var length = input.length,
             table = this.table,
             output = [],

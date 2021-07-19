@@ -1,5 +1,10 @@
-import { IConditional, ResultMapInterface, Roller } from "src/types";
-import { MarkdownRenderer, Notice, SectionCache, TFile } from "obsidian";
+import {
+    Conditional,
+    ResultMapInterface,
+    Roller,
+    SectionCacheWithFile
+} from "src/types";
+import { MarkdownRenderer, Notice } from "obsidian";
 import { _checkCondition, _getRandomBetween, _insertIntoMap } from "./util";
 
 export class DiceRoll implements Roller<number> {
@@ -12,7 +17,7 @@ export class DiceRoll implements Roller<number> {
     originalRoll: number[];
     modifiersAllowed: boolean = true;
     static: boolean = false;
-    conditions: IConditional[];
+    conditions: Conditional[];
 
     get result() {
         if (this.static) {
@@ -99,7 +104,7 @@ export class DiceRoll implements Roller<number> {
                 this.results.set(index, { ...previous });
             });
     }
-    reroll(times: number, conditionals: IConditional[]) {
+    reroll(times: number, conditionals: Conditional[]) {
         if (!this.modifiersAllowed) {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
@@ -138,7 +143,7 @@ export class DiceRoll implements Roller<number> {
             this.results.set(index, value);
         });
     }
-    explodeAndCombine(times: number, conditionals: IConditional[]) {
+    explodeAndCombine(times: number, conditionals: Conditional[]) {
         if (!this.modifiersAllowed) {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
@@ -176,7 +181,7 @@ export class DiceRoll implements Roller<number> {
             }
         });
     }
-    explode(times: number, conditionals: IConditional[]) {
+    explode(times: number, conditionals: Conditional[]) {
         if (!this.modifiersAllowed) {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
@@ -269,7 +274,7 @@ export class StuntRoll implements Roller<string> {
     }
 }
 
-export class LinkRoll implements Roller<string> {
+export class TableRoll implements Roller<string> {
     resultArray: string[];
     get result() {
         return this.resultArray.join("|");
@@ -284,44 +289,106 @@ export class LinkRoll implements Roller<string> {
         public link: string,
         public block: string
     ) {
-        this.resultArray = this.roll();
+        this.roll();
     }
     roll() {
-        return [...Array(this.rolls)].map(
+        return (this.resultArray = [...Array(this.rolls)].map(
             () => this.options[_getRandomBetween(0, this.options.length - 1)]
-        );
+        ));
     }
 }
 
-export class SectionRoller implements Roller<SectionCache> {
-    resultArray: SectionCache[];
+export class SectionRoller implements Roller<SectionCacheWithFile> {
+    resultArray: SectionCacheWithFile[];
+    private selected: Set<SectionCacheWithFile> = new Set();
 
-    constructor(public rolls: number, public options: SectionCache[], private content: string) {
-        this.resultArray = this.roll();
+    constructor(
+        public rolls: number = 1,
+        public options: SectionCacheWithFile[],
+        public content: Map<string, string>,
+        public file: string
+    ) {
+        if (!rolls) this.rolls = 1;
+        this.roll();
     }
 
     get result() {
         return this.resultArray[0];
     }
     get display() {
-
-        let res = this.content.slice(
-            this.result.position.start.offset,
-            this.result.position.end.offset
-        );
+        let res = this.content
+            .get(this.file)
+            .slice(
+                this.result.position.start.offset,
+                this.result.position.end.offset
+            );
 
         return `${res}`;
     }
-    async element() {
-        const ret = createDiv();
+    displayFromCache(cache: SectionCacheWithFile) {
+        let res = this.content
+            .get(cache.file)
+            .slice(cache.position.start.offset, cache.position.end.offset);
 
-        MarkdownRenderer.renderMarkdown(this.display, ret, '', null);
+        return `${res}`;
+    }
+    get remaining() {
+        return this.options.filter((o) => !this.selected.has(o));
+    }
 
-        return ret;
+    element(parent: HTMLElement) {
+        parent.empty();
+        const holder = parent.createDiv();
+
+        for (let result of Array.from(this.selected)) {
+            const resultEl = holder.createDiv();
+            if (this.content.size > 1) {
+                resultEl.createEl("h5", {
+                    cls: "dice-file-name",
+                    text: result.file
+                });
+            }
+            const ret = resultEl.createDiv({
+                cls: "markdown-embed"
+            });
+            if (!result) {
+                ret.createDiv({
+                    cls: "dice-no-results",
+                    text: "No results."
+                });
+
+                continue;
+            }
+
+            const embed = ret.createDiv({
+                attr: {
+                    "aria-label": `${result.file}: ${result.type}`
+                }
+            });
+            MarkdownRenderer.renderMarkdown(
+                this.displayFromCache(result),
+                embed,
+                "",
+                null
+            );
+        }
+
+        holder.onclick = async (evt) => {
+            evt.stopPropagation();
+            this.roll();
+            this.element(parent);
+        };
+
+        return holder;
     }
     roll() {
-        return [...Array(this.rolls)].map(
-            () => this.options[_getRandomBetween(0, this.options.length - 1)]
-        );
+        this.selected = new Set();
+        this.resultArray = [...Array(this.rolls)].map(() => {
+            const choice =
+                this.remaining[_getRandomBetween(0, this.remaining.length - 1)];
+            this.selected.add(choice);
+            return choice;
+        });
+        return this.resultArray;
     }
 }
