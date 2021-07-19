@@ -1,4 +1,4 @@
-import { IConditional, ResultInterface, ResultMapInterface } from "src/types";
+import { Conditional, ResultInterface, ResultMapInterface } from "src/types";
 
 const MATCH = /^\|?([\s\S]+?)\|?$/;
 const SPLIT = /\|/;
@@ -70,7 +70,7 @@ export function _getRandomBetween(min: number, max: number): number {
 
 export function _checkCondition(
     value: number,
-    conditions: IConditional[]
+    conditions: Conditional[]
 ): boolean {
     return conditions.every(({ operator, comparer }) => {
         if (Number.isNaN(value) || Number.isNaN(comparer)) {

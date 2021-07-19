@@ -16,6 +16,11 @@
     font-size: inherit;
     margin-left: 0.25em;
 }
+
+.dice-roller.has-embed .dice-roller-button {
+    padding-top: 0.5rem;
+}
+
 .dice.tooltip {
     max-width: unset !important;
 }
@@ -23,6 +28,16 @@
     display: flex;
     padding-right: 0.25rem;
 }
+
+.dice-no-results {
+    font-style: italic;
+    text-align: center;
+}
+
 .dice-roller.has-embed .internal-embed {
     width: 100%;
+}
+
+.dice-roller.has-embed .dice-file-name {
+    font-style: italic;
 }
