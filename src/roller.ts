@@ -1,5 +1,5 @@
 import { IConditional, ResultMapInterface, Roller } from "src/types";
-import { Notice, SectionCache, TFile } from "obsidian";
+import { MarkdownRenderer, Notice, SectionCache, TFile } from "obsidian";
 import { _checkCondition, _getRandomBetween, _insertIntoMap } from "./util";
 
 export class DiceRoll implements Roller<number> {
@@ -296,7 +296,7 @@ export class LinkRoll implements Roller<string> {
 export class SectionRoller implements Roller<SectionCache> {
     resultArray: SectionCache[];
 
-    constructor(public rolls: number, public options: SectionCache[]) {
+    constructor(public rolls: number, public options: SectionCache[], private content: string) {
         this.resultArray = this.roll();
     }
 
@@ -304,7 +304,20 @@ export class SectionRoller implements Roller<SectionCache> {
         return this.resultArray[0];
     }
     get display() {
-        return `${this.result}`;
+
+        let res = this.content.slice(
+            this.result.position.start.offset,
+            this.result.position.end.offset
+        );
+
+        return `${res}`;
+    }
+    async element() {
+        const ret = createDiv();
+
+        MarkdownRenderer.renderMarkdown(this.display, ret, '', null);
+
+        return ret;
     }
     roll() {
         return [...Array(this.rolls)].map(

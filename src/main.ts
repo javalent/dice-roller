@@ -13,7 +13,7 @@ import { faDice } from "@fortawesome/free-solid-svg-icons";
 import { icon } from "@fortawesome/fontawesome-svg-core";
 
 import "./main.css";
-import { DiceRoll, LinkRoll, StuntRoll } from "./roller";
+import { DiceRoll, LinkRoll, SectionRoller, StuntRoll } from "./roller";
 import { Parser } from "./parser";
 import { IConditional, ILexeme } from "src/types";
 import { extract } from "./util";
@@ -52,12 +52,15 @@ export default class DiceRoller extends Plugin {
                             /^dice:\s*([\s\S]+)\s*?/
                         );
 
-                        let { result, text, link } = await this.parseDice(
-                            content
-                        );
+                        let { result, text, link, render } =
+                            await this.parseDice(content);
 
                         let container = createDiv().createDiv({
-                            cls: "dice-roller"
+                            cls: "dice-roller",
+                            attr: {
+                                "aria-label": `${content}\n${text}`,
+                                "aria-label-position": "top"
+                            }
                         });
                         container.setAttr("data-dice", content);
 
@@ -108,6 +111,13 @@ export default class DiceRoller extends Plugin {
                                 }
                                 resultEl.createSpan({ text: str });
                             }
+                        }
+                        if (render) {
+                            container.addClass("has-embed");
+                            resultEl = container.createDiv("internal-embed");
+                            const embedded =
+                                resultEl.createDiv("markdown-embed");
+                            embedded.appendChild(render);
                         } else {
                             resultEl = container.createSpan({
                                 text: result.toLocaleString(
@@ -135,7 +145,9 @@ export default class DiceRoller extends Plugin {
                                 );
                                 return;
                             }
-                            ({ result, text } = await this.parseDice(content));
+                            ({ result, text, render } = await this.parseDice(
+                                content
+                            ));
 
                             if (link && typeof result === "string") {
                                 resultEl.empty();
@@ -186,6 +198,12 @@ export default class DiceRoller extends Plugin {
                                     }
                                     resultEl.createSpan({ text: str });
                                 }
+                            } else if (render) {
+                                resultEl.empty();
+
+                                const embedded =
+                                    resultEl.createDiv("markdown-embed");
+                                embedded.appendChild(render);
                             } else {
                                 resultEl.setText(
                                     result.toLocaleString(navigator.language, {
@@ -193,31 +211,7 @@ export default class DiceRoller extends Plugin {
                                     })
                                 );
                             }
-
-                            this.buildTooltip(
-                                container,
-                                `${content}\n${text}`,
-                                {
-                                    delay: 0,
-                                    gap: 2,
-                                    placement: "top"
-                                }
-                            );
                         });
-                        container.addEventListener(
-                            "mouseenter",
-                            (evt: MouseEvent) => {
-                                this.buildTooltip(
-                                    container,
-                                    `${content}\n${text}`,
-                                    {
-                                        delay: 0,
-                                        gap: 2,
-                                        placement: "top"
-                                    }
-                                );
-                            }
-                        );
                     } catch (e) {
                         console.error(e);
                         new Notice(
@@ -471,7 +465,6 @@ export default class DiceRoller extends Plugin {
     }
 
     onunload() {
-        this.clearTooltip();
         console.log("DiceRoller unloaded");
     }
 
@@ -484,14 +477,18 @@ export default class DiceRoller extends Plugin {
             return Math.pow(a, b);
         }
     };
-    async parseDice(
-        text: string
-    ): Promise<{ result: string | number; text: string; link?: string }> {
+    async parseDice(text: string): Promise<{
+        result: string | number;
+        text: string;
+        link?: string;
+        render?: HTMLElement;
+    }> {
         return new Promise(async (resolve, reject) => {
             let stack: Array<DiceRoll | StuntRoll> = [],
                 diceMap: DiceRoll[] = [],
                 stuntMap: StuntRoll,
-                linkMap: LinkRoll;
+                linkMap: LinkRoll,
+                sectionMap: SectionRoller;
             const parsed = this.parse(text);
             parse: for (const d of parsed) {
                 switch (d.type) {
@@ -642,9 +639,8 @@ export default class DiceRoller extends Plugin {
                         break parse;
 
                     case "section": {
-
                         const [, roll, link] = d.data.match(
-                                /((\d+)[Dd])?\[\[([\s\S]+?)\]\]/
+                                /(?:(\d+)[Dd])?\[\[([\s\S]+)\]\]/
                             ),
                             file =
                                 await this.app.metadataCache.getFirstLinkpathDest(
@@ -660,10 +656,18 @@ export default class DiceRoller extends Plugin {
                             file
                         );
                         if (!cache || !cache.sections || !cache.sections.length)
-                            reject(
-                                "Could not read file cache."
-                            );
-                        const data = cache.sections;
+                            reject("Could not read file cache.");
+                        const content = await this.app.vault.read(file);
+                        const data = cache.sections.filter(
+                            ({ type }) =>
+                                !["yaml", "thematicBreak"].includes(type)
+                        );
+
+                        sectionMap = new SectionRoller(
+                            Number(roll),
+                            data,
+                            content
+                        );
 
                         break parse;
                     }
@@ -686,13 +690,16 @@ export default class DiceRoller extends Plugin {
             }
 
             resolve({
-                result: linkMap
+                result: sectionMap
+                    ? null
+                    : linkMap
                     ? linkMap.result
                     : stuntMap
                     ? stuntMap.result
                     : stack[0].result,
                 text: text,
-                link: `${linkMap?.link}#^${linkMap?.block}` ?? null
+                link: `${linkMap?.link}#^${linkMap?.block}` ?? null,
+                render: sectionMap ? await sectionMap.element() : null
             });
         });
     }
@@ -702,146 +709,5 @@ export default class DiceRoller extends Plugin {
             token;
         while ((token = this.lexer.lex())) tokens.push(token);
         return this.parser.parse(tokens);
-    }
-
-    buildTooltip(
-        element: HTMLElement,
-        text: string,
-        params: {
-            placement?: string;
-            classes?: string[];
-            gap?: number;
-            delay?: number;
-        }
-    ) {
-        let { placement = "top", classes = [], gap = 4, delay = 0 } = params;
-
-        if (delay > 0) {
-            setTimeout(() => {
-                this.buildTooltip(element, text, {
-                    placement: placement,
-                    classes: classes,
-                    gap: gap,
-                    delay: 0
-                });
-            }, delay);
-            return;
-        }
-        const { top, left, width, height } = element.getBoundingClientRect();
-
-        if (this.tooltip && this.tooltipTarget === element) {
-            this.tooltip.setText(text);
-        } else {
-            this.clearTooltip();
-            this.tooltip = createDiv({
-                cls: "tooltip",
-                text: text
-            });
-
-            (this.tooltip.parentNode || document.body).appendChild(
-                this.tooltip
-            );
-        }
-
-        let arrow =
-            (this.tooltip.getElementsByClassName(
-                "tooltip-arrow"
-            )[0] as HTMLDivElement) || this.tooltip.createDiv("tooltip-arrow");
-
-        let bottom = 0;
-        let middle = 0;
-
-        if (top - this.tooltip.getBoundingClientRect().height < 0) {
-            placement = "bottom";
-        }
-        switch (placement) {
-            case "bottom": {
-                bottom = top + height + gap;
-                middle = left + width / 2;
-                break;
-            }
-            case "right": {
-                bottom = top + height / 2;
-                middle = left + width + gap;
-                classes.push("mod-right");
-                break;
-            }
-            case "left": {
-                bottom = top + height / 2;
-                middle = left - gap;
-                classes.push("mod-left");
-                break;
-            }
-            case "top": {
-                bottom = top - gap - 5;
-                middle = left + width / 2;
-                classes.push("mod-top");
-                break;
-            }
-        }
-
-        this.tooltip.addClasses(classes);
-        this.tooltip.style.top = "0px";
-        this.tooltip.style.left = "0px";
-        this.tooltip.style.width = "";
-        this.tooltip.style.height = "";
-        const { width: ttWidth, height: ttHeight } =
-            this.tooltip.getBoundingClientRect();
-        const actualWidth = ["bottom", "top"].contains(placement)
-            ? ttWidth / 2
-            : ttWidth;
-        const actualHeight = ["left", "right"].contains(placement)
-            ? ttHeight / 2
-            : ttHeight;
-
-        if (
-            ("left" === placement
-                ? (middle -= actualWidth)
-                : "top" === placement && (bottom -= actualHeight),
-            bottom + actualHeight > window.innerHeight &&
-                (bottom = window.innerHeight - actualHeight - gap),
-            (bottom = Math.max(bottom, gap)),
-            "top" === placement || "bottom" === placement)
-        ) {
-            if (middle + actualWidth > window.innerWidth) {
-                const E = middle + actualWidth + gap - window.innerWidth;
-                middle -= E;
-                arrow.style.left = "initial";
-                arrow.style.right = actualWidth - E - gap / 2 + "px";
-            } else if (middle - gap - actualWidth < 0) {
-                const E = -(middle - gap - actualWidth);
-                middle += E;
-                arrow.style.right = "initial";
-                arrow.style.left = actualWidth - E - gap / 2 + "px";
-            }
-            middle = Math.max(middle, gap);
-        }
-
-        this.tooltip.style.top = bottom + "px";
-        this.tooltip.style.left = middle + "px";
-        this.tooltip.style.width = ttWidth + "px";
-        this.tooltip.style.height = ttHeight + "px";
-        this.tooltipTarget = element;
-
-        this.tooltipTarget.addEventListener("mouseleave", () => {
-            this.clearTooltip();
-        });
-    }
-    tooltip: HTMLDivElement = null;
-    tooltipTimeout: number = null;
-    tooltipTarget: HTMLElement = null;
-    clearTooltipTimeout() {
-        if (this.tooltipTimeout) {
-            clearTimeout(this.tooltipTimeout);
-            this.tooltipTimeout = null;
-        }
-    }
-    clearTooltip() {
-        this.clearTooltipTimeout();
-        if (this.tooltip) {
-            this.tooltip.detach();
-            this.tooltip = null;
-            this.tooltipTarget = null;
-        }
     }
 }
