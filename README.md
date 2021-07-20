@@ -29,7 +29,7 @@ This feature is still under development and may not work as expected.
 
 Usage:
 | Example | Result |
-| ----------------------------------------- | ----------------------------------------------- |
+| --- | --- |
 | `` `dice: [[Note]]` `` | Returns a single random block from `Note` |
 | `` `dice: 3d[[Note]]` `` | Returns 3 random blocks from `Note` |
 
@@ -58,8 +58,8 @@ Usage:
 | Example                                      | Result                                                                         |
 | -------------------------------------------- | ------------------------------------------------------------------------------ |
 | `` `dice: [[Note]]\|paragraph` ``            | Return `paragraph` blocks                                                      |
-| `` `dice: #tag\|paragraph,header,yaml` ``    | Return `paragraph`, `header`, and `yaml` blocks                                |
-| `` `dice: #tag\|-\|paragraph,header,yaml` `` | Return `paragraph`, `header`, and `yaml` blocks from a **single, random note** |
+| `` `dice: #tag\|paragraph,heading,yaml` ``    | Return `paragraph`, `heading`, and `yaml` blocks                                |
+| `` `dice: #tag\|-\|paragraph,heading,yaml` `` | Return `paragraph`, `heading`, and `yaml` blocks from a **single, random note** |
 
 I do not have any control over what Obsidian consider's each block (for instance, images may be returned as `paragraph`).
 
