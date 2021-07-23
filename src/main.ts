@@ -511,19 +511,13 @@ export default class DiceRoller extends Plugin {
         return new Promise(async (resolve, reject) => {
             let stack: Array<DiceRoll | StuntRoll> = [],
                 diceMap: DiceRoll[] = [],
-                stuntMap: StuntRoll,
                 tableMap: TableRoll,
                 renderMap: Map<string, SectionRoller[]> = new Map(),
                 type: "dice" | "table" | "render" = "dice";
             const parsed = this.parse(text);
-            parse: for (const d of parsed) {
-                if (d.type === "stunt") {
-                    stuntMap = new StuntRoll();
-                    if (parsed.length > 1) {
-                        new Notice(`Stunt dice cannot be used with modifiers.`);
-                    }
-                    break;
-                } else if (d.type === "table") {
+            let stunted: string = "";
+            for (const d of parsed) {
+                if (d.type === "table") {
                     type = "table";
                     const [, roll = 1, link, block, header] =
                             d.data.match(TABLE_REGEX),
@@ -809,10 +803,20 @@ export default class DiceRoller extends Plugin {
                         }
                         case "dice":
                             ///const res = this.roll(d.data);
-
                             diceMap.push(new DiceRoll(d.data));
                             stack.push(diceMap[diceMap.length - 1]);
                             break;
+                        case "stunt":
+                            let stunt = new StuntRoll(d.original);
+                            diceMap.push(stunt);
+
+                            if (stunt.doubles) {
+                                stunted = ` - ${
+                                    stunt.results.get(0).value
+                                } Stunt Points`;
+                            }
+
+                            stack.push(diceMap[diceMap.length - 1]);
                     }
                 }
             }
@@ -822,9 +826,6 @@ export default class DiceRoller extends Plugin {
                     diceInstance.display
                 );
             });
-            if (stuntMap) {
-                text = /* text.replace(/1[Dd]S/,  */ stuntMap.display;
-            }
             if (tableMap) {
                 text = text.replace(
                     tableMap.text,
@@ -842,9 +843,7 @@ export default class DiceRoller extends Plugin {
                     ? null
                     : tableMap
                     ? tableMap.result
-                    : stuntMap
-                    ? stuntMap.result
-                    : stack[0].result,
+                    : `${stack[0].text}${stunted}`,
                 text: text,
                 link: `${tableMap?.link}#^${tableMap?.block}` ?? null,
                 type,

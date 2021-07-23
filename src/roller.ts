@@ -19,6 +19,10 @@ export class DiceRoll implements Roller<number> {
     static: boolean = false;
     conditions: Conditional[];
 
+    get text() {
+        return `${this.result}`;
+    }
+
     get result() {
         if (this.static) {
             return Number(this.dice);
@@ -245,32 +249,32 @@ export class DiceRoll implements Roller<number> {
     }
 }
 
-export class StuntRoll implements Roller<string> {
-    rolls: number = 3;
-    results: number[];
-    constructor() {
-        this.results = this.roll().map((v) => Number(v));
-    }
-    get display() {
-        let result = `[${[...this.results].join(", ")}]`;
-        return result;
-    }
-    get numberResult() {
-        return this.results.reduce((a, b) => a + b);
-    }
-    get result() {
-        let result = `${this.results.reduce((a, b) => a + b)}`;
-        if (this.doubles) result += ` - ${this.results[0]} Stunt Points`;
-        return result;
-    }
-    get resultArray() {
-        return this.results.map((v) => `${v}`);
+export class StuntRoll extends DiceRoll {
+    constructor(dice: string) {
+        super(`3d6`);
+
+        this.dice = dice;
+        
     }
     get doubles() {
-        return new Set(this.results).size < this.results.length;
+        return (
+            new Set(
+                [...this.results].map(([, { usable, value }]) =>
+                    usable ? value : 0
+                )
+            ).size < 3
+        );
     }
-    roll() {
-        return [...Array(this.rolls)].map(() => `${_getRandomBetween(1, 6)}`);
+    get display() {
+        let str: string[] = [];
+        for (let result of this.results) {
+            if (result[0] == 0 && this.doubles) {
+                str.push(`${result[1].value}S`);
+                continue;
+            }
+            str.push(`${result[1].value}`);
+        }
+        return `[${str.join(", ")}]`;
     }
 }
 
@@ -314,6 +318,9 @@ export class SectionRoller
         super();
         if (!rolls) this.rolls = 1;
         this.roll();
+    }
+    get text() {
+        return this.display;
     }
 
     get result() {

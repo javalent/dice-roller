@@ -156,8 +156,6 @@ Use `` `dice: XdF` `` to roll a fudge/fate dice. See [here](<https://en.wikipedi
 
 Use `` `dice: 1dS` `` to roll a Fantasy AGE stunt dice. The result will show the total roll and also the stunt points if successful.
 
-**Stunt dice cannot be used with modifiers. Any modifiers supplied will be ignored.**
-
 # Dice Modifiers
 
 The parser supports several modifiers. If a die has been modified, it will display _how_ it has been modified in the tooltip.

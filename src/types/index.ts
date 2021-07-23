@@ -24,6 +24,7 @@ export type ResultInterface<T> = {
 
 export abstract class Roller<T> {
     display: string;
+    text: string;
     result: T;
     resultArray: T[];
     rolls: number;
