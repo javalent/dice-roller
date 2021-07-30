@@ -310,6 +310,17 @@ export default class DiceRoller extends Plugin {
                     true
                 );
             };
+
+            link.onmouseenter = async (evt) => {
+                this.app.workspace.trigger(
+                    "link-hover",
+                    this, //not sure
+                    link, //targetEl
+                    fileMap.result, //linkText
+                    this.app.workspace.getActiveFile()?.path //source
+                );
+            };
+
             resultEl.empty();
             resultEl.appendChild(link);
         }
