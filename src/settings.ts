@@ -21,7 +21,23 @@ export default class SettingTab extends PluginSettingTab {
                 t.onChange(async (v) => {
                     this.plugin.returnAllTags = v;
                     await this.plugin.saveData({
-                        returnAllTags: this.plugin.returnAllTags
+                        returnAllTags: this.plugin.returnAllTags,
+                        rollLinksForTags: this.plugin.rollLinksForTags
+                    });
+                });
+            });
+        new Setting(containerEl)
+            .setName("Always Return Links for Tags")
+            .setDesc(
+                "Enables random link rolling with the link parameter. Override by specifying a section type."
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.rollLinksForTags);
+                t.onChange(async (v) => {
+                    this.plugin.rollLinksForTags = v;
+                    await this.plugin.saveData({
+                        returnAllTags: this.plugin.returnAllTags,
+                        rollLinksForTags: this.plugin.rollLinksForTags
                     });
                 });
             });

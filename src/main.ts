@@ -13,7 +13,13 @@ import { faDice } from "@fortawesome/free-solid-svg-icons";
 import { icon } from "@fortawesome/fontawesome-svg-core";
 
 import "./main.css";
-import { DiceRoll, TableRoll, SectionRoller, StuntRoll } from "./roller";
+import {
+    DiceRoll,
+    TableRoll,
+    SectionRoller,
+    StuntRoll,
+    FileRoller
+} from "./roller";
 import { Parser } from "./parser";
 import { Conditional, Lexeme } from "src/types";
 import { extract } from "./util";
@@ -56,16 +62,19 @@ export default class DiceRoller extends Plugin {
     lexer: lexer;
     parser: Parser;
     returnAllTags: boolean;
+    rollLinksForTags: boolean;
     async onload() {
         console.log("DiceRoller plugin loaded");
 
         const data = Object.assign(
             {
-                returnAllTags: true
+                returnAllTags: true,
+                rollLinksForTags: false
             },
-            this.loadData()
+            await this.loadData()
         );
         this.returnAllTags = data.returnAllTags ?? true;
+        this.rollLinksForTags = data.rollLinksForTags ?? false;
 
         this.addSettingTab(new SettingTab(this.app, this));
 
@@ -86,7 +95,7 @@ export default class DiceRoller extends Plugin {
                             /^dice:\s*([\s\S]+)\s*?/
                         );
 
-                        let { text, link, renderMap, tableMap, type } =
+                        let { text, link, renderMap, tableMap, type, fileMap } =
                             await this.parseDice(content);
 
                         let container = createDiv().createDiv({
@@ -114,7 +123,9 @@ export default class DiceRoller extends Plugin {
                             link,
                             renderMap,
                             tableMap,
-                            type
+                            fileMap,
+                            type,
+                            ctx.sourcePath
                         );
 
                         const icon = container.createDiv({
@@ -133,7 +144,9 @@ export default class DiceRoller extends Plugin {
                                 link,
                                 renderMap,
                                 tableMap,
-                                type
+                                fileMap,
+                                type,
+                                ctx.sourcePath
                             );
                         icon.onclick = (evt) =>
                             this.reroll(
@@ -144,7 +157,9 @@ export default class DiceRoller extends Plugin {
                                 link,
                                 renderMap,
                                 tableMap,
-                                type
+                                fileMap,
+                                type,
+                                ctx.sourcePath
                             );
                     } catch (e) {
                         console.error(e);
@@ -193,7 +208,9 @@ export default class DiceRoller extends Plugin {
         link: string,
         renderMap: Map<string, SectionRoller[]>,
         tableMap: TableRoll,
-        type: "dice" | "table" | "render"
+        fileMap: FileRoller,
+        type: "dice" | "table" | "render" | "file",
+        sourcePath: string
     ) {
         resultEl.empty();
         if (type === "dice") {
@@ -278,6 +295,23 @@ export default class DiceRoller extends Plugin {
                     });
                 }
             }
+        } else if (type === "file") {
+            fileMap.roll();
+            container.setAttrs({
+                "aria-label": `${content}\n${fileMap.display}`
+            });
+
+            const link = await fileMap.element(sourcePath);
+            link.onclick = async (evt) => {
+                evt.stopPropagation();
+                this.app.workspace.openLinkText(
+                    fileMap.result.replace("^", "#^").split(/\|/).shift(),
+                    this.app.workspace.getActiveFile()?.path,
+                    true
+                );
+            };
+            resultEl.empty();
+            resultEl.appendChild(link);
         }
     }
 
@@ -505,15 +539,17 @@ export default class DiceRoller extends Plugin {
         text: string;
         link?: string;
         tableMap: TableRoll;
+        fileMap: FileRoller;
         renderMap: Map<string, SectionRoller[]>;
-        type: "dice" | "table" | "render";
+        type: "dice" | "table" | "render" | "file";
     }> {
         return new Promise(async (resolve, reject) => {
             let stack: Array<DiceRoll | StuntRoll> = [],
                 diceMap: DiceRoll[] = [],
                 tableMap: TableRoll,
                 renderMap: Map<string, SectionRoller[]> = new Map(),
-                type: "dice" | "table" | "render" = "dice";
+                fileMap: FileRoller,
+                type: "dice" | "table" | "render" | "file" = "dice";
             const parsed = this.parse(text);
             let stunted: string = "";
             for (const d of parsed) {
@@ -534,12 +570,16 @@ export default class DiceRoller extends Plugin {
                     const cache = await this.app.metadataCache.getFileCache(
                         file
                     );
-                    if (!cache || !cache.blocks || !cache.blocks[block])
+                    if (
+                        !cache ||
+                        !cache.blocks ||
+                        !cache.blocks[block.toLowerCase()]
+                    )
                         reject(
                             "Could not read file cache. Does the block reference exist?\n\n" +
                                 `${link} > ${block}`
                         );
-                    const data = cache.blocks[block];
+                    const data = cache.blocks[block.toLowerCase()];
 
                     const content = (await this.app.vault.read(file))?.slice(
                         data.position.start.offset,
@@ -655,69 +695,88 @@ export default class DiceRoller extends Plugin {
                         );
                     }
 
-                    const couldNotRead = [],
-                        noCache = [];
-                    for (let link of files) {
-                        let file =
-                            await this.app.metadataCache.getFirstLinkpathDest(
-                                link,
-                                ""
-                            );
-                        if (!file || !(file instanceof TFile))
-                            couldNotRead.push(link);
-                        const cache = await this.app.metadataCache.getFileCache(
-                            file
+                    if (
+                        filter === "link" ||
+                        (this.rollLinksForTags && !types?.length)
+                    ) {
+                        fileMap = new FileRoller(
+                            1,
+                            [...files],
+                            this.app.metadataCache
                         );
-                        if (!cache || !cache.sections || !cache.sections.length)
-                            noCache.push(link);
-
-                        const content = await this.app.vault.read(file);
-                        const data = cache.sections
-                            .filter(({ type }) =>
-                                types
-                                    ? types.includes(type)
-                                    : !["yaml", "thematicBreak"].includes(type)
+                        type = "file";
+                    } else {
+                        const couldNotRead = [],
+                            noCache = [];
+                        for (let link of files) {
+                            let file =
+                                await this.app.metadataCache.getFirstLinkpathDest(
+                                    link,
+                                    ""
+                                );
+                            if (!file || !(file instanceof TFile))
+                                couldNotRead.push(link);
+                            const cache =
+                                await this.app.metadataCache.getFileCache(file);
+                            if (
+                                !cache ||
+                                !cache.sections ||
+                                !cache.sections.length
                             )
-                            .map((cache) => {
-                                return {
-                                    ...cache,
-                                    file: file.basename
-                                };
-                            });
+                                noCache.push(link);
 
-                        if (collapse) {
-                            let roller;
-                            const rollers = renderMap.get("all");
-                            if (rollers && rollers.length) {
-                                roller = rollers.shift();
-                                roller.options = [...roller.options, ...data];
-                                roller.content.set(file.basename, content);
+                            const content = await this.app.vault.read(file);
+                            const data = cache.sections
+                                .filter(({ type }) =>
+                                    types
+                                        ? types.includes(type)
+                                        : !["yaml", "thematicBreak"].includes(
+                                              type
+                                          )
+                                )
+                                .map((cache) => {
+                                    return {
+                                        ...cache,
+                                        file: file.basename
+                                    };
+                                });
+
+                            if (collapse) {
+                                let roller;
+                                const rollers = renderMap.get("all");
+                                if (rollers && rollers.length) {
+                                    roller = rollers.shift();
+                                    roller.options = [
+                                        ...roller.options,
+                                        ...data
+                                    ];
+                                    roller.content.set(file.basename, content);
+                                } else {
+                                    roller = new SectionRoller(
+                                        Number(roll),
+                                        data,
+                                        new Map([[file.basename, content]]),
+                                        "all"
+                                    );
+                                }
+                                renderMap.set("all", [
+                                    ...(renderMap.get("all") ?? []),
+                                    roller
+                                ]);
                             } else {
-                                roller = new SectionRoller(
+                                const roller = new SectionRoller(
                                     Number(roll),
                                     data,
                                     new Map([[file.basename, content]]),
-                                    "all"
+                                    file.basename
                                 );
+                                renderMap.set(file.basename, [
+                                    ...(renderMap.get(file.basename) ?? []),
+                                    roller
+                                ]);
                             }
-                            renderMap.set("all", [
-                                ...(renderMap.get("all") ?? []),
-                                roller
-                            ]);
-                        } else {
-                            const roller = new SectionRoller(
-                                Number(roll),
-                                data,
-                                new Map([[file.basename, content]]),
-                                file.basename
-                            );
-                            renderMap.set(file.basename, [
-                                ...(renderMap.get(file.basename) ?? []),
-                                roller
-                            ]);
                         }
                     }
-
                     break;
                 } else {
                     switch (d.type) {
@@ -838,17 +897,18 @@ export default class DiceRoller extends Plugin {
                 }`;
             }
 
+            if (fileMap) {
+                text = fileMap.result;
+            }
+
             resolve({
-                result: renderMap.size
-                    ? null
-                    : tableMap
-                    ? tableMap.result
-                    : `${stack[0].text}${stunted}`,
+                result: stack.length ? `${stack[0].text}${stunted}` : null,
                 text: text,
                 link: `${tableMap?.link}#^${tableMap?.block}` ?? null,
                 type,
                 tableMap,
-                renderMap
+                renderMap,
+                fileMap
             });
         });
     }

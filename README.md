@@ -47,6 +47,12 @@ If results from multiple files are returned, the result **from that file** can b
 | `` `dice: #tag\|-` `` | Return a single random block from **a single, random note** with `#tag`                                  |
 | `` `dice: #tag\|+` `` | Return a single random block from **every note** with `#tag`                                             |
 
+#### Links
+
+If the `Always Return Links for Tags` setting is on, or `|link` is appended to the end of the tag, a link to a random note will be returned instead of sections.
+
+At the moment this will only return a single link regardless of the number of rolls specified. This may change in a later release.
+
 #### Block Types
 
 Obsidian has several "types" of blocks. Currently, the default behavior of the plugin is to filter out **thematicBreak** and **yaml** from the returned results.
@@ -55,9 +61,9 @@ To return a specific block type, you may append `|<type>` to the end of any bloc
 
 Usage:
 
-| Example                                      | Result                                                                         |
-| -------------------------------------------- | ------------------------------------------------------------------------------ |
-| `` `dice: [[Note]]\|paragraph` ``            | Return `paragraph` blocks                                                      |
+| Example                                       | Result                                                                          |
+| --------------------------------------------- | ------------------------------------------------------------------------------- |
+| `` `dice: [[Note]]\|paragraph` ``             | Return `paragraph` blocks                                                       |
 | `` `dice: #tag\|paragraph,heading,yaml` ``    | Return `paragraph`, `heading`, and `yaml` blocks                                |
 | `` `dice: #tag\|-\|paragraph,heading,yaml` `` | Return `paragraph`, `heading`, and `yaml` blocks from a **single, random note** |
 

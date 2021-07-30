@@ -4,7 +4,14 @@ import {
     Roller,
     SectionCacheWithFile
 } from "src/types";
-import { Events, MarkdownRenderer, Notice } from "obsidian";
+import {
+    Events,
+    MarkdownRenderer,
+    MetadataCache,
+    Notice,
+    TFile,
+    Vault
+} from "obsidian";
 import { _checkCondition, _getRandomBetween, _insertIntoMap } from "./util";
 
 export class DiceRoll implements Roller<number> {
@@ -254,7 +261,6 @@ export class StuntRoll extends DiceRoll {
         super(`3d6`);
 
         this.dice = dice;
-        
     }
     get doubles() {
         return (
@@ -412,5 +418,44 @@ export class SectionRoller
             return choice;
         });
         return this.resultArray;
+    }
+}
+
+export class FileRoller implements Roller<string> {
+    resultArray: string[];
+    get result() {
+        return this.resultArray[0];
+    }
+
+    get text() {
+        return "";
+    }
+    get display() {
+        return this.result;
+    }
+    async element(sourcePath: string = "") {
+        const file = await this.cache.getFirstLinkpathDest(
+            this.display,
+            sourcePath
+        );
+        /* return  */ const link = createEl("a", {
+            cls: "internal-link",
+            text: file.basename
+        });
+
+        return link;
+    }
+    roll() {
+        return (this.resultArray = [...Array(this.rolls)].map(
+            () => this.options[_getRandomBetween(0, this.options.length - 1)]
+        ));
+    }
+    constructor(
+        public rolls: number = 1,
+        public options: string[],
+        private cache: MetadataCache
+    ) {
+        if (!rolls) this.rolls = 1;
+        this.roll();
     }
 }
