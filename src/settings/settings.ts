@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
-import type DiceRoller from "./main";
+import type DiceRoller from "../main";
 
 export default class SettingTab extends PluginSettingTab {
     constructor(app: App, public plugin: DiceRoller) {
@@ -17,13 +17,10 @@ export default class SettingTab extends PluginSettingTab {
             .setName("Roll All Files for Tags")
             .setDesc("Return a result for each file when rolling tags.")
             .addToggle((t) => {
-                t.setValue(this.plugin.returnAllTags);
+                t.setValue(this.plugin.data.returnAllTags);
                 t.onChange(async (v) => {
-                    this.plugin.returnAllTags = v;
-                    await this.plugin.saveData({
-                        returnAllTags: this.plugin.returnAllTags,
-                        rollLinksForTags: this.plugin.rollLinksForTags
-                    });
+                    this.plugin.data.returnAllTags = v;
+                    await this.plugin.saveData(this.plugin.data);
                 });
             });
         new Setting(containerEl)
@@ -32,13 +29,22 @@ export default class SettingTab extends PluginSettingTab {
                 "Enables random link rolling with the link parameter. Override by specifying a section type."
             )
             .addToggle((t) => {
-                t.setValue(this.plugin.rollLinksForTags);
+                t.setValue(this.plugin.data.rollLinksForTags);
                 t.onChange(async (v) => {
-                    this.plugin.rollLinksForTags = v;
-                    await this.plugin.saveData({
-                        returnAllTags: this.plugin.returnAllTags,
-                        rollLinksForTags: this.plugin.rollLinksForTags
-                    });
+                    this.plugin.data.rollLinksForTags = v;
+                    await this.plugin.saveData(this.plugin.data);
+                });
+            });
+        new Setting(containerEl)
+            .setName("Add Copy Button to Section Results")
+            .setDesc(
+                "Randomly rolled sections will have a copy-content button to easy add result to clipboard."
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.copyContentButton);
+                t.onChange(async (v) => {
+                    this.plugin.data.copyContentButton = v;
+                    await this.plugin.saveData(this.plugin.data);
                 });
             });
     }

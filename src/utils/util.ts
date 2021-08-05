@@ -64,10 +64,6 @@ export function _insertIntoMap(
     map.set(index, value);
 }
 
-export function _getRandomBetween(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
 export function _checkCondition(
     value: number,
     conditions: Conditional[]

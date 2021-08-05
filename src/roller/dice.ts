@@ -1,20 +1,12 @@
+import { Notice } from "obsidian";
+import { ResultMapInterface, Conditional } from "src/types";
 import {
-    Conditional,
-    ResultMapInterface,
-    Roller,
-    SectionCacheWithFile
-} from "src/types";
-import {
-    Events,
-    MarkdownRenderer,
-    MetadataCache,
-    Notice,
-    TFile,
-    Vault
-} from "obsidian";
-import { _checkCondition, _getRandomBetween, _insertIntoMap } from "./util";
+    _checkCondition,
+    _insertIntoMap
+} from "src/utils/util";
+import { BaseRoller, Roller } from "./roller";
 
-export class DiceRoll implements Roller<number> {
+export class DiceRoller extends BaseRoller implements Roller<number> {
     dice: string;
     modifiers: string[] = [];
     rolls: number;
@@ -51,6 +43,7 @@ export class DiceRoll implements Roller<number> {
             .join(", ")}]`;
     }
     constructor(dice: string) {
+        super();
         if (!/(\-?\d+)[dD]?(\d+|%|\[\d+,\s?\d+\])?/.test(dice)) {
             throw new Error("Non parseable dice string passed to DiceRoll.");
         }
@@ -146,7 +139,7 @@ export class DiceRoll implements Roller<number> {
             i++;
             toReroll.map(([, roll]) => {
                 roll.modifiers.add("r");
-                roll.value = _getRandomBetween(this.faces.min, this.faces.max);
+                roll.value = this._getRandomBetween(this.faces.min, this.faces.max);
             });
         }
 
@@ -179,14 +172,14 @@ export class DiceRoll implements Roller<number> {
             );
 
         toExplode.forEach(([index, value]) => {
-            let newRoll = _getRandomBetween(this.faces.min, this.faces.max);
+            let newRoll = this._getRandomBetween(this.faces.min, this.faces.max);
             i++;
             value.modifiers.add("!");
             value.value += newRoll;
             this.results.set(index, value);
             while (i < times && _checkCondition(newRoll, conditionals)) {
                 i++;
-                newRoll = _getRandomBetween(this.faces.min, this.faces.max);
+                newRoll = this._getRandomBetween(this.faces.min, this.faces.max);
                 value.value += newRoll;
                 this.results.set(index, value);
             }
@@ -232,7 +225,7 @@ export class DiceRoll implements Roller<number> {
                 let previous = this.results.get(key + inserted + i);
                 previous.modifiers.add("!");
 
-                newRoll = _getRandomBetween(this.faces.min, this.faces.max);
+                newRoll = this._getRandomBetween(this.faces.min, this.faces.max);
 
                 /** Insert the new roll into the results map */
                 _insertIntoMap(this.results, key + inserted + i + 1, {
@@ -251,12 +244,17 @@ export class DiceRoll implements Roller<number> {
             return [Number(this.dice)];
         }
         return [...Array(this.rolls)].map(() =>
-            _getRandomBetween(this.faces.min, this.faces.max)
+            this._getRandomBetween(this.faces.min, this.faces.max)
         );
+    }
+
+    element() {
+        return createDiv();
     }
 }
 
-export class StuntRoll extends DiceRoll {
+
+export class StuntRoller extends DiceRoller {
     constructor(dice: string) {
         super(`3d6`);
 
@@ -281,181 +279,5 @@ export class StuntRoll extends DiceRoll {
             str.push(`${result[1].value}`);
         }
         return `[${str.join(", ")}]`;
-    }
-}
-
-export class TableRoll implements Roller<string> {
-    resultArray: string[];
-    get result() {
-        return this.resultArray.join("|");
-    }
-    get display() {
-        return `${this.result}`;
-    }
-    constructor(
-        public rolls: number,
-        public options: string[],
-        public text: string,
-        public link: string,
-        public block: string
-    ) {
-        this.roll();
-    }
-    roll() {
-        return (this.resultArray = [...Array(this.rolls)].map(
-            () => this.options[_getRandomBetween(0, this.options.length - 1)]
-        ));
-    }
-}
-
-export class SectionRoller
-    extends Events
-    implements Roller<SectionCacheWithFile>
-{
-    resultArray: SectionCacheWithFile[];
-    private selected: Set<SectionCacheWithFile> = new Set();
-
-    constructor(
-        public rolls: number = 1,
-        public options: SectionCacheWithFile[],
-        public content: Map<string, string>,
-        public file: string
-    ) {
-        super();
-        if (!rolls) this.rolls = 1;
-        this.roll();
-    }
-    get text() {
-        return this.display;
-    }
-
-    get result() {
-        return this.resultArray[0];
-    }
-    get display() {
-        let res = this.content
-            .get(this.file)
-            .slice(
-                this.result.position.start.offset,
-                this.result.position.end.offset
-            );
-
-        return `${res}`;
-    }
-    displayFromCache(cache: SectionCacheWithFile) {
-        let res = this.content
-            .get(cache.file)
-            .slice(cache.position.start.offset, cache.position.end.offset);
-
-        return `${res}`;
-    }
-    get remaining() {
-        return this.options.filter((o) => !this.selected.has(o));
-    }
-
-    element(parent: HTMLElement) {
-        parent.empty();
-        const holder = parent.createDiv();
-
-        for (let result of Array.from(this.selected)) {
-            const resultEl = holder.createDiv();
-            if (this.content.size > 1) {
-                resultEl.createEl("h5", {
-                    cls: "dice-file-name",
-                    text: result.file
-                });
-            }
-            resultEl.onclick = async (evt) => {
-                if (
-                    (evt && evt.getModifierState("Control")) ||
-                    evt.getModifierState("Meta")
-                ) {
-                    evt.stopPropagation();
-                    this.trigger("open-link", result.file);
-                    return;
-                }
-            };
-            const ret = resultEl.createDiv({
-                cls: "markdown-embed"
-            });
-            if (!result) {
-                ret.createDiv({
-                    cls: "dice-no-results",
-                    text: "No results."
-                });
-
-                continue;
-            }
-
-            const embed = ret.createDiv({
-                attr: {
-                    "aria-label": `${result.file}: ${result.type}`
-                }
-            });
-            MarkdownRenderer.renderMarkdown(
-                this.displayFromCache(result),
-                embed,
-                "",
-                null
-            );
-        }
-
-        holder.onclick = async (evt) => {
-            evt.stopPropagation();
-
-            this.roll();
-            this.element(parent);
-        };
-
-        return holder;
-    }
-    roll() {
-        this.selected = new Set();
-        this.resultArray = [...Array(this.rolls)].map(() => {
-            const choice =
-                this.remaining[_getRandomBetween(0, this.remaining.length - 1)];
-            this.selected.add(choice);
-            return choice;
-        });
-        return this.resultArray;
-    }
-}
-
-export class FileRoller implements Roller<string> {
-    resultArray: string[];
-    get result() {
-        return this.resultArray[0];
-    }
-
-    get text() {
-        return "";
-    }
-    get display() {
-        return this.result;
-    }
-    async element(sourcePath: string = "") {
-        const file = await this.cache.getFirstLinkpathDest(
-            this.display,
-            sourcePath
-        );
-        /* return  */ const link = createEl("a", {
-            cls: "internal-link",
-            text: file.basename
-        });
-
-        return link;
-    }
-    roll() {
-        return (this.resultArray = [...Array(this.rolls)].map(
-            () => this.options[_getRandomBetween(0, this.options.length - 1)]
-        ));
-    }
-    constructor(
-        public rolls: number = 1,
-        public options: string[],
-        private cache: MetadataCache
-    ) {
-        if (!rolls) this.rolls = 1;
-        this.roll();
     }
 }

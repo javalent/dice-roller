@@ -10,21 +10,29 @@ import {
 import lexer from "lex";
 
 import { faDice } from "@fortawesome/free-solid-svg-icons";
+import { faCopy } from "@fortawesome/free-regular-svg-icons";
 import { icon } from "@fortawesome/fontawesome-svg-core";
 
-import "./main.css";
+import "./assets/main.css";
 import {
-    DiceRoll,
-    TableRoll,
+    DiceRoller,
+    TableRoller,
     SectionRoller,
-    StuntRoll,
+    StuntRoller,
     FileRoller
 } from "./roller";
-import { Parser } from "./parser";
+import { Parser } from "./parser/parser";
 import { Conditional, Lexeme } from "src/types";
-import { extract } from "./util";
-import { MATH_REGEX, SECTION_REGEX, TABLE_REGEX, TAG_REGEX } from "./constants";
-import SettingTab from "./settings";
+import { extract } from "./utils/util";
+import {
+    COPY_DEFINITION,
+    ICON_DEFINITION,
+    MATH_REGEX,
+    SECTION_REGEX,
+    TABLE_REGEX,
+    TAG_REGEX
+} from "./utils/constants";
+import SettingTab from "./settings/settings";
 
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -57,31 +65,35 @@ declare module "obsidian" {
         };
     }
 }
-
-export default class DiceRoller extends Plugin {
+export default class DiceRollerPlugin extends Plugin {
     lexer: lexer;
     parser: Parser;
-    returnAllTags: boolean;
-    rollLinksForTags: boolean;
+    data: {
+        returnAllTags: boolean;
+        rollLinksForTags: boolean;
+        copyContentButton: boolean;
+    };
     async onload() {
         console.log("DiceRoller plugin loaded");
 
-        const data = Object.assign(
+        this.data = Object.assign(
             {
                 returnAllTags: true,
-                rollLinksForTags: false
+                rollLinksForTags: false,
+                copyContentButton: true
             },
             await this.loadData()
         );
-        this.returnAllTags = data.returnAllTags ?? true;
-        this.rollLinksForTags = data.rollLinksForTags ?? false;
 
         this.addSettingTab(new SettingTab(this.app, this));
 
-        const ICON_DEFINITION = Symbol("dice-roller-icon").toString();
         const ICON_SVG = icon(faDice).html[0];
 
         addIcon(ICON_DEFINITION, ICON_SVG);
+
+        const COPY_SVG = icon(faCopy).html[0];
+
+        addIcon(COPY_DEFINITION, COPY_SVG);
 
         this.registerMarkdownPostProcessor(
             async (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
@@ -96,7 +108,7 @@ export default class DiceRoller extends Plugin {
                         );
 
                         let { text, link, renderMap, tableMap, type, fileMap } =
-                            await this.parseDice(content);
+                            await this.parseDice(content, ctx.sourcePath);
 
                         let container = createDiv().createDiv({
                             cls: "dice-roller",
@@ -124,8 +136,7 @@ export default class DiceRoller extends Plugin {
                             renderMap,
                             tableMap,
                             fileMap,
-                            type,
-                            ctx.sourcePath
+                            type
                         );
 
                         const icon = container.createDiv({
@@ -145,8 +156,7 @@ export default class DiceRoller extends Plugin {
                                 renderMap,
                                 tableMap,
                                 fileMap,
-                                type,
-                                ctx.sourcePath
+                                type
                             );
                         icon.onclick = (evt) =>
                             this.reroll(
@@ -158,8 +168,7 @@ export default class DiceRoller extends Plugin {
                                 renderMap,
                                 tableMap,
                                 fileMap,
-                                type,
-                                ctx.sourcePath
+                                type
                             );
                     } catch (e) {
                         console.error(e);
@@ -207,10 +216,9 @@ export default class DiceRoller extends Plugin {
         content: string,
         link: string,
         renderMap: Map<string, SectionRoller[]>,
-        tableMap: TableRoll,
+        tableMap: TableRoller,
         fileMap: FileRoller,
-        type: "dice" | "table" | "render" | "file",
-        sourcePath: string
+        type: "dice" | "table" | "render" | "file"
     ) {
         resultEl.empty();
         if (type === "dice") {
@@ -270,6 +278,7 @@ export default class DiceRoller extends Plugin {
             resultEl.addClass("internal-embed");
             for (let [file, elements] of Array.from(renderMap)) {
                 const holder = resultEl.createDiv({
+                    cls: "dice-section-result",
                     attr: {
                         "aria-label": file
                     }
@@ -280,19 +289,10 @@ export default class DiceRoller extends Plugin {
                         text: file
                     });
                 }
-
+                
                 for (let el of elements) {
                     el.roll();
                     el.element(holder.createDiv());
-                    el.on("open-link", async (link) => {
-                        if (link) {
-                            await this.app.workspace.openLinkText(
-                                link.replace("^", "#^").split(/\|/).shift(),
-                                this.app.workspace.getActiveFile()?.path,
-                                true
-                            );
-                        }
-                    });
                 }
             }
         } else if (type === "file") {
@@ -301,7 +301,7 @@ export default class DiceRoller extends Plugin {
                 "aria-label": `${content}\n${fileMap.display}`
             });
 
-            const link = await fileMap.element(sourcePath);
+            const link = await fileMap.element();
             link.onclick = async (evt) => {
                 evt.stopPropagation();
                 this.app.workspace.openLinkText(
@@ -545,19 +545,22 @@ export default class DiceRoller extends Plugin {
             return Math.pow(a, b);
         }
     };
-    async parseDice(text: string): Promise<{
+    async parseDice(
+        text: string,
+        source?: string
+    ): Promise<{
         result: string | number;
         text: string;
         link?: string;
-        tableMap: TableRoll;
+        tableMap: TableRoller;
         fileMap: FileRoller;
         renderMap: Map<string, SectionRoller[]>;
         type: "dice" | "table" | "render" | "file";
     }> {
         return new Promise(async (resolve, reject) => {
-            let stack: Array<DiceRoll | StuntRoll> = [],
-                diceMap: DiceRoll[] = [],
-                tableMap: TableRoll,
+            let stack: Array<DiceRoller | StuntRoller> = [],
+                diceMap: DiceRoller[] = [],
+                tableMap: TableRoller,
                 renderMap: Map<string, SectionRoller[]> = new Map(),
                 fileMap: FileRoller,
                 type: "dice" | "table" | "render" | "file" = "dice";
@@ -609,7 +612,7 @@ export default class DiceRoller extends Plugin {
                         opts = table.rows;
                     }
 
-                    tableMap = new TableRoll(
+                    tableMap = new TableRoller(
                         Number(roll ?? 1),
                         opts,
                         d.data,
@@ -664,7 +667,8 @@ export default class DiceRoller extends Plugin {
                         Number(roll),
                         data,
                         new Map([[file.basename, content]]),
-                        file.basename
+                        file.basename,
+                        this.data.copyContentButton
                     );
 
                     renderMap.set(file.basename, [
@@ -689,7 +693,7 @@ export default class DiceRoller extends Plugin {
                             ? true
                             : collapseTrigger === "+"
                             ? false
-                            : !this.returnAllTags;
+                            : !this.data.returnAllTags;
 
                     let types: string[];
                     if (filter && filter.length) {
@@ -708,13 +712,14 @@ export default class DiceRoller extends Plugin {
 
                     if (
                         filter === "link" ||
-                        (this.rollLinksForTags && !types?.length)
+                        (this.data.rollLinksForTags && !types?.length)
                     ) {
                         fileMap = new FileRoller(
                             1,
                             [...files],
                             this.app.metadataCache
                         );
+                        fileMap.source = source;
                         type = "file";
                     } else {
                         const couldNotRead = [],
@@ -767,7 +772,8 @@ export default class DiceRoller extends Plugin {
                                         Number(roll),
                                         data,
                                         new Map([[file.basename, content]]),
-                                        "all"
+                                        "all",
+                                        this.data.copyContentButton
                                     );
                                 }
                                 renderMap.set("all", [
@@ -779,7 +785,8 @@ export default class DiceRoller extends Plugin {
                                     Number(roll),
                                     data,
                                     new Map([[file.basename, content]]),
-                                    file.basename
+                                    file.basename,
+                                    this.data.copyContentButton
                                 );
                                 renderMap.set(file.basename, [
                                     ...(renderMap.get(file.basename) ?? []),
@@ -804,7 +811,7 @@ export default class DiceRoller extends Plugin {
                                     b.result
                                 );
 
-                            stack.push(new DiceRoll(`${result}`));
+                            stack.push(new DiceRoller(`${result}`));
                             break;
                         case "kh": {
                             let diceInstance = diceMap[diceMap.length - 1];
@@ -873,11 +880,11 @@ export default class DiceRoller extends Plugin {
                         }
                         case "dice":
                             ///const res = this.roll(d.data);
-                            diceMap.push(new DiceRoll(d.data));
+                            diceMap.push(new DiceRoller(d.data));
                             stack.push(diceMap[diceMap.length - 1]);
                             break;
                         case "stunt":
-                            let stunt = new StuntRoll(d.original);
+                            let stunt = new StuntRoller(d.original);
                             diceMap.push(stunt);
 
                             if (stunt.doubles) {

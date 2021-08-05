@@ -21,12 +21,3 @@ export type ResultInterface<T> = {
     value: T;
     modifiers?: Set<string>;
 };
-
-export abstract class Roller<T> {
-    display: string;
-    text: string;
-    result: T;
-    resultArray: T[];
-    rolls: number;
-    abstract roll: () => T[];
-}
