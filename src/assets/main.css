@@ -38,7 +38,9 @@
     width: 100%;
 }
 
-.dice-roller.has-embed .internal-embed *:last-child:not(svg) {
+.dice-roller.has-embed
+    .internal-embed
+    *:last-child:not(svg):not(.dice-content-copy) {
     margin-bottom: 15px;
 }
 
@@ -67,4 +69,14 @@
 .dice-roller.has-embed .dice-section-result .dice-content-copy,
 .dice-content-copy:hover {
     opacity: 1;
+}
+
+.dice-roller-settings .coffee {
+    width: 60%;
+    color: var(--text-faint);
+    margin: 0.5rem auto;
+    text-align: center;
+}
+.dice-roller-settings .coffee img {
+    height: 30px;
 }
