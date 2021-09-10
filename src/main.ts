@@ -101,7 +101,7 @@ export default class DiceRollerPlugin extends Plugin {
                 if (!nodeList.length) return;
 
                 for (const node of Array.from(nodeList)) {
-                    if (!/^dice:\s*([\s\S]+)\s*?/.test(node.innerText)) return;
+                    if (!/^dice:\s*([\s\S]+)\s*?/.test(node.innerText)) continue;
                     try {
                         let [, content] = node.innerText.match(
                             /^dice:\s*([\s\S]+)\s*?/
@@ -176,7 +176,7 @@ export default class DiceRollerPlugin extends Plugin {
                             `There was an error parsing the dice string: ${node.innerText}.\n\n${e}`,
                             5000
                         );
-                        return;
+                        continue;
                     }
                 }
             }
@@ -289,7 +289,7 @@ export default class DiceRollerPlugin extends Plugin {
                         text: file
                     });
                 }
-                
+
                 for (let el of elements) {
                     el.roll();
                     el.element(holder.createDiv());
@@ -369,10 +369,10 @@ export default class DiceRollerPlugin extends Plugin {
         });
 
         this.lexer.addRule(
-            /(\d+)([Dd]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?)?/,
+            /(-?\d+)([Dd]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?)?/,
             function (lexeme: string): Lexeme {
                 let [, dice] = lexeme.match(
-                        /(\d+(?:[Dd]?\[?(?:-?\d+\s?,)?\s?(?:-?\d+|%|F)\]?)?)/
+                        /(-?\d+(?:[Dd]?\[?(?:-?\d+\s?,)?\s?(?:-?\d+|%|F)\]?)?)/
                     ),
                     conditionals: Conditional[] = [];
                 if (/(?:(!?=|=!|>=?|<=?)(\d+))+/.test(lexeme)) {
