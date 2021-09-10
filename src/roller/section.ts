@@ -54,7 +54,7 @@ export class SectionRoller
         const holder = parent.createDiv();
 
         for (let result of Array.from(this.selected)) {
-            const resultEl = holder.createDiv();
+            const resultEl = holder.createDiv("dice-roller-result-element");
             if (this.content.size > 1) {
                 resultEl.createEl("h5", {
                     cls: "dice-file-name",
@@ -88,7 +88,7 @@ export class SectionRoller
                     attr: { "aria-label": "Copy Contents" }
                 });
                 copy.addEventListener("click", (evt) => {
-                    evt.stopPropagation()
+                    evt.stopPropagation();
                     navigator.clipboard
                         .writeText(this.displayFromCache(result).trim())
                         .then(async () => {

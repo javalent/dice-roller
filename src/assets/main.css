@@ -28,7 +28,6 @@
     display: flex;
     padding-right: 0.25rem;
 }
-
 .dice-no-results {
     font-style: italic;
     text-align: center;
@@ -69,6 +68,10 @@
 .dice-roller.has-embed .dice-section-result .dice-content-copy,
 .dice-content-copy:hover {
     opacity: 1;
+}
+
+.dice-roller-result-element {
+    position: relative;
 }
 
 .dice-roller-settings .coffee {
