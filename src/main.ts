@@ -275,6 +275,7 @@ export default class DiceRollerPlugin extends Plugin {
                 return;
             }
             resultEl.empty();
+            resultEl.createSpan({ text: `${content} => ` });
             tableMap.roll();
             const split = tableMap.result.split(/(\[\[(?:[\s\S]+?)\]\])/);
 
@@ -309,6 +310,7 @@ export default class DiceRollerPlugin extends Plugin {
             }
         } else if (type === "render") {
             resultEl.empty();
+            resultEl.createSpan({ text: `${content} => ` });
             resultEl.addClass("internal-embed");
             for (let [file, elements] of Array.from(renderMap)) {
                 const holder = resultEl.createDiv({
@@ -331,6 +333,7 @@ export default class DiceRollerPlugin extends Plugin {
             }
         } else if (type === "file") {
             fileMap.roll();
+            resultEl.createSpan({ text: content });
             container.setAttrs({
                 "aria-label": `${content}\n${fileMap.display}`
             });
