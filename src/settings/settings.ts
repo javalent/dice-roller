@@ -57,6 +57,18 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveData(this.plugin.data);
                 });
             });
+        new Setting(containerEl)
+            .setName("Display Formula With Results")
+            .setDesc(
+                "Both the formula and the results will both be displayed in preview mode."
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.displayResultsInline);
+                t.onChange(async (v) => {
+                    this.plugin.data.displayResultsInline = v;
+                    await this.plugin.saveData(this.plugin.data);
+                });
+            });
 
         this.additionalContainer = containerEl.createDiv(
             "dice-roller-setting-additional-container"
@@ -135,10 +147,6 @@ export default class SettingTab extends PluginSettingTab {
                         })
                 );
         }
-        console.log(
-            "🚀 ~ file: settings.ts ~ line 139 ~ !Object.values(formulas).length",
-            !Object.values(formulas).length
-        );
         if (!Object.values(formulas).length) {
             additional.createSpan({
                 text: "Create a formula to see it here!",
