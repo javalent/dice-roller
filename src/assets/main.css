@@ -83,3 +83,50 @@
 .dice-roller-settings .coffee img {
     height: 30px;
 }
+
+/** Settings */
+.dice-roller-setting-additional-container
+    > .setting-item:not(.setting-item-heading) {
+    border: 0px;
+}
+
+.dice-roller-setting-additional-container {
+    border-bottom: 1px solid var(--background-modifier-border);
+    border-top: 1px solid var(--background-modifier-border);
+    padding: 18px 0;
+}
+
+.dice-roller-setting-additional-container > .setting-item-heading:only-child {
+    padding-bottom: 18px;
+}
+
+.dice-roller-setting-additional-container > .additional .no-formulas {
+    width: auto;
+    display: block;
+    text-align: center;
+}
+.dice-roller-setting-additional-container > .additional > .setting-item {
+    border-top: 0;
+    padding-top: 9px;
+}
+.dice-roller-setting-additional-container
+    > .additional
+    > .setting-item
+    > .setting-item-control
+    > *:first-child {
+    margin: 0 6px;
+}
+
+.dice-roller-setting-additional-container .add-new-formula {
+    margin: 0 1rem;
+    padding: 1rem 1rem 0 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 0 0.25rem var(--background-modifier-box-shadow);
+}
+
+.dice-roller-setting-additional-container
+    .add-new-formula
+    .formula-data
+    .setting-item {
+    border: 0;
+}

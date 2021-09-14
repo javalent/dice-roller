@@ -65,14 +65,25 @@ declare module "obsidian" {
         };
     }
 }
+
+interface DiceRollerSettings {
+    returnAllTags: boolean;
+    rollLinksForTags: boolean;
+    copyContentButton: boolean;
+    formulas: Record<string, string>;
+}
+
+const DEFAULT_SETTINGS: DiceRollerSettings = {
+    returnAllTags: true,
+    rollLinksForTags: false,
+    copyContentButton: true,
+    formulas: {}
+};
+
 export default class DiceRollerPlugin extends Plugin {
     lexer: lexer;
     parser: Parser;
-    data: {
-        returnAllTags: boolean;
-        rollLinksForTags: boolean;
-        copyContentButton: boolean;
-    };
+    data: DiceRollerSettings;
     async onload() {
         console.log("DiceRoller plugin loaded");
 
@@ -80,7 +91,8 @@ export default class DiceRollerPlugin extends Plugin {
             {
                 returnAllTags: true,
                 rollLinksForTags: false,
-                copyContentButton: true
+                copyContentButton: true,
+                formulas: {}
             },
             await this.loadData()
         );
@@ -101,7 +113,8 @@ export default class DiceRollerPlugin extends Plugin {
                 if (!nodeList.length) return;
 
                 for (const node of Array.from(nodeList)) {
-                    if (!/^dice:\s*([\s\S]+)\s*?/.test(node.innerText)) continue;
+                    if (!/^dice:\s*([\s\S]+)\s*?/.test(node.innerText))
+                        continue;
                     try {
                         let [, content] = node.innerText.match(
                             /^dice:\s*([\s\S]+)\s*?/
@@ -564,6 +577,11 @@ export default class DiceRollerPlugin extends Plugin {
                 renderMap: Map<string, SectionRoller[]> = new Map(),
                 fileMap: FileRoller,
                 type: "dice" | "table" | "render" | "file" = "dice";
+
+            if (text in this.data.formulas) {
+                text = this.data.formulas[text];
+            }
+
             const parsed = this.parse(text);
             let stunted: string = "";
             for (const d of parsed) {
