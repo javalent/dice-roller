@@ -70,6 +70,7 @@ interface DiceRollerSettings {
     returnAllTags: boolean;
     rollLinksForTags: boolean;
     copyContentButton: boolean;
+    displayResultsInline: boolean;
     formulas: Record<string, string>;
 }
 
@@ -77,6 +78,7 @@ const DEFAULT_SETTINGS: DiceRollerSettings = {
     returnAllTags: true,
     rollLinksForTags: false,
     copyContentButton: true,
+    displayResultsInline: false,
     formulas: {}
 };
 
@@ -120,16 +122,23 @@ export default class DiceRollerPlugin extends Plugin {
                             /^dice:\s*([\s\S]+)\s*?/
                         );
 
+                        let parsedResults = await this.parseDice(
+                            content,
+                            ctx.sourcePath
+                        );
+
+                        if (!parsedResults) continue;
+
                         let { text, link, renderMap, tableMap, type, fileMap } =
-                            await this.parseDice(content, ctx.sourcePath);
+                            parsedResults;
 
                         let container = createDiv().createDiv({
-                            cls: "dice-roller",
-                            attr: {
+                            cls: "dice-roller"
+                            /* attr: {
                                 "aria-label": `${content}\n${text}`,
                                 "aria-label-position": "top",
                                 "data-dice": content
-                            }
+                            } */
                         });
 
                         if (type === "render") {
@@ -236,14 +245,26 @@ export default class DiceRollerPlugin extends Plugin {
         resultEl.empty();
         if (type === "dice") {
             let { result, text } = await this.parseDice(content);
-            container.setAttrs({
-                "aria-label": `${content}\n${text}`
-            });
-            resultEl.setText(
-                result.toLocaleString(navigator.language, {
-                    maximumFractionDigits: 2
-                })
-            );
+
+            if (this.data.displayResultsInline) {
+                resultEl.setText(
+                    `${content} => ${text} = ${result.toLocaleString(
+                        navigator.language,
+                        {
+                            maximumFractionDigits: 2
+                        }
+                    )}`
+                );
+            } else {
+                container.setAttrs({
+                    "aria-label": `${content}\n${text}`
+                });
+                resultEl.setText(
+                    result.toLocaleString(navigator.language, {
+                        maximumFractionDigits: 2
+                    })
+                );
+            }
         } else if (type === "table") {
             if (link && evt && evt.getModifierState("Control")) {
                 await this.app.workspace.openLinkText(
@@ -254,6 +275,7 @@ export default class DiceRollerPlugin extends Plugin {
                 return;
             }
             resultEl.empty();
+            resultEl.createSpan({ text: `${content} => ` });
             tableMap.roll();
             const split = tableMap.result.split(/(\[\[(?:[\s\S]+?)\]\])/);
 
@@ -288,6 +310,7 @@ export default class DiceRollerPlugin extends Plugin {
             }
         } else if (type === "render") {
             resultEl.empty();
+            resultEl.createSpan({ text: `${content} => ` });
             resultEl.addClass("internal-embed");
             for (let [file, elements] of Array.from(renderMap)) {
                 const holder = resultEl.createDiv({
@@ -310,6 +333,7 @@ export default class DiceRollerPlugin extends Plugin {
             }
         } else if (type === "file") {
             fileMap.roll();
+            resultEl.createSpan({ text: content });
             container.setAttrs({
                 "aria-label": `${content}\n${fileMap.display}`
             });
@@ -581,8 +605,14 @@ export default class DiceRollerPlugin extends Plugin {
             if (text in this.data.formulas) {
                 text = this.data.formulas[text];
             }
-
-            const parsed = this.parse(text);
+            let parsed: Lexeme[];
+            try {
+                parsed = this.parse(text);
+                if (!parsed || !parsed.length)
+                    throw new Error(`Unparseable text: ${text}`);
+            } catch (e) {
+                reject(e.message);
+            }
             let stunted: string = "";
             for (const d of parsed) {
                 if (d.type === "table") {
@@ -952,7 +982,12 @@ export default class DiceRollerPlugin extends Plugin {
         this.lexer.setInput(input);
         var tokens = [],
             token;
-        while ((token = this.lexer.lex())) tokens.push(token);
+        while ((token = this.tryLex())) tokens.push(token);
         return this.parser.parse(tokens);
+    }
+    tryLex() {
+        try {
+            return this.lexer.lex();
+        } catch (e) {}
     }
 }
