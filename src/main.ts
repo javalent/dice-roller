@@ -33,6 +33,7 @@ import {
     TAG_REGEX
 } from "./utils/constants";
 import SettingTab from "./settings/settings";
+import { StackRoller } from "./roller/dice";
 
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -119,6 +120,9 @@ export default class DiceRollerPlugin extends Plugin {
                         let [, content] = node.innerText.match(
                             /^dice:\s*([\s\S]+)\s*?/
                         );
+
+                        const parsed = this.parse(content);
+                        window.stack = new StackRoller(content, parsed);
 
                         let { text, link, renderMap, tableMap, type, fileMap } =
                             await this.parseDice(content, ctx.sourcePath);
@@ -571,7 +575,7 @@ export default class DiceRollerPlugin extends Plugin {
         type: "dice" | "table" | "render" | "file";
     }> {
         return new Promise(async (resolve, reject) => {
-            let stack: Array<DiceRoller | StuntRoller> = [],
+            let stack: Array<DiceRoller> = [],
                 diceMap: DiceRoller[] = [],
                 tableMap: TableRoller,
                 renderMap: Map<string, SectionRoller[]> = new Map(),
@@ -836,7 +840,7 @@ export default class DiceRollerPlugin extends Plugin {
                             let data = d.data ? Number(d.data) : 1;
 
                             diceInstance.keepHigh(data);
-                            diceInstance.modifiers.push(d.original);
+                            diceInstance.modifiers.add(d.original);
                             break;
                         }
                         case "dl": {
@@ -846,7 +850,7 @@ export default class DiceRollerPlugin extends Plugin {
                             data = diceInstance.results.size - data;
 
                             diceInstance.keepHigh(data);
-                            diceInstance.modifiers.push(d.original);
+                            diceInstance.modifiers.add(d.original);
                             break;
                         }
                         case "kl": {
@@ -854,7 +858,7 @@ export default class DiceRollerPlugin extends Plugin {
                             let data = d.data ? Number(d.data) : 1;
 
                             diceInstance.keepLow(data);
-                            diceInstance.modifiers.push(d.original);
+                            diceInstance.modifiers.add(d.original);
                             break;
                         }
                         case "dh": {
@@ -864,7 +868,7 @@ export default class DiceRollerPlugin extends Plugin {
                             data = diceInstance.results.size - data;
 
                             diceInstance.keepLow(data);
-                            diceInstance.modifiers.push(d.original);
+                            diceInstance.modifiers.add(d.original);
                             break;
                         }
                         case "!": {
@@ -872,7 +876,7 @@ export default class DiceRollerPlugin extends Plugin {
                             let data = Number(d.data) || 1;
 
                             diceInstance.explode(data, d.conditionals);
-                            diceInstance.modifiers.push(d.original);
+                            diceInstance.modifiers.add(d.original);
 
                             break;
                         }
@@ -884,7 +888,7 @@ export default class DiceRollerPlugin extends Plugin {
                                 data,
                                 d.conditionals
                             );
-                            diceInstance.modifiers.push(d.original);
+                            diceInstance.modifiers.add(d.original);
 
                             break;
                         }
@@ -893,7 +897,7 @@ export default class DiceRollerPlugin extends Plugin {
                             let data = Number(d.data) || 1;
 
                             diceInstance.reroll(data, d.conditionals);
-                            diceInstance.modifiers.push(d.original);
+                            diceInstance.modifiers.add(d.original);
                             break;
                         }
                         case "dice":
@@ -917,7 +921,9 @@ export default class DiceRollerPlugin extends Plugin {
             }
             diceMap.forEach((diceInstance) => {
                 text = text.replace(
-                    `${diceInstance.dice}${diceInstance.modifiers.join("")}`,
+                    `${diceInstance.dice}${Array.from(
+                        diceInstance.modifiers
+                    ).join("")}`,
                     diceInstance.display
                 );
             });
