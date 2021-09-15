@@ -2,9 +2,7 @@ import {
     Plugin,
     MarkdownPostProcessorContext,
     Notice,
-    TFile,
-    addIcon,
-    setIcon
+    addIcon
 } from "obsidian";
 //@ts-ignore
 import lexer from "lex";
@@ -14,16 +12,9 @@ import { faCopy } from "@fortawesome/free-regular-svg-icons";
 import { icon } from "@fortawesome/fontawesome-svg-core";
 
 import "./assets/main.css";
-import {
-    DiceRoller,
-    TableRoller,
-    SectionRoller,
-    StuntRoller,
-    FileRoller
-} from "./roller";
 import { Parser } from "./parser/parser";
 import { Conditional, Lexeme } from "src/types";
-import { extract } from "./utils/util";
+
 import {
     COPY_DEFINITION,
     ICON_DEFINITION,
@@ -32,8 +23,10 @@ import {
     TABLE_REGEX,
     TAG_REGEX
 } from "./utils/constants";
+import { TableRoller, SectionRoller, FileRoller } from "./roller";
 import SettingTab from "./settings/settings";
 import { StackRoller } from "./roller/dice";
+import type { BasicRoller } from "./roller/roller";
 
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -114,79 +107,21 @@ export default class DiceRollerPlugin extends Plugin {
                 if (!nodeList.length) return;
 
                 for (const node of Array.from(nodeList)) {
-                    if (!/^dice:\s*([\s\S]+)\s*?/.test(node.innerText))
+                    if (!/^dice\+?:\s*([\s\S]+)\s*?/.test(node.innerText))
                         continue;
                     try {
                         let [, content] = node.innerText.match(
-                            /^dice:\s*([\s\S]+)\s*?/
+                            /^dice\+?:\s*([\s\S]+)\s*?/
                         );
-
-                        const parsed = this.parse(content);
-                        window.stack = new StackRoller(content, parsed);
-
-                        let { text, link, renderMap, tableMap, type, fileMap } =
-                            await this.parseDice(content, ctx.sourcePath);
-
-                        let container = createDiv().createDiv({
-                            cls: "dice-roller",
-                            attr: {
-                                "aria-label": `${content}\n${text}`,
-                                "aria-label-position": "top",
-                                "data-dice": content
-                            }
-                        });
-
-                        if (type === "render") {
-                            container.addClasses([
-                                "has-embed",
-                                "markdown-embed"
-                            ]);
+                        if (content in this.data.formulas) {
+                            content = this.data.formulas[content];
                         }
 
-                        let resultEl = container.createDiv();
-                        this.reroll(
-                            null,
-                            container,
-                            resultEl,
-                            content,
-                            link,
-                            renderMap,
-                            tableMap,
-                            fileMap,
-                            type
-                        );
+                        const roller = this.getRoller(content);
 
-                        const icon = container.createDiv({
-                            cls: "dice-roller-button"
-                        });
-                        setIcon(icon, ICON_DEFINITION);
+                        window.roller = roller;
 
-                        node.replaceWith(container);
-
-                        container.onclick = (evt) =>
-                            this.reroll(
-                                evt,
-                                container,
-                                resultEl,
-                                content,
-                                link,
-                                renderMap,
-                                tableMap,
-                                fileMap,
-                                type
-                            );
-                        icon.onclick = (evt) =>
-                            this.reroll(
-                                evt,
-                                container,
-                                resultEl,
-                                content,
-                                link,
-                                renderMap,
-                                tableMap,
-                                fileMap,
-                                type
-                            );
+                        node.replaceWith(roller.containerEl);
                     } catch (e) {
                         console.error(e);
                         new Notice(
@@ -226,6 +161,29 @@ export default class DiceRollerPlugin extends Plugin {
             "^": exponent
         });
     }
+    getRoller(content: string): BasicRoller {
+        const lexemes = this.parse(content);
+
+        const type = this.getTypeFromLexemes(lexemes);
+
+        switch (type) {
+            case "dice": {
+                return new StackRoller(this, content, lexemes);
+            }
+        }
+    }
+    getTypeFromLexemes(lexemes: Lexeme[]) {
+        if (lexemes.some(({ type }) => type === "table")) {
+            return "table";
+        }
+        if (lexemes.some(({ type }) => type === "render")) {
+            return "render";
+        }
+        if (lexemes.some(({ type }) => type === "file")) {
+            return "file";
+        }
+        return "dice";
+    }
     async reroll(
         evt: MouseEvent,
         container: HTMLElement,
@@ -239,7 +197,7 @@ export default class DiceRollerPlugin extends Plugin {
     ) {
         resultEl.empty();
         if (type === "dice") {
-            let { result, text } = await this.parseDice(content);
+            /* let { result, text } = await this.parseDice(content);
             container.setAttrs({
                 "aria-label": `${content}\n${text}`
             });
@@ -247,7 +205,7 @@ export default class DiceRollerPlugin extends Plugin {
                 result.toLocaleString(navigator.language, {
                     maximumFractionDigits: 2
                 })
-            );
+            ); */
         } else if (type === "table") {
             if (link && evt && evt.getModifierState("Control")) {
                 await this.app.workspace.openLinkText(
@@ -562,7 +520,7 @@ export default class DiceRollerPlugin extends Plugin {
             return Math.pow(a, b);
         }
     };
-    async parseDice(
+    /*     async parseDice(
         text: string,
         source?: string
     ): Promise<{
@@ -953,7 +911,7 @@ export default class DiceRollerPlugin extends Plugin {
                 fileMap
             });
         });
-    }
+    } */
     parse(input: string): Lexeme[] {
         this.lexer.setInput(input);
         var tokens = [],

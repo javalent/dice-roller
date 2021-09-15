@@ -1,18 +1,18 @@
-import { Notice } from "obsidian";
+import { Notice, setIcon } from "obsidian";
+import type DiceRollerPlugin from "src/main";
 import { ResultMapInterface, Conditional, Lexeme } from "src/types";
+import { ICON_DEFINITION } from "src/utils/constants";
 import { _checkCondition, _insertIntoMap } from "src/utils/util";
-import { BaseRoller, Roller } from "./roller";
+import { BaseRoller, GenericRoller, Roller } from "./roller";
 
 interface Modifier {
-    type: string;
     conditionals: Conditional[];
     data: number;
 }
 
-export class DiceRoller extends BaseRoller implements Roller<number> {
+class DiceRoller extends BaseRoller implements Roller<number> {
     dice: string;
-    modifiers: Set<string> = new Set();
-    newModifiers: Set<Modifier> = new Set();
+    modifiers: Map<string, Modifier> = new Map();
     rolls: number;
     faces: { min: number; max: number };
     results: ResultMapInterface<number>;
@@ -271,14 +271,14 @@ export class DiceRoller extends BaseRoller implements Roller<number> {
             })
         );
 
-        for (let modifier of this.newModifiers) {
-            this.applyModifier(modifier);
+        for (let [type, modifier] of this.modifiers) {
+            this.applyModifier(type, modifier);
         }
 
         return roll;
     }
-    applyModifier(modifier: Modifier) {
-        switch (modifier.type) {
+    applyModifier(type: string, modifier: Modifier) {
+        switch (type) {
             case "kh": {
                 this.keepHigh(modifier.data);
                 break;
@@ -307,7 +307,7 @@ export class DiceRoller extends BaseRoller implements Roller<number> {
     }
 }
 
-export class StuntRoller extends DiceRoller {
+class StuntRoller extends DiceRoller {
     constructor(dice: string) {
         super(`3d6`);
 
@@ -335,24 +335,48 @@ export class StuntRoller extends DiceRoller {
     }
 }
 
-export class StackRoller {
+export class StackRoller extends GenericRoller<number> {
     result: number;
-
     get tooltip() {
         let text = this.original;
-        console.log(...this.dice);
         this.dice.forEach((dice) => {
-            console.log(...dice.results.values());
             text = text.replace(
                 `${dice.dice}${Array.from(dice.modifiers).join("")}`,
                 dice.display
             );
         });
-        return text;
+        return `${this.original}\n${text}`;
+    }
+    async render() {
+        
+        this.resultEl.setText(
+            this.result.toLocaleString(navigator.language, {
+                maximumFractionDigits: 2
+            })
+        );
     }
 
-    constructor(public original: string, public lexemes: Lexeme[]) {
+    constructor(
+        public plugin: DiceRollerPlugin,
+        public original: string,
+        public lexemes: Lexeme[]
+    ) {
+        super(plugin, original, lexemes);
         this.roll();
+        const icon = this.containerEl.createDiv({
+            cls: "dice-roller-button"
+        });
+        setIcon(icon, ICON_DEFINITION);
+
+        this.containerEl.onclick = (evt) => {
+            evt.stopPropagation();
+            evt.stopImmediatePropagation();
+            this.roll();
+        };
+
+        /* icon.onclick = () => {
+            this.roll();
+        }; */
     }
     operators: Record<string, (...args: number[]) => number> = {
         "+": (a: number, b: number): number => a + b,
@@ -367,6 +391,12 @@ export class StackRoller {
     dice: DiceRoller[] = [];
     roll() {
         let index = 0;
+        console.log(
+            "🚀 ~ file: dice.ts ~ line 406 ~ this.lexemes",
+            this.lexemes,
+            this.dice,
+            this.stack
+        );
         for (const d of this.lexemes) {
             switch (d.type) {
                 case "+":
@@ -388,14 +418,9 @@ export class StackRoller {
                     let diceInstance = this.dice[index - 1];
                     let data = d.data ? Number(d.data) : 1;
 
-                    diceInstance.keepHigh(data);
-                    console.log(
-                        ...diceInstance.results.values(),
-                        this.dice.indexOf(diceInstance)
-                    );
+                    /* diceInstance.keepHigh(data); */
 
-                    diceInstance.newModifiers.add({
-                        type: "kh",
+                    diceInstance.modifiers.set("kh", {
                         data,
                         conditionals: []
                     });
@@ -407,9 +432,8 @@ export class StackRoller {
 
                     data = diceInstance.results.size - data;
 
-                    diceInstance.keepHigh(data);
-                    diceInstance.newModifiers.add({
-                        type: "kh",
+                    /* diceInstance.keepHigh(data); */
+                    diceInstance.modifiers.set("kh", {
                         data,
                         conditionals: []
                     });
@@ -419,9 +443,8 @@ export class StackRoller {
                     let diceInstance = this.dice[index - 1];
                     let data = d.data ? Number(d.data) : 1;
 
-                    diceInstance.keepLow(data);
-                    diceInstance.newModifiers.add({
-                        type: "kl",
+                    /* diceInstance.keepLow(data); */
+                    diceInstance.modifiers.set("kl", {
                         data,
                         conditionals: []
                     });
@@ -433,9 +456,8 @@ export class StackRoller {
 
                     data = diceInstance.results.size - data;
 
-                    diceInstance.keepLow(data);
-                    diceInstance.newModifiers.add({
-                        type: "kl",
+                    /* diceInstance.keepLow(data); */
+                    diceInstance.modifiers.set("kl", {
                         data,
                         conditionals: []
                     });
@@ -445,10 +467,9 @@ export class StackRoller {
                     let diceInstance = this.dice[index - 1];
                     let data = Number(d.data) || 1;
 
-                    diceInstance.explode(data, d.conditionals);
-                    diceInstance.modifiers.add(d.original);
-                    diceInstance.newModifiers.add({
-                        type: "!",
+                    /* diceInstance.explode(data, d.conditionals); */
+                    /* diceInstance.modifiers.add(d.original); */
+                    diceInstance.modifiers.set("!", {
                         data,
                         conditionals: d.conditionals
                     });
@@ -459,10 +480,9 @@ export class StackRoller {
                     let diceInstance = this.dice[index - 1];
                     let data = Number(d.data) || 1;
 
-                    diceInstance.explodeAndCombine(data, d.conditionals);
-                    diceInstance.modifiers.add(d.original);
-                    diceInstance.newModifiers.add({
-                        type: "!!",
+                    /* diceInstance.explodeAndCombine(data, d.conditionals); */
+                    /* diceInstance.modifiers.add(d.original); */
+                    diceInstance.modifiers.set("!!", {
                         data,
                         conditionals: d.conditionals
                     });
@@ -473,10 +493,9 @@ export class StackRoller {
                     let diceInstance = this.dice[index - 1];
                     let data = Number(d.data) || 1;
 
-                    diceInstance.reroll(data, d.conditionals);
-                    diceInstance.modifiers.add(d.original);
-                    diceInstance.newModifiers.add({
-                        type: "r",
+                    /* diceInstance.reroll(data, d.conditionals); */
+                    /* diceInstance.modifiers.add(d.original); */
+                    diceInstance.modifiers.set("r", {
                         data,
                         conditionals: d.conditionals
                     });
@@ -487,6 +506,7 @@ export class StackRoller {
                     if (!this.dice[index]) {
                         this.dice[index] = new DiceRoller(d.data);
                     }
+
                     this.stack.push(this.dice[index]);
                     index++;
                     break;
@@ -505,6 +525,14 @@ export class StackRoller {
                     index++;
             }
         }
-        return (this.result = this.stack.pop().result);
+
+        const final = this.stack.pop();
+        final.roll();
+
+        this.result = final.result;
+
+        this.render();
+
+        return this.result;
     }
 }

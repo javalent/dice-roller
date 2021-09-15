@@ -135,10 +135,6 @@ export default class SettingTab extends PluginSettingTab {
                         })
                 );
         }
-        console.log(
-            "🚀 ~ file: settings.ts ~ line 139 ~ !Object.values(formulas).length",
-            !Object.values(formulas).length
-        );
         if (!Object.values(formulas).length) {
             additional.createSpan({
                 text: "Create a formula to see it here!",
