@@ -347,13 +347,16 @@ export class StackRoller extends GenericRoller<number> {
         });
         return `${this.original}\n${text}`;
     }
-    async render() {
-        
-        this.resultEl.setText(
+    async build() {
+        const result = [
             this.result.toLocaleString(navigator.language, {
                 maximumFractionDigits: 2
             })
-        );
+        ];
+        if (this.plugin.data.displayResultsInline) {
+            result.unshift(this.tooltip.split("\n").join(" => "), " => ");
+        }
+        this.resultEl.setText(result.join(""));
     }
 
     constructor(
@@ -363,20 +366,6 @@ export class StackRoller extends GenericRoller<number> {
     ) {
         super(plugin, original, lexemes);
         this.roll();
-        const icon = this.containerEl.createDiv({
-            cls: "dice-roller-button"
-        });
-        setIcon(icon, ICON_DEFINITION);
-
-        this.containerEl.onclick = (evt) => {
-            evt.stopPropagation();
-            evt.stopImmediatePropagation();
-            this.roll();
-        };
-
-        /* icon.onclick = () => {
-            this.roll();
-        }; */
     }
     operators: Record<string, (...args: number[]) => number> = {
         "+": (a: number, b: number): number => a + b,
@@ -391,12 +380,6 @@ export class StackRoller extends GenericRoller<number> {
     dice: DiceRoller[] = [];
     roll() {
         let index = 0;
-        console.log(
-            "🚀 ~ file: dice.ts ~ line 406 ~ this.lexemes",
-            this.lexemes,
-            this.dice,
-            this.stack
-        );
         for (const d of this.lexemes) {
             switch (d.type) {
                 case "+":

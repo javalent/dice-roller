@@ -23,7 +23,13 @@ import {
     TABLE_REGEX,
     TAG_REGEX
 } from "./utils/constants";
-import { TableRoller, SectionRoller, FileRoller } from "./roller";
+import {
+    TableRoller,
+    Section,
+    FileRoller,
+    SectionRoller,
+    TagRoller
+} from "./roller";
 import SettingTab from "./settings/settings";
 import { StackRoller } from "./roller/dice";
 import type { BasicRoller } from "./roller/roller";
@@ -111,8 +117,7 @@ export default class DiceRollerPlugin extends Plugin {
                             content = this.data.formulas[content];
                         }
 
-                        const roller = this.getRoller(content);
-
+                        const roller = this.getRoller(content, ctx.sourcePath);
                         window.roller = roller;
 
                         node.replaceWith(roller.containerEl);
@@ -155,7 +160,7 @@ export default class DiceRollerPlugin extends Plugin {
             "^": exponent
         });
     }
-    getRoller(content: string): BasicRoller {
+    getRoller(content: string, source: string): BasicRoller {
         const lexemes = this.parse(content);
 
         const type = this.getTypeFromLexemes(lexemes);
@@ -164,14 +169,31 @@ export default class DiceRollerPlugin extends Plugin {
             case "dice": {
                 return new StackRoller(this, content, lexemes);
             }
+            case "table": {
+                return new TableRoller(this, content, lexemes[0], source);
+            }
+            case "section": {
+                return new SectionRoller(this, content, lexemes[0], source);
+            }
+            case "tag": {
+                if (!this.app.plugins.plugins.dataview) {
+                    throw new Error(
+                        "Tags are only supported with the Dataview plugin installed."
+                    );
+                }
+                return new TagRoller(this, content, lexemes);
+            }
         }
     }
     getTypeFromLexemes(lexemes: Lexeme[]) {
         if (lexemes.some(({ type }) => type === "table")) {
             return "table";
         }
-        if (lexemes.some(({ type }) => type === "render")) {
-            return "render";
+        if (lexemes.some(({ type }) => type === "section")) {
+            return "section";
+        }
+        if (lexemes.some(({ type }) => type === "tag")) {
+            return "tag";
         }
         if (lexemes.some(({ type }) => type === "file")) {
             return "file";
@@ -184,7 +206,7 @@ export default class DiceRollerPlugin extends Plugin {
         resultEl: HTMLElement,
         content: string,
         link: string,
-        renderMap: Map<string, SectionRoller[]>,
+        renderMap: Map<string, Section[]>,
         tableMap: TableRoller,
         fileMap: FileRoller,
         type: "dice" | "table" | "render" | "file"
@@ -200,49 +222,6 @@ export default class DiceRollerPlugin extends Plugin {
                     maximumFractionDigits: 2
                 })
             ); */
-        } else if (type === "table") {
-            if (link && evt && evt.getModifierState("Control")) {
-                await this.app.workspace.openLinkText(
-                    link.replace("^", "#^").split(/\|/).shift(),
-                    this.app.workspace.getActiveFile()?.path,
-                    true
-                );
-                return;
-            }
-            resultEl.empty();
-            resultEl.createSpan({ text: `${content} => ` });
-            tableMap.roll();
-            const split = tableMap.result.split(/(\[\[(?:[\s\S]+?)\]\])/);
-
-            for (let str of split) {
-                if (/\[\[(?:[\s\S]+?)\]\]/.test(str)) {
-                    //link;
-                    const [, match] = str.match(/\[\[([\s\S]+?)\]\]/);
-                    const internal = resultEl.createEl("a", {
-                        cls: "internal-link",
-                        text: match
-                    });
-                    internal.onmouseover = () => {
-                        this.app.workspace.trigger(
-                            "link-hover",
-                            this, //not sure
-                            internal, //targetEl
-                            match.replace("^", "#^").split("|").shift(), //linkText
-                            this.app.workspace.getActiveFile()?.path //source
-                        );
-                    };
-                    internal.onclick = async (ev: MouseEvent) => {
-                        ev.stopPropagation();
-                        await this.app.workspace.openLinkText(
-                            match.replace("^", "#^").split(/\|/).shift(),
-                            this.app.workspace.getActiveFile()?.path,
-                            ev.getModifierState("Control")
-                        );
-                    };
-                    continue;
-                }
-                resultEl.createSpan({ text: str });
-            }
         } else if (type === "render") {
             resultEl.empty();
             resultEl.createSpan({ text: `${content} => ` });
@@ -331,9 +310,18 @@ export default class DiceRollerPlugin extends Plugin {
             };
         });
 
-        this.lexer.addRule(TAG_REGEX, function (lexeme: string): Lexeme {
+        this.lexer.addRule(TAG_REGEX, (lexeme: string): Lexeme => {
+            const { groups } = lexeme.match(TAG_REGEX);
+            let type = "tag";
+            if (
+                groups.types === "link" ||
+                (this.data.rollLinksForTags && !groups.types?.length)
+            ) {
+                type = "file";
+            }
+
             return {
-                type: "tag",
+                type,
                 data: lexeme,
                 original: lexeme,
                 conditionals: null
@@ -517,149 +505,7 @@ export default class DiceRollerPlugin extends Plugin {
             return Math.pow(a, b);
         }
     };
-    /*     async parseDice(
-        text: string,
-        source?: string
-    ): Promise<{
-        result: string | number;
-        text: string;
-        link?: string;
-        tableMap: TableRoller;
-        fileMap: FileRoller;
-        renderMap: Map<string, SectionRoller[]>;
-        type: "dice" | "table" | "render" | "file";
-    }> {
-        return new Promise(async (resolve, reject) => {
-            let stack: Array<DiceRoller> = [],
-                diceMap: DiceRoller[] = [],
-                tableMap: TableRoller,
-                renderMap: Map<string, SectionRoller[]> = new Map(),
-                fileMap: FileRoller,
-                type: "dice" | "table" | "render" | "file" = "dice";
-
-            if (text in this.data.formulas) {
-                text = this.data.formulas[text];
-            }
-            let parsed: Lexeme[];
-            try {
-                parsed = this.parse(text);
-                if (!parsed || !parsed.length)
-                    throw new Error(`Unparseable text: ${text}`);
-            } catch (e) {
-                reject(e.message);
-            }
-            let stunted: string = "";
-            for (const d of parsed) {
-                if (d.type === "table") {
-                    type = "table";
-                    const [, roll = 1, link, block, header] =
-                            d.data.match(TABLE_REGEX),
-                        file =
-                            await this.app.metadataCache.getFirstLinkpathDest(
-                                link,
-                                ""
-                            );
-                    if (!file || !(file instanceof TFile))
-                        reject(
-                            "Could not read file cache. Is the link correct?\n\n" +
-                                link
-                        );
-                    const cache = await this.app.metadataCache.getFileCache(
-                        file
-                    );
-                    if (
-                        !cache ||
-                        !cache.blocks ||
-                        !cache.blocks[block.toLowerCase()]
-                    )
-                        reject(
-                            "Could not read file cache. Does the block reference exist?\n\n" +
-                                `${link} > ${block}`
-                        );
-                    const data = cache.blocks[block.toLowerCase()];
-
-                    const content = (await this.app.vault.read(file))?.slice(
-                        data.position.start.offset,
-                        data.position.end.offset
-                    );
-                    let table = extract(content);
-                    let opts: string[];
-
-                    if (header && table.columns[header]) {
-                        opts = table.columns[header];
-                    } else {
-                        if (header)
-                            reject(
-                                `Header ${header} was not found in table ${link} > ${block}.`
-                            );
-                        opts = table.rows;
-                    }
-
-                    tableMap = new TableRoller(
-                        Number(roll ?? 1),
-                        opts,
-                        d.data,
-                        link,
-                        block
-                    );
-
-                    if (parsed.length > 1) {
-                        new Notice(
-                            `Random tables cannot be used with modifiers.`
-                        );
-                    }
-                    break;
-                } else if (d.type === "section") {
-                    type = "render";
-                    const [, roll = 1, link, filter] =
-                            d.data.match(SECTION_REGEX),
-                        file =
-                            await this.app.metadataCache.getFirstLinkpathDest(
-                                link,
-                                ""
-                            );
-                    let types: string[];
-                    if (filter && filter.length) {
-                        types = filter.split(",");
-                    }
-                    if (!file || !(file instanceof TFile))
-                        reject(
-                            "Could not read file cache. Is the link correct?\n\n" +
-                                link
-                        );
-                    const cache = await this.app.metadataCache.getFileCache(
-                        file
-                    );
-                    if (!cache || !cache.sections || !cache.sections.length)
-                        reject("Could not read file cache.");
-                    const content = await this.app.vault.read(file);
-                    const data = cache.sections
-                        .filter(({ type }) =>
-                            types
-                                ? types.includes(type)
-                                : !["yaml", "thematicBreak"].includes(type)
-                        )
-                        .map((cache) => {
-                            return {
-                                ...cache,
-                                file: file.basename
-                            };
-                        });
-
-                    const roller = new SectionRoller(
-                        Number(roll),
-                        data,
-                        new Map([[file.basename, content]]),
-                        file.basename,
-                        this.data.copyContentButton
-                    );
-
-                    renderMap.set(file.basename, [
-                        ...(renderMap.get(file.basename) ?? []),
-                        roller
-                    ]);
-
-                    break;
+    /*
                 } else if (d.type === "tag") {
                     type = "render";
                     if (!this.app.plugins.plugins.dataview) {
