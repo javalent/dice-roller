@@ -89,15 +89,7 @@ export default class DiceRollerPlugin extends Plugin {
     async onload() {
         console.log("DiceRoller plugin loaded");
 
-        this.data = Object.assign(
-            {
-                returnAllTags: true,
-                rollLinksForTags: false,
-                copyContentButton: true,
-                formulas: {}
-            },
-            await this.loadData()
-        );
+        this.data = Object.assign(DEFAULT_SETTINGS, await this.loadData());
 
         this.addSettingTab(new SettingTab(this.app, this));
 
