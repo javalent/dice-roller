@@ -17,6 +17,15 @@
     margin-left: 0.25em;
 }
 
+.dice-roller.has-embed .dice-roller-result {
+    width: 100%;
+    padding: 1rem;
+}
+
+.dice-roller.has-embed .dice-roller-result .markdown-embed {
+    margin-top: 0.5rem;
+}
+
 .dice-roller.has-embed .dice-roller-button {
     padding-top: 0.5rem;
 }
@@ -24,9 +33,10 @@
 .dice.tooltip {
     max-width: unset !important;
 }
-.dice-roller.has-embed {
+.workspace .markdown-preview-view .dice-roller.has-embed {
     display: flex;
     padding-right: 0.25rem;
+    margin: 0.25rem 0;
 }
 .dice-no-results {
     font-style: italic;
@@ -70,7 +80,7 @@
     opacity: 1;
 }
 
-.dice-roller-result-element {
+.dice-roller-result {
     position: relative;
 }
 

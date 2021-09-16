@@ -1,14 +1,18 @@
-import { Notice } from "obsidian";
-import { ResultMapInterface, Conditional } from "src/types";
-import {
-    _checkCondition,
-    _insertIntoMap
-} from "src/utils/util";
-import { BaseRoller, Roller } from "./roller";
+import { Notice, setIcon } from "obsidian";
+import type DiceRollerPlugin from "src/main";
+import { ResultMapInterface, Conditional, Lexeme } from "src/types";
+import { ICON_DEFINITION } from "src/utils/constants";
+import { _checkCondition, _insertIntoMap } from "src/utils/util";
+import { BaseRoller, GenericRoller, Roller } from "./roller";
 
-export class DiceRoller extends BaseRoller implements Roller<number> {
+interface Modifier {
+    conditionals: Conditional[];
+    data: number;
+}
+
+class DiceRoller extends BaseRoller implements Roller<number> {
     dice: string;
-    modifiers: string[] = [];
+    modifiers: Map<string, Modifier> = new Map();
     rolls: number;
     faces: { min: number; max: number };
     results: ResultMapInterface<number>;
@@ -139,7 +143,10 @@ export class DiceRoller extends BaseRoller implements Roller<number> {
             i++;
             toReroll.map(([, roll]) => {
                 roll.modifiers.add("r");
-                roll.value = this._getRandomBetween(this.faces.min, this.faces.max);
+                roll.value = this._getRandomBetween(
+                    this.faces.min,
+                    this.faces.max
+                );
             });
         }
 
@@ -172,14 +179,20 @@ export class DiceRoller extends BaseRoller implements Roller<number> {
             );
 
         toExplode.forEach(([index, value]) => {
-            let newRoll = this._getRandomBetween(this.faces.min, this.faces.max);
+            let newRoll = this._getRandomBetween(
+                this.faces.min,
+                this.faces.max
+            );
             i++;
             value.modifiers.add("!");
             value.value += newRoll;
             this.results.set(index, value);
             while (i < times && _checkCondition(newRoll, conditionals)) {
                 i++;
-                newRoll = this._getRandomBetween(this.faces.min, this.faces.max);
+                newRoll = this._getRandomBetween(
+                    this.faces.min,
+                    this.faces.max
+                );
                 value.value += newRoll;
                 this.results.set(index, value);
             }
@@ -225,7 +238,10 @@ export class DiceRoller extends BaseRoller implements Roller<number> {
                 let previous = this.results.get(key + inserted + i);
                 previous.modifiers.add("!");
 
-                newRoll = this._getRandomBetween(this.faces.min, this.faces.max);
+                newRoll = this._getRandomBetween(
+                    this.faces.min,
+                    this.faces.max
+                );
 
                 /** Insert the new roll into the results map */
                 _insertIntoMap(this.results, key + inserted + i + 1, {
@@ -239,7 +255,7 @@ export class DiceRoller extends BaseRoller implements Roller<number> {
             inserted += i;
         });
     }
-    roll(): number[] {
+    _roll(): number[] {
         if (this.static) {
             return [Number(this.dice)];
         }
@@ -247,14 +263,51 @@ export class DiceRoller extends BaseRoller implements Roller<number> {
             this._getRandomBetween(this.faces.min, this.faces.max)
         );
     }
+    roll() {
+        const roll = this._roll();
+        this.results = new Map(
+            [...roll].map((n, i) => {
+                return [i, { usable: true, value: n, modifiers: new Set() }];
+            })
+        );
+
+        for (let [type, modifier] of this.modifiers) {
+            this.applyModifier(type, modifier);
+        }
+
+        return roll;
+    }
+    applyModifier(type: string, modifier: Modifier) {
+        switch (type) {
+            case "kh": {
+                this.keepHigh(modifier.data);
+                break;
+            }
+            case "kl": {
+                this.keepLow(modifier.data);
+                break;
+            }
+            case "!": {
+                this.explode(modifier.data, modifier.conditionals);
+                break;
+            }
+            case "!!": {
+                this.explodeAndCombine(modifier.data, modifier.conditionals);
+                break;
+            }
+            case "r": {
+                this.reroll(modifier.data, modifier.conditionals);
+                break;
+            }
+        }
+    }
 
     element() {
         return createDiv();
     }
 }
 
-
-export class StuntRoller extends DiceRoller {
+class StuntRoller extends DiceRoller {
     constructor(dice: string) {
         super(`3d6`);
 
@@ -279,5 +332,190 @@ export class StuntRoller extends DiceRoller {
             str.push(`${result[1].value}`);
         }
         return `[${str.join(", ")}]`;
+    }
+}
+
+export class StackRoller extends GenericRoller<number> {
+    result: number;
+    get tooltip() {
+        let text = this.original;
+        this.dice.forEach((dice) => {
+            text = text.replace(
+                `${dice.dice}${Array.from(dice.modifiers).join("")}`,
+                dice.display
+            );
+        });
+        return `${this.original}\n${text}`;
+    }
+    async build() {
+        const result = [
+            this.result.toLocaleString(navigator.language, {
+                maximumFractionDigits: 2
+            })
+        ];
+        if (this.plugin.data.displayResultsInline) {
+            result.unshift(this.tooltip.split("\n").join(" -> "), " -> ");
+        }
+        this.resultEl.setText(result.join(""));
+    }
+
+    constructor(
+        public plugin: DiceRollerPlugin,
+        public original: string,
+        public lexemes: Lexeme[]
+    ) {
+        super(plugin, original, lexemes);
+        this.roll();
+    }
+    operators: Record<string, (...args: number[]) => number> = {
+        "+": (a: number, b: number): number => a + b,
+        "-": (a: number, b: number): number => a - b,
+        "*": (a: number, b: number): number => a * b,
+        "/": (a: number, b: number): number => a / b,
+        "^": (a: number, b: number): number => {
+            return Math.pow(a, b);
+        }
+    };
+    stack: DiceRoller[] = [];
+    dice: DiceRoller[] = [];
+    async roll() {
+        let index = 0;
+        for (const d of this.lexemes) {
+            switch (d.type) {
+                case "+":
+                case "-":
+                case "*":
+                case "/":
+                case "^":
+                case "math":
+                    const b = this.stack.pop(),
+                        a = this.stack.pop();
+                    a.roll();
+                    b.roll();
+
+                    const result = this.operators[d.data](a.result, b.result);
+
+                    this.stack.push(new DiceRoller(`${result}`));
+                    break;
+                case "kh": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = d.data ? Number(d.data) : 1;
+
+                    /* diceInstance.keepHigh(data); */
+
+                    diceInstance.modifiers.set("kh", {
+                        data,
+                        conditionals: []
+                    });
+                    break;
+                }
+                case "dl": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = d.data ? Number(d.data) : 1;
+
+                    data = diceInstance.results.size - data;
+
+                    /* diceInstance.keepHigh(data); */
+                    diceInstance.modifiers.set("kh", {
+                        data,
+                        conditionals: []
+                    });
+                    break;
+                }
+                case "kl": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = d.data ? Number(d.data) : 1;
+
+                    /* diceInstance.keepLow(data); */
+                    diceInstance.modifiers.set("kl", {
+                        data,
+                        conditionals: []
+                    });
+                    break;
+                }
+                case "dh": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = d.data ? Number(d.data) : 1;
+
+                    data = diceInstance.results.size - data;
+
+                    /* diceInstance.keepLow(data); */
+                    diceInstance.modifiers.set("kl", {
+                        data,
+                        conditionals: []
+                    });
+                    break;
+                }
+                case "!": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = Number(d.data) || 1;
+
+                    /* diceInstance.explode(data, d.conditionals); */
+                    /* diceInstance.modifiers.add(d.original); */
+                    diceInstance.modifiers.set("!", {
+                        data,
+                        conditionals: d.conditionals
+                    });
+
+                    break;
+                }
+                case "!!": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = Number(d.data) || 1;
+
+                    /* diceInstance.explodeAndCombine(data, d.conditionals); */
+                    /* diceInstance.modifiers.add(d.original); */
+                    diceInstance.modifiers.set("!!", {
+                        data,
+                        conditionals: d.conditionals
+                    });
+
+                    break;
+                }
+                case "r": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = Number(d.data) || 1;
+
+                    /* diceInstance.reroll(data, d.conditionals); */
+                    /* diceInstance.modifiers.add(d.original); */
+                    diceInstance.modifiers.set("r", {
+                        data,
+                        conditionals: d.conditionals
+                    });
+                    break;
+                }
+                case "dice":
+                    ///const res = this.roll(d.data);
+                    if (!this.dice[index]) {
+                        this.dice[index] = new DiceRoller(d.data);
+                    }
+
+                    this.stack.push(this.dice[index]);
+                    index++;
+                    break;
+                case "stunt":
+                    if (!this.dice[index]) {
+                        this.dice[index] = new StuntRoller(d.original);
+                    }
+
+                    /* if (stunt.doubles) {
+                            stunted = ` - ${
+                                stunt.results.get(0).value
+                            } Stunt Points`;
+                        } */
+
+                    this.stack.push(this.dice[index]);
+                    index++;
+            }
+        }
+
+        const final = this.stack.pop();
+        final.roll();
+
+        this.result = final.result;
+
+        this.render();
+
+        return this.result;
     }
 }
