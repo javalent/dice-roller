@@ -345,30 +345,9 @@ These conditions are fully chainable.
 | `dice: 1d4r<3`   | Re-roll rolls less than 3                 | `[4, 1, 2, 4] -> [4, 4r, 3r, 4] = 15`    |
 | `dice: 1d4r<2>3` | Re-roll rolls less than 2, greater than 3 | `[4, 1, 2, 4] -> [3r, 2r, 2, 2r] = 9`    |
 
-# Customization
+# Dice Formulas
 
-The following CSS is applied:
-
-```css
-.dice-roller {
-    position: relative;
-    display: inline-block;
-    cursor: pointer;
-    margin: 0 0.25em 0 0;
-    font-weight: bolder;
-}
-.dice-roller > .dice-roller-button {
-    display: inline-block;
-    position: relative;
-    font-size: inherit;
-    margin-left: 0.25em;
-}
-.dice.tooltip {
-    max-width: unset !important;
-}
-```
-
-The dice icon cannot be changed, but setting the `.dice-roller-button` to to `display: none` will hide it.
+Dice formulas can be created in settings. Formulas must be given an alias; when the plugin detects the formula alias, it will use the defined formula for the roll.
 
 # Coming Soon
 
