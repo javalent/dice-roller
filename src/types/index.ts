@@ -19,5 +19,6 @@ export type ResultMapInterface<T> = Map<number, ResultInterface<T>>;
 export type ResultInterface<T> = {
     usable: boolean;
     value: T;
+    display: string;
     modifiers?: Set<string>;
 };

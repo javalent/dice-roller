@@ -1,4 +1,3 @@
-export { DiceRoller, StuntRoller } from "./dice";
-export { FileRoller } from "./file";
-export { SectionRoller } from "./section";
-export { TableRoller } from "./table";
+export * from "./dice";
+export * from "./section";
+export * from "./table";

@@ -296,19 +296,41 @@ Re-rolled dice will display as `Xr` in the tooltip.
 
 # Conditions
 
+## Dice Conditions
+
+Dice rolls support conditional parameters as of version 6.0.0. This allows you to specify a set of requirements, one of which the dice must meet to be included in the roll. If the dice meets this requirement, it will be considered a `1` (pass), and if it does not, it will be considered a `0` (failure).
+
+Additionally, a `negative equals` condition may be supplied; if the dice meet this requirement, it will be considered a `-1`.
+
+The following conditions are supported:
+
+| Condition          | Effect                                                             |
+| ------------------ | ------------------------------------------------------------------ |
+| `={n}`             | Only rolls that are equal to `{n}` are successful.                 |
+| `=!{n}`\*          | Only rolls that are not equal to `{n}` are successful.             |
+| `>{n}`             | Only rolls that are greater than `{n}` are successful.             |
+| `<{n}`             | Only rolls that are less than `{n}` are successful.                |
+| `>={n}`            | Only rolls that are greater than or equal to `{n}` are successful. |
+| `<={n}`            | Only rolls that are less than or equal to `{n}` are successful.    |
+| `-={n}` or `=-{n}` | Rolls equal to `{n}` will be considered -1.                        |
+
+\*Not supported on as a dice condition due to a collision with [Explode](#explode). If necessary, use `=!{n}`.
+
+## Modifier Conditions
+
 The [Explode](#explode), [Explode and Combine](#explode--combine) and [Re-roll](#re-roll) modifiers each support an optional _condition_ operator. If provided, the condition operator
 changes the die rolls that the modifier is applied to.
 
 Supported Conditions:
 
-| Condition           | Effect                                                           |
-| ------------------- | ---------------------------------------------------------------- |
-| `={n}`              | Only rolls that are equal to `{n}` are modified.                 |
-| `!={n}*` or `=!{n}` | Only rolls that are not equal to `{n}` are modified.             |
-| `>{n}`              | Only rolls that are greater than `{n}` are modified.             |
-| `<{n}`              | Only rolls that are less than `{n}` are modified.                |
-| `>={n}`             | Only rolls that are greater than or equal to `{n}` are modified. |
-| `<={n}`             | Only rolls that are less than or equal to `{n}` are modified.    |
+| Condition            | Effect                                                           |
+| -------------------- | ---------------------------------------------------------------- |
+| `={n}`               | Only rolls that are equal to `{n}` are modified.                 |
+| `!={n}`\* or `=!{n}` | Only rolls that are not equal to `{n}` are modified.             |
+| `>{n}`               | Only rolls that are greater than `{n}` are modified.             |
+| `<{n}`               | Only rolls that are less than `{n}` are modified.                |
+| `>={n}`              | Only rolls that are greater than or equal to `{n}` are modified. |
+| `<={n}`              | Only rolls that are less than or equal to `{n}` are modified.    |
 
 \*Not supported as the first conditional on a parameterless [Explode](#explode) due to a collision with [Explode and Combine](#explode--combine). If necessary, use `=!{n}`.
 
@@ -395,7 +417,6 @@ If you're using Obsidian to run/plan a TTRPG, you may find my other plugin usefu
 
 -   [Obsidian Leaflet](https://github.com/valentine195/obsidian-leaflet-plugin) - Add interactive maps to Obsidian.md notes
 -   [5e Statblocks](https://github.com/valentine195/obsidian-5e-statblocks/) - Create 5e-styled statblocks inside notes
--   [Initiative Tracker](https://github.com/valentine195/obsidian-initiative-tracker) - Track TTRPG Initiative in Obsidian 
-
+-   [Initiative Tracker](https://github.com/valentine195/obsidian-initiative-tracker) - Track TTRPG Initiative in Obsidian
 
 <a href="https://www.buymeacoffee.com/valentine195"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=valentine195&button_colour=e3e7ef&font_colour=262626&font_family=Inter&outline_colour=262626&coffee_colour=ff0000"></a>
