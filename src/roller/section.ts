@@ -299,7 +299,7 @@ export class LinkRoller extends GenericRoller<TFile> {
     async roll() {
         return (
             (this.result =
-                this.links[this.getRandomBetween(0, this.links.length)]),
+                this.links[this.getRandomBetween(0, this.links.length - 1)]),
             await this.render(),
             this.result
         );

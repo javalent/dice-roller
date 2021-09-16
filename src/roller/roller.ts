@@ -69,7 +69,9 @@ export abstract class BasicRoller extends Events {
     onClick(evt: MouseEvent) {
         evt.stopPropagation();
         evt.stopImmediatePropagation();
-        this.roll();
+        if (window.getSelection()?.isCollapsed) {
+            this.roll();
+        }
     }
 }
 
