@@ -15,7 +15,8 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
     results: SectionCache[];
     types: string[];
     content: string;
-    optionsLoaded: boolean;
+    loaded: boolean;
+    copy: HTMLDivElement;
 
     constructor(
         public plugin: DiceRollerPlugin,
@@ -28,6 +29,19 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
         this.containerEl.addClasses(["has-embed", "markdown-embed"]);
         this.resultEl.addClass("internal-embed");
         this.resultEl.setAttrs({ src: source });
+        this.copy = this.containerEl.createDiv({
+            cls: "dice-content-copy dice-roller-button no-show",
+            attr: { "aria-label": "Copy Contents" }
+        });
+        this.copy.addEventListener("click", (evt) => {
+            evt.stopPropagation();
+            navigator.clipboard
+                .writeText(this.displayFromCache(...this.results).trim())
+                .then(async () => {
+                    new Notice("Result copied to clipboard.");
+                });
+        });
+        setIcon(this.copy, COPY_DEFINITION);
     }
     get tooltip() {
         return `${this.original}\n${this.path}`;
@@ -39,6 +53,19 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
                 text: `${this.tooltip.split("\n").join(" -> ")} -> `
             });
         }
+
+        if (!this.results || !this.results.length) {
+            this.resultEl.createDiv({
+                cls: "dice-no-results",
+                text: "No results."
+            });
+
+            return;
+        }
+        if (this.plugin.data.copyContentButton) {
+            this.copy.removeClass("no-show");
+        }
+
         for (const result of this.results) {
             this.resultEl.onclick = async (evt) => {
                 if (
@@ -65,9 +92,16 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
 
                 continue;
             }
-            if (this.plugin.data.copyContentButton) {
-                let copy = this.resultEl.createDiv({
-                    cls: "dice-content-copy",
+            MarkdownRenderer.renderMarkdown(
+                this.displayFromCache(result),
+                ret.createDiv(),
+                this.source,
+                null
+            );
+
+            if (this.plugin.data.copyContentButton && this.results.length > 1) {
+                let copy = ret.createDiv({
+                    cls: "dice-content-copy dice-roller-button",
                     attr: { "aria-label": "Copy Contents" }
                 });
                 copy.addEventListener("click", (evt) => {
@@ -80,27 +114,24 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
                 });
                 setIcon(copy, COPY_DEFINITION);
             }
-            MarkdownRenderer.renderMarkdown(
-                this.displayFromCache(result),
-                ret.createDiv(),
-                this.source,
-                null
-            );
         }
     }
 
     async load() {
         await this.getOptions();
-
-        this.roll();
     }
-    displayFromCache(cache: SectionCache) {
-        let res = this.content.slice(
-            cache.position.start.offset,
-            cache.position.end.offset
-        );
+    displayFromCache(...caches: SectionCache[]) {
+        let res: string[] = [];
+        for (let cache of caches) {
+            res.push(
+                this.content.slice(
+                    cache.position.start.offset,
+                    cache.position.end.offset
+                )
+            );
+        }
 
-        return `${res}`;
+        return res.join("\n\n");
     }
     getPath() {
         const { groups } = this.lexeme.data.match(SECTION_REGEX);
@@ -123,13 +154,13 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
                 ? this.types.includes(type)
                 : !["yaml", "thematicBreak"].includes(type)
         );
-        this.optionsLoaded = true;
-        this.trigger("options-loaded");
+        this.loaded = true;
+        this.trigger("loaded");
     }
     async roll(): Promise<SectionCache> {
         return new Promise((resolve, reject) => {
-            if (!this.optionsLoaded) {
-                this.on("options-loaded", () => {
+            if (!this.loaded) {
+                this.on("loaded", () => {
                     const options = [...this.options];
 
                     this.results = [...Array(this.rolls)]
@@ -143,6 +174,7 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
                         })
                         .filter((r) => r);
                     this.render();
+                    this.trigger("new-result");
                     resolve(this.results[0]);
                 });
             } else {
@@ -159,6 +191,7 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
                     })
                     .filter((r) => r);
                 this.render();
+                this.trigger("new-result");
                 resolve(this.results[0]);
             }
         });
@@ -235,7 +268,6 @@ export class TagRoller extends GenericRoller<SectionRoller> {
                 false
             );
         });
-        await this.roll();
     }
     result: SectionRoller;
     async build() {
@@ -268,6 +300,7 @@ export class TagRoller extends GenericRoller<SectionRoller> {
     async roll() {
         this.results.forEach(async (section) => await section.roll());
         this.render();
+        this.trigger("new-result");
         return this.result;
     }
     get tooltip() {
@@ -301,6 +334,7 @@ export class LinkRoller extends GenericRoller<TFile> {
             (this.result =
                 this.links[this.getRandomBetween(0, this.links.length - 1)]),
             await this.render(),
+            this.trigger("new-result"),
             this.result
         );
     }
@@ -353,6 +387,5 @@ export class LinkRoller extends GenericRoller<TFile> {
                 this.source
             )
         );
-        await this.roll();
     }
 }

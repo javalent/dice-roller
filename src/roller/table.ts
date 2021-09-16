@@ -1,36 +1,7 @@
 import type { Pos } from "obsidian";
 
 import { TABLE_REGEX } from "src/utils/constants";
-import { BaseRoller, GenericFileRoller, Roller } from "./roller";
-
-export class Table extends BaseRoller implements Roller<string> {
-    resultArray: string[];
-    get result() {
-        return this.resultArray.join("|");
-    }
-    get display() {
-        return `${this.result}`;
-    }
-    constructor(
-        public rolls: number,
-        public options: string[],
-        public text: string,
-        public link: string,
-        public block: string
-    ) {
-        super();
-        this.roll();
-    }
-    roll() {
-        return (this.resultArray = [...Array(this.rolls)].map(
-            () =>
-                this.options[this._getRandomBetween(0, this.options.length - 1)]
-        ));
-    }
-    element() {
-        return createDiv();
-    }
-}
+import { GenericFileRoller } from "./roller";
 
 export class TableRoller extends GenericFileRoller<string> {
     content: string;
@@ -95,25 +66,51 @@ export class TableRoller extends GenericFileRoller<string> {
             this.resultEl.createSpan({ text: str });
         }
     }
-    async roll() {
-        const options = [...this.options];
+    async roll(): Promise<string> {
+        return new Promise((resolve) => {
+            if (this.loaded) {
+                const options = [...this.options];
 
-        this.result = [...Array(this.rolls)]
-            .map(() => {
-                let option =
-                    options[this.getRandomBetween(0, options.length - 1)];
-                options.splice(options.indexOf(option), 1);
-                return option;
-            })
-            .join("||");
+                this.result = [...Array(this.rolls)]
+                    .map(() => {
+                        let option =
+                            options[
+                                this.getRandomBetween(0, options.length - 1)
+                            ];
+                        options.splice(options.indexOf(option), 1);
+                        return option;
+                    })
+                    .join("||");
 
-        this.render();
-        return this.result;
+                this.render();
+
+                this.trigger("new-result");
+                resolve(this.result);
+            } else {
+                this.on("loaded", () => {
+                    const options = [...this.options];
+
+                    this.result = [...Array(this.rolls)]
+                        .map(() => {
+                            let option =
+                                options[
+                                    this.getRandomBetween(0, options.length - 1)
+                                ];
+                            options.splice(options.indexOf(option), 1);
+                            return option;
+                        })
+                        .join("||");
+
+                    this.render();
+
+                    this.trigger("new-result");
+                    resolve(this.result);
+                });
+            }
+        });
     }
     async load() {
         await this.getOptions();
-
-        this.roll();
     }
 
     async getOptions() {
@@ -146,6 +143,8 @@ export class TableRoller extends GenericFileRoller<string> {
                 );
             this.options = table.rows;
         }
+        this.loaded = true;
+        this.trigger("loaded");
     }
 }
 const MATCH = /^\|?([\s\S]+?)\|?$/;

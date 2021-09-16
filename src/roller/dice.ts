@@ -365,7 +365,6 @@ export class StackRoller extends GenericRoller<number> {
         public lexemes: Lexeme[]
     ) {
         super(plugin, original, lexemes);
-        this.roll();
     }
     operators: Record<string, (...args: number[]) => number> = {
         "+": (a: number, b: number): number => a + b,
@@ -485,7 +484,6 @@ export class StackRoller extends GenericRoller<number> {
                     break;
                 }
                 case "dice":
-                    ///const res = this.roll(d.data);
                     if (!this.dice[index]) {
                         this.dice[index] = new DiceRoller(d.data);
                     }
@@ -516,6 +514,7 @@ export class StackRoller extends GenericRoller<number> {
 
         this.render();
 
+        this.trigger("new-result");
         return this.result;
     }
 }

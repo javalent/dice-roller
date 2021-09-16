@@ -27,6 +27,7 @@ export abstract class Roller<T> {
 export abstract class BasicRoller extends Events {
     rolls: number;
     abstract roll(): Promise<any>;
+    result: any;
     containerEl = createDiv({
         cls: "dice-roller",
         attr: {
@@ -66,11 +67,11 @@ export abstract class BasicRoller extends Events {
         icon.onclick = this.onClick.bind(this);
     }
 
-    onClick(evt: MouseEvent) {
+    async onClick(evt: MouseEvent) {
         evt.stopPropagation();
         evt.stopImmediatePropagation();
         if (window.getSelection()?.isCollapsed) {
-            this.roll();
+            await this.roll();
         }
     }
 }
@@ -78,6 +79,7 @@ export abstract class BasicRoller extends Events {
 export abstract class GenericRoller<T> extends BasicRoller {
     abstract result: T;
     abstract roll(): Promise<T>;
+    loaded: boolean;
 }
 
 export abstract class GenericFileRoller<T> extends GenericRoller<T> {
@@ -109,8 +111,8 @@ export abstract class GenericFileRoller<T> extends GenericRoller<T> {
         await this.load();
         this.registerFileWatcher();
     }
-    async load() {}
-    abstract getOptions(): void;
+    abstract load(): Promise<void>;
+    abstract getOptions(): Promise<void>;
     registerFileWatcher() {
         this.plugin.registerEvent(
             this.plugin.app.vault.on("modify", async (file) => {
