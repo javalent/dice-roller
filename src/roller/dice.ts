@@ -72,7 +72,7 @@ class DiceRoller {
 
         this.faces = { max: max ? Number(max) : 1, min: min ? Number(min) : 1 };
 
-        this.conditions = this.lexeme.conditionals;
+        this.conditions = this.lexeme.conditionals ?? [];
 
         this.results = new Map(
             [...this.roll()].map((n, i) => {
@@ -93,7 +93,7 @@ class DiceRoller {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
-        if (this.conditions.length) {
+        if (this.conditions?.length) {
             new Notice("Modifiers are not permitted on conditioned dice.");
             return;
         }
@@ -113,7 +113,7 @@ class DiceRoller {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
-        if (this.conditions.length) {
+        if (this.conditions?.length) {
             new Notice("Modifiers are not permitted on conditioned dice.");
             return;
         }
@@ -132,7 +132,7 @@ class DiceRoller {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
-        if (this.conditions.length) {
+        if (this.conditions?.length) {
             new Notice("Modifiers are not permitted on conditioned dice.");
             return;
         }
@@ -178,7 +178,7 @@ class DiceRoller {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
-        if (this.conditions.length) {
+        if (this.conditions?.length) {
             new Notice("Modifiers are not permitted on conditioned dice.");
             return;
         }
@@ -222,7 +222,7 @@ class DiceRoller {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
-        if (this.conditions.length) {
+        if (this.conditions?.length) {
             new Notice("Modifiers are not permitted on conditioned dice.");
             return;
         }
@@ -303,7 +303,7 @@ class DiceRoller {
         for (let [type, modifier] of this.modifiers) {
             this.applyModifier(type, modifier);
         }
-        if (this.conditions.length) this.applyConditions();
+        if (this.conditions?.length) this.applyConditions();
 
         return roll;
     }
@@ -462,7 +462,6 @@ export class StackRoller extends GenericRoller<number> {
         public lexemes: Lexeme[]
     ) {
         super(plugin, original, lexemes);
-        console.log("🚀 ~ file: dice.ts ~ line 375 ~ lexemes", lexemes);
     }
     operators: Record<string, (...args: number[]) => number> = {
         "+": (a: number, b: number): number => a + b,
@@ -505,11 +504,6 @@ export class StackRoller extends GenericRoller<number> {
                             } Stunt Points`;
                         }
                     }
-                    console.log(
-                        "🚀 ~ file: dice.ts ~ line 504 ~ this.stunted",
-                        this.stunted
-                    );
-
                     const result = this.operators[dice.data](
                         a.result,
                         b.result

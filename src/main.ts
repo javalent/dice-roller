@@ -165,21 +165,6 @@ export default class DiceRollerPlugin extends Plugin {
             "^": exponent
         });
     }
-    registerPersistWatcher(
-        roller: BasicRoller,
-        ctx: MarkdownPostProcessorContext
-    ) {
-        this.registerEvent(
-            this.app.metadataCache.on("changed", (file) => {
-                console.log(
-                    "🚀 ~ file: main.ts ~ line 211 ~ file",
-                    file.path == ctx.sourcePath
-                );
-                if (file.path != ctx.sourcePath) return;
-                console.log(ctx.getSectionInfo(roller.containerEl));
-            })
-        );
-    }
     getRoller(content: string, source: string): BasicRoller {
         const lexemes = this.parse(content);
 
@@ -277,12 +262,6 @@ export default class DiceRollerPlugin extends Plugin {
 
         this.lexer.addRule(DICE_REGEX, function (lexeme: string): Lexeme {
             const { dice, conditional } = lexeme.match(DICE_REGEX).groups;
-            console.log(
-                "🚀 ~ file: main.ts ~ line 280 ~ dice",
-                dice,
-                lexeme,
-                conditional
-            );
             let conditionals: Conditional[] = [];
             if (conditional) {
                 let matches = conditional.matchAll(CONDITIONAL_REGEX);
@@ -297,7 +276,6 @@ export default class DiceRollerPlugin extends Plugin {
                     }
                 }
             }
-            console.log(conditionals);
 
             return {
                 type: "dice",
