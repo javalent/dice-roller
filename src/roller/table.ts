@@ -11,10 +11,10 @@ export class TableRoller extends GenericFileRoller<string> {
     getPath() {
         const { groups } = this.lexeme.data.match(TABLE_REGEX);
 
-        const { roll, link, block, header } = groups;
+        const { roll = 1, link, block, header } = groups;
         if (!link || !block) throw new Error("Could not parse link.");
 
-        this.rolls = Number(roll);
+        this.rolls = (roll && !isNaN(Number(roll)) && Number(roll)) ?? 1;
         this.path = link.replace(/(\[|\])/g, "");
         this.block = block
             .replace(/(\^|#)/g, "")

@@ -278,7 +278,6 @@ export default class DiceRollerPlugin extends Plugin {
         });
 
         this.lexer.addRule(MATH_REGEX, function (lexeme: string): Lexeme {
-            console.log("🚀 ~ file: main.ts ~ line 281 ~ lexeme", lexeme);
             return {
                 type: "math",
                 data: lexeme,
