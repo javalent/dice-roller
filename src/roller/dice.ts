@@ -412,6 +412,15 @@ class StuntRoller extends DiceRoller {
             ).size < 3
         );
     }
+    get result() {
+        if (this.static) {
+            return Number(this.dice);
+        }
+        const results = [...this.results].map(([, { usable, value }]) =>
+            usable ? value : 0
+        );
+        return results.reduce((a, b) => a + b, 0);
+    }
     get display() {
         let str: string[] = [];
         for (let result of this.results) {
@@ -427,6 +436,7 @@ class StuntRoller extends DiceRoller {
 
 export class StackRoller extends GenericRoller<number> {
     result: number;
+    stunted: string = "";
     get tooltip() {
         let text = this.original;
         this.dice.forEach((dice) => {
@@ -443,7 +453,7 @@ export class StackRoller extends GenericRoller<number> {
         if (this.plugin.data.displayResultsInline) {
             result.unshift(this.tooltip.split("\n").join(" -> "), " -> ");
         }
-        this.resultEl.setText(result.join(""));
+        this.resultEl.setText(result.join("") + this.stunted);
     }
 
     constructor(
@@ -467,6 +477,7 @@ export class StackRoller extends GenericRoller<number> {
     dice: DiceRoller[] = [];
     async roll() {
         let index = 0;
+        this.stunted = "";
         for (const dice of this.lexemes) {
             switch (dice.type) {
                 case "+":
@@ -479,6 +490,25 @@ export class StackRoller extends GenericRoller<number> {
                         a = this.stack.pop();
                     a.roll();
                     b.roll();
+
+                    if (a instanceof StuntRoller) {
+                        if (a.doubles) {
+                            this.stunted = ` - ${
+                                a.results.get(0).value
+                            } Stunt Points`;
+                        }
+                    }
+                    if (b instanceof StuntRoller) {
+                        if (b.doubles) {
+                            this.stunted = ` - ${
+                                a.results.get(0).value
+                            } Stunt Points`;
+                        }
+                    }
+                    console.log(
+                        "🚀 ~ file: dice.ts ~ line 504 ~ this.stunted",
+                        this.stunted
+                    );
 
                     const result = this.operators[dice.data](
                         a.result,
@@ -587,12 +617,6 @@ export class StackRoller extends GenericRoller<number> {
                         this.dice[index] = new StuntRoller(dice.original, dice);
                     }
 
-                    /* if (stunt.doubles) {
-                            stunted = ` - ${
-                                stunt.results.get(0).value
-                            } Stunt Points`;
-                        } */
-
                     this.stack.push(this.dice[index]);
                     index++;
             }
@@ -600,6 +624,11 @@ export class StackRoller extends GenericRoller<number> {
 
         const final = this.stack.pop();
         final.roll();
+        if (final instanceof StuntRoller) {
+            if (final.doubles) {
+                this.stunted = ` - ${final.results.get(0).value} Stunt Points`;
+            }
+        }
 
         this.result = final.result;
 
