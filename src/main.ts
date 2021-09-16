@@ -23,9 +23,15 @@ import {
     TABLE_REGEX,
     TAG_REGEX
 } from "./utils/constants";
-import { TableRoller, FileRoller, SectionRoller, TagRoller, LinkRoller } from "./roller";
+import {
+    StackRoller,
+    TableRoller,
+    SectionRoller,
+    TagRoller,
+    LinkRoller
+} from "./roller";
 import SettingTab from "./settings/settings";
-import { StackRoller } from "./roller/dice";
+
 import type { BasicRoller } from "./roller/roller";
 
 String.prototype.matchAll =
@@ -112,7 +118,6 @@ export default class DiceRollerPlugin extends Plugin {
                         }
 
                         const roller = this.getRoller(content, ctx.sourcePath);
-                        window.roller = roller;
 
                         node.replaceWith(roller.containerEl);
                     } catch (e) {
@@ -196,81 +201,6 @@ export default class DiceRollerPlugin extends Plugin {
             return "link";
         }
         return "dice";
-    }
-    async reroll(
-        evt: MouseEvent,
-        container: HTMLElement,
-        resultEl: HTMLElement,
-        content: string,
-        link: string,
-        tableMap: TableRoller,
-        fileMap: FileRoller,
-        type: "dice" | "table" | "render" | "file"
-    ) {
-        resultEl.empty();
-        /* if (type === "dice") { */
-        /* let { result, text } = await this.parseDice(content);
-            container.setAttrs({
-                "aria-label": `${content}\n${text}`
-            });
-            resultEl.setText(
-                result.toLocaleString(navigator.language, {
-                    maximumFractionDigits: 2
-                })
-            ); */
-        /* } else if (type === "render") {
-            resultEl.empty();
-            resultEl.createSpan({ text: `${content} => ` });
-            resultEl.addClass("internal-embed");
-            for (let [file, elements] of Array.from(renderMap)) {
-                const holder = resultEl.createDiv({
-                    cls: "dice-section-result",
-                    attr: {
-                        "aria-label": file
-                    }
-                });
-                if (renderMap.size > 1) {
-                    holder.createEl("h5", {
-                        cls: "dice-file-name",
-                        text: file
-                    });
-                }
-
-                for (let el of elements) {
-                    el.roll();
-                    el.element(holder.createDiv());
-                }
-            }
-        } else if (type === "file") {
-            fileMap.roll();
-            resultEl.createSpan({ text: content });
-            container.setAttrs({
-                "aria-label": `${content}\n${fileMap.display}`
-            });
-
-            const link = await fileMap.element();
-            link.onclick = async (evt) => {
-                evt.stopPropagation();
-                this.app.workspace.openLinkText(
-                    fileMap.result.replace("^", "#^").split(/\|/).shift(),
-                    this.app.workspace.getActiveFile()?.path,
-                    true
-                );
-            };
-
-            link.onmouseenter = async (evt) => {
-                this.app.workspace.trigger(
-                    "link-hover",
-                    this, //not sure
-                    link, //targetEl
-                    fileMap.result, //linkText
-                    this.app.workspace.getActiveFile()?.path //source
-                );
-            };
-
-            resultEl.empty();
-            resultEl.appendChild(link);
-        } */
     }
 
     addLexerRules() {
@@ -501,262 +431,7 @@ export default class DiceRollerPlugin extends Plugin {
             return Math.pow(a, b);
         }
     };
-    /*
-                } else if (d.type === "tag") {
-                    type = "render";
-                    if (!this.app.plugins.plugins.dataview) {
-                        new Notice(
-                            "Tags are only supported with the Dataview plugin installed."
-                        );
-                        return;
-                    }
-                    const [, roll = 1, tag, collapseTrigger, filter] =
-                        d.data.match(TAG_REGEX);
 
-                    const collapse =
-                        collapseTrigger === "-"
-                            ? true
-                            : collapseTrigger === "+"
-                            ? false
-                            : !this.data.returnAllTags;
-
-                    let types: string[];
-                    if (filter && filter.length) {
-                        types = filter.split(",");
-                    }
-                    const files =
-                        this.app.plugins.plugins.dataview.index.tags.invMap.get(
-                            tag
-                        );
-                    if (!files || !files.size) {
-                        reject(
-                            "No files found with that tag. Is the tag correct?\n\n" +
-                                tag
-                        );
-                    }
-
-                    if (
-                        filter === "link" ||
-                        (this.data.rollLinksForTags && !types?.length)
-                    ) {
-                        fileMap = new FileRoller(
-                            1,
-                            [...files],
-                            this.app.metadataCache
-                        );
-                        fileMap.source = source;
-                        type = "file";
-                    } else {
-                        const couldNotRead = [],
-                            noCache = [];
-                        for (let link of files) {
-                            let file =
-                                await this.app.metadataCache.getFirstLinkpathDest(
-                                    link,
-                                    ""
-                                );
-                            if (!file || !(file instanceof TFile))
-                                couldNotRead.push(link);
-                            const cache =
-                                await this.app.metadataCache.getFileCache(file);
-                            if (
-                                !cache ||
-                                !cache.sections ||
-                                !cache.sections.length
-                            )
-                                noCache.push(link);
-
-                            const content = await this.app.vault.read(file);
-                            const data = cache.sections
-                                .filter(({ type }) =>
-                                    types
-                                        ? types.includes(type)
-                                        : !["yaml", "thematicBreak"].includes(
-                                              type
-                                          )
-                                )
-                                .map((cache) => {
-                                    return {
-                                        ...cache,
-                                        file: file.basename
-                                    };
-                                });
-
-                            if (collapse) {
-                                let roller;
-                                const rollers = renderMap.get("all");
-                                if (rollers && rollers.length) {
-                                    roller = rollers.shift();
-                                    roller.options = [
-                                        ...roller.options,
-                                        ...data
-                                    ];
-                                    roller.content.set(file.basename, content);
-                                } else {
-                                    roller = new SectionRoller(
-                                        Number(roll),
-                                        data,
-                                        new Map([[file.basename, content]]),
-                                        "all",
-                                        this.data.copyContentButton
-                                    );
-                                }
-                                renderMap.set("all", [
-                                    ...(renderMap.get("all") ?? []),
-                                    roller
-                                ]);
-                            } else {
-                                const roller = new SectionRoller(
-                                    Number(roll),
-                                    data,
-                                    new Map([[file.basename, content]]),
-                                    file.basename,
-                                    this.data.copyContentButton
-                                );
-                                renderMap.set(file.basename, [
-                                    ...(renderMap.get(file.basename) ?? []),
-                                    roller
-                                ]);
-                            }
-                        }
-                    }
-                    break;
-                } else {
-                    switch (d.type) {
-                        case "+":
-                        case "-":
-                        case "*":
-                        case "/":
-                        case "^":
-                        case "math":
-                            const b = stack.pop(),
-                                a = stack.pop(),
-                                result = this.operators[d.data](
-                                    a.result,
-                                    b.result
-                                );
-
-                            stack.push(new DiceRoller(`${result}`));
-                            break;
-                        case "kh": {
-                            let diceInstance = diceMap[diceMap.length - 1];
-                            let data = d.data ? Number(d.data) : 1;
-
-                            diceInstance.keepHigh(data);
-                            diceInstance.modifiers.add(d.original);
-                            break;
-                        }
-                        case "dl": {
-                            let diceInstance = diceMap[diceMap.length - 1];
-                            let data = d.data ? Number(d.data) : 1;
-
-                            data = diceInstance.results.size - data;
-
-                            diceInstance.keepHigh(data);
-                            diceInstance.modifiers.add(d.original);
-                            break;
-                        }
-                        case "kl": {
-                            let diceInstance = diceMap[diceMap.length - 1];
-                            let data = d.data ? Number(d.data) : 1;
-
-                            diceInstance.keepLow(data);
-                            diceInstance.modifiers.add(d.original);
-                            break;
-                        }
-                        case "dh": {
-                            let diceInstance = diceMap[diceMap.length - 1];
-                            let data = d.data ? Number(d.data) : 1;
-
-                            data = diceInstance.results.size - data;
-
-                            diceInstance.keepLow(data);
-                            diceInstance.modifiers.add(d.original);
-                            break;
-                        }
-                        case "!": {
-                            let diceInstance = diceMap[diceMap.length - 1];
-                            let data = Number(d.data) || 1;
-
-                            diceInstance.explode(data, d.conditionals);
-                            diceInstance.modifiers.add(d.original);
-
-                            break;
-                        }
-                        case "!!": {
-                            let diceInstance = diceMap[diceMap.length - 1];
-                            let data = Number(d.data) || 1;
-
-                            diceInstance.explodeAndCombine(
-                                data,
-                                d.conditionals
-                            );
-                            diceInstance.modifiers.add(d.original);
-
-                            break;
-                        }
-                        case "r": {
-                            let diceInstance = diceMap[diceMap.length - 1];
-                            let data = Number(d.data) || 1;
-
-                            diceInstance.reroll(data, d.conditionals);
-                            diceInstance.modifiers.add(d.original);
-                            break;
-                        }
-                        case "dice":
-                            ///const res = this.roll(d.data);
-                            diceMap.push(new DiceRoller(d.data));
-                            stack.push(diceMap[diceMap.length - 1]);
-                            break;
-                        case "stunt":
-                            let stunt = new StuntRoller(d.original);
-                            diceMap.push(stunt);
-
-                            if (stunt.doubles) {
-                                stunted = ` - ${
-                                    stunt.results.get(0).value
-                                } Stunt Points`;
-                            }
-
-                            stack.push(diceMap[diceMap.length - 1]);
-                    }
-                }
-            }
-            diceMap.forEach((diceInstance) => {
-                text = text.replace(
-                    `${diceInstance.dice}${Array.from(
-                        diceInstance.modifiers
-                    ).join("")}`,
-                    diceInstance.display
-                );
-            });
-            if (tableMap) {
-                text = text.replace(
-                    tableMap.text,
-                    `${tableMap.link} > ${tableMap.block}`
-                );
-            }
-            if (renderMap && renderMap.size) {
-                text = `Results from ${renderMap.size} file${
-                    renderMap.size != 1 ? "s" : ""
-                }`;
-            }
-
-            if (fileMap) {
-                text = fileMap.result;
-            }
-
-            resolve({
-                result: stack.length ? `${stack[0].text}${stunted}` : null,
-                text: text,
-                link: `${tableMap?.link}#^${tableMap?.block}` ?? null,
-                type,
-                tableMap,
-                renderMap,
-                fileMap
-            });
-        });
-    } */
     parse(input: string): Lexeme[] {
         this.lexer.setInput(input);
         var tokens = [],
