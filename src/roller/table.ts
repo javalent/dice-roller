@@ -61,7 +61,7 @@ export class TableRoller extends GenericFileRoller<string> {
         this.resultEl.empty();
         const result = [this.result];
         if (this.plugin.data.displayResultsInline) {
-            result.unshift(this.tooltip.split("\n").join(" => "), " => ");
+            result.unshift(this.tooltip.split("\n").join(" -> "), " -> ");
         }
         const split = result.join("").split(/(\[\[(?:[\s\S]+?)\]\])/);
 
@@ -95,7 +95,7 @@ export class TableRoller extends GenericFileRoller<string> {
             this.resultEl.createSpan({ text: str });
         }
     }
-    roll() {
+    async roll() {
         const options = [...this.options];
 
         this.result = [...Array(this.rolls)]

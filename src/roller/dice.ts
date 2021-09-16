@@ -354,7 +354,7 @@ export class StackRoller extends GenericRoller<number> {
             })
         ];
         if (this.plugin.data.displayResultsInline) {
-            result.unshift(this.tooltip.split("\n").join(" => "), " => ");
+            result.unshift(this.tooltip.split("\n").join(" -> "), " -> ");
         }
         this.resultEl.setText(result.join(""));
     }
@@ -378,7 +378,7 @@ export class StackRoller extends GenericRoller<number> {
     };
     stack: DiceRoller[] = [];
     dice: DiceRoller[] = [];
-    roll() {
+    async roll() {
         let index = 0;
         for (const d of this.lexemes) {
             switch (d.type) {

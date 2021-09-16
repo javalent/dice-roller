@@ -23,13 +23,7 @@ import {
     TABLE_REGEX,
     TAG_REGEX
 } from "./utils/constants";
-import {
-    TableRoller,
-    Section,
-    FileRoller,
-    SectionRoller,
-    TagRoller
-} from "./roller";
+import { TableRoller, FileRoller, SectionRoller, TagRoller, LinkRoller } from "./roller";
 import SettingTab from "./settings/settings";
 import { StackRoller } from "./roller/dice";
 import type { BasicRoller } from "./roller/roller";
@@ -181,7 +175,10 @@ export default class DiceRollerPlugin extends Plugin {
                         "Tags are only supported with the Dataview plugin installed."
                     );
                 }
-                return new TagRoller(this, content, lexemes);
+                return new TagRoller(this, content, lexemes[0], source);
+            }
+            case "link": {
+                return new LinkRoller(this, content, lexemes[0], source);
             }
         }
     }
@@ -195,8 +192,8 @@ export default class DiceRollerPlugin extends Plugin {
         if (lexemes.some(({ type }) => type === "tag")) {
             return "tag";
         }
-        if (lexemes.some(({ type }) => type === "file")) {
-            return "file";
+        if (lexemes.some(({ type }) => type === "link")) {
+            return "link";
         }
         return "dice";
     }
@@ -206,14 +203,13 @@ export default class DiceRollerPlugin extends Plugin {
         resultEl: HTMLElement,
         content: string,
         link: string,
-        renderMap: Map<string, Section[]>,
         tableMap: TableRoller,
         fileMap: FileRoller,
         type: "dice" | "table" | "render" | "file"
     ) {
         resultEl.empty();
-        if (type === "dice") {
-            /* let { result, text } = await this.parseDice(content);
+        /* if (type === "dice") { */
+        /* let { result, text } = await this.parseDice(content);
             container.setAttrs({
                 "aria-label": `${content}\n${text}`
             });
@@ -222,7 +218,7 @@ export default class DiceRollerPlugin extends Plugin {
                     maximumFractionDigits: 2
                 })
             ); */
-        } else if (type === "render") {
+        /* } else if (type === "render") {
             resultEl.empty();
             resultEl.createSpan({ text: `${content} => ` });
             resultEl.addClass("internal-embed");
@@ -274,7 +270,7 @@ export default class DiceRollerPlugin extends Plugin {
 
             resultEl.empty();
             resultEl.appendChild(link);
-        }
+        } */
     }
 
     addLexerRules() {
@@ -317,7 +313,7 @@ export default class DiceRollerPlugin extends Plugin {
                 groups.types === "link" ||
                 (this.data.rollLinksForTags && !groups.types?.length)
             ) {
-                type = "file";
+                type = "link";
             }
 
             return {

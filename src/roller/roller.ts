@@ -1,4 +1,4 @@
-import { CachedMetadata, setIcon, TFile } from "obsidian";
+import { CachedMetadata, Events, setIcon, TFile } from "obsidian";
 import DiceRollerPlugin from "src/main";
 import { Lexeme } from "src/types";
 import { ICON_DEFINITION } from "src/utils/constants";
@@ -24,9 +24,9 @@ export abstract class Roller<T> {
     ) => Promise<HTMLElement> | HTMLElement;
 }
 
-export abstract class BasicRoller {
+export abstract class BasicRoller extends Events {
     rolls: number;
-    abstract roll(): any;
+    abstract roll(): Promise<any>;
     containerEl = createDiv({
         cls: "dice-roller",
         attr: {
@@ -44,17 +44,18 @@ export abstract class BasicRoller {
     getRandomBetween(min: number, max: number): number {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
-    async render(parent?: HTMLElement) {
+    async render() {
         this.setTooltip();
-        await this.build(parent);
+        await this.build();
     }
     abstract get tooltip(): string;
-    abstract build(parent?: HTMLElement): Promise<void>;
+    abstract build(): Promise<void>;
     constructor(
         public plugin: DiceRollerPlugin,
         public original: string,
         public lexemes: Lexeme[]
     ) {
+        super();
         const icon = this.containerEl.createDiv({
             cls: "dice-roller-button"
         });
@@ -74,7 +75,7 @@ export abstract class BasicRoller {
 
 export abstract class GenericRoller<T> extends BasicRoller {
     abstract result: T;
-    abstract roll(): T;
+    abstract roll(): Promise<T>;
 }
 
 export abstract class GenericFileRoller<T> extends GenericRoller<T> {
@@ -82,7 +83,7 @@ export abstract class GenericFileRoller<T> extends GenericRoller<T> {
     file: TFile;
     cache: CachedMetadata;
     options: T[];
-    results: T[]
+    results: T[];
     constructor(
         public plugin: DiceRollerPlugin,
         public original: string,
@@ -103,10 +104,10 @@ export abstract class GenericFileRoller<T> extends GenericRoller<T> {
         if (!this.file || !(this.file instanceof TFile))
             throw new Error("Could not load file.");
 
-        this.load();
+        await this.load();
         this.registerFileWatcher();
     }
-    load() {}
+    async load() {}
     abstract getOptions(): void;
     registerFileWatcher() {
         this.plugin.registerEvent(
@@ -116,5 +117,4 @@ export abstract class GenericFileRoller<T> extends GenericRoller<T> {
             })
         );
     }
-    
 }
