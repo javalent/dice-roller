@@ -462,6 +462,7 @@ export class StackRoller extends GenericRoller<number> {
         public lexemes: Lexeme[]
     ) {
         super(plugin, original, lexemes);
+        console.log("🚀 ~ file: dice.ts ~ line 472 ~ lexemes", lexemes);
     }
     operators: Record<string, (...args: number[]) => number> = {
         "+": (a: number, b: number): number => a + b,
@@ -487,26 +488,37 @@ export class StackRoller extends GenericRoller<number> {
                 case "math":
                     const b = this.stack.pop(),
                         a = this.stack.pop();
-                    a.roll();
-                    b.roll();
+                    let aResult: number, bResult: number;
+                        if (a) {
 
-                    if (a instanceof StuntRoller) {
-                        if (a.doubles) {
-                            this.stunted = ` - ${
-                                a.results.get(0).value
-                            } Stunt Points`;
+                            a.roll();
+                             if (a instanceof StuntRoller) {
+                                 if (a.doubles) {
+                                     this.stunted = ` - ${
+                                         a.results.get(0).value
+                                     } Stunt Points`;
+                                 }
+                             }
+                             aResult = a.result;
+                        } else {
+                            aResult = 0;
                         }
-                    }
-                    if (b instanceof StuntRoller) {
-                        if (b.doubles) {
-                            this.stunted = ` - ${
-                                a.results.get(0).value
-                            } Stunt Points`;
+                    if (b) {
+                        b.roll();
+                        if (b instanceof StuntRoller) {
+                            if (b.doubles) {
+                                this.stunted = ` - ${
+                                    b.results.get(0).value
+                                } Stunt Points`;
+                            }
                         }
+                        bResult = b.result;
+                    } else {
+                        bResult = 0;
                     }
                     const result = this.operators[dice.data](
-                        a.result,
-                        b.result
+                        aResult,
+                        bResult
                     );
 
                     this.stack.push(new DiceRoller(`${result}`, dice));

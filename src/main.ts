@@ -216,14 +216,6 @@ export default class DiceRollerPlugin extends Plugin {
         this.lexer.addRule(/[{}]+/, function () {
             /* skip brackets */
         });
-        this.lexer.addRule(MATH_REGEX, function (lexeme: string): Lexeme {
-            return {
-                type: "math",
-                data: lexeme,
-                original: lexeme,
-                conditionals: null
-            };
-        });
 
         this.lexer.addRule(TABLE_REGEX, function (lexeme: string): Lexeme {
             return {
@@ -283,6 +275,16 @@ export default class DiceRollerPlugin extends Plugin {
                 original: lexeme,
                 conditionals
             }; // symbols
+        });
+
+        this.lexer.addRule(MATH_REGEX, function (lexeme: string): Lexeme {
+            console.log("🚀 ~ file: main.ts ~ line 281 ~ lexeme", lexeme);
+            return {
+                type: "math",
+                data: lexeme,
+                original: lexeme,
+                conditionals: null
+            };
         });
         this.lexer.addRule(/1[Dd]S/, function (lexeme: string): Lexeme {
             const [, dice] = lexeme.match(/1[Dd]S/) ?? [, "1"];
