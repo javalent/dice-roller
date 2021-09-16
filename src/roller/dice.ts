@@ -1,8 +1,7 @@
-import { Notice, setIcon } from "obsidian";
+import { Notice } from "obsidian";
 import type DiceRollerPlugin from "src/main";
 import { ResultMapInterface, Conditional, Lexeme } from "src/types";
-import { ICON_DEFINITION } from "src/utils/constants";
-import { _checkCondition, _insertIntoMap } from "src/utils/util";
+import { _insertIntoMap } from "src/utils/util";
 import { BaseRoller, GenericRoller, Roller } from "./roller";
 
 interface Modifier {
@@ -10,17 +9,16 @@ interface Modifier {
     data: number;
 }
 
-class DiceRoller extends BaseRoller implements Roller<number> {
+class DiceRoller {
     dice: string;
     modifiers: Map<string, Modifier> = new Map();
     rolls: number;
     faces: { min: number; max: number };
     results: ResultMapInterface<number>;
     resultArray: number[];
-    originalRoll: number[];
     modifiersAllowed: boolean = true;
     static: boolean = false;
-    conditions: Conditional[];
+    conditions: Conditional[] = [];
 
     get text() {
         return `${this.result}`;
@@ -41,13 +39,12 @@ class DiceRoller extends BaseRoller implements Roller<number> {
         }
         return `[${[...this.results]
             .map(
-                ([, { modifiers, value }]) =>
-                    `${value}${[...modifiers].join("")}`
+                ([, { modifiers, display }]) =>
+                    `${display}${[...modifiers].join("")}`
             )
             .join(", ")}]`;
     }
-    constructor(dice: string) {
-        super();
+    constructor(dice: string, public lexeme: Lexeme) {
         if (!/(\-?\d+)[dD]?(\d+|%|\[\d+,\s?\d+\])?/.test(dice)) {
             throw new Error("Non parseable dice string passed to DiceRoll.");
         }
@@ -75,10 +72,19 @@ class DiceRoller extends BaseRoller implements Roller<number> {
 
         this.faces = { max: max ? Number(max) : 1, min: min ? Number(min) : 1 };
 
-        this.originalRoll = this.roll();
+        this.conditions = this.lexeme.conditionals;
+
         this.results = new Map(
-            [...this.originalRoll].map((n, i) => {
-                return [i, { usable: true, value: n, modifiers: new Set() }];
+            [...this.roll()].map((n, i) => {
+                return [
+                    i,
+                    {
+                        usable: true,
+                        value: n,
+                        display: `${n}`,
+                        modifiers: new Set()
+                    }
+                ];
             })
         );
     }
@@ -87,6 +93,11 @@ class DiceRoller extends BaseRoller implements Roller<number> {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
+        if (this.conditions.length) {
+            new Notice("Modifiers are not permitted on conditioned dice.");
+            return;
+        }
+
         [...this.results]
             .sort((a, b) => a[1].value - b[1].value)
             .slice(drop - this.results.size)
@@ -100,6 +111,10 @@ class DiceRoller extends BaseRoller implements Roller<number> {
     keepHigh(drop: number = 1) {
         if (!this.modifiersAllowed) {
             new Notice("Modifiers are only allowed on dice rolls.");
+            return;
+        }
+        if (this.conditions.length) {
+            new Notice("Modifiers are not permitted on conditioned dice.");
             return;
         }
         [...this.results]
@@ -117,6 +132,10 @@ class DiceRoller extends BaseRoller implements Roller<number> {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
+        if (this.conditions.length) {
+            new Notice("Modifiers are not permitted on conditioned dice.");
+            return;
+        }
         /**
          * Build Conditional
          */
@@ -132,18 +151,18 @@ class DiceRoller extends BaseRoller implements Roller<number> {
          */
         let i = 0,
             toReroll = [...this.results].filter(([, { value }]) =>
-                _checkCondition(value, conditionals)
+                this.checkCondition(value, conditionals)
             );
         while (
             i < times &&
             toReroll.filter(([, { value }]) =>
-                _checkCondition(value, conditionals)
+                this.checkCondition(value, conditionals)
             ).length > 0
         ) {
             i++;
             toReroll.map(([, roll]) => {
                 roll.modifiers.add("r");
-                roll.value = this._getRandomBetween(
+                roll.value = this.getRandomBetween(
                     this.faces.min,
                     this.faces.max
                 );
@@ -157,6 +176,10 @@ class DiceRoller extends BaseRoller implements Roller<number> {
     explodeAndCombine(times: number, conditionals: Conditional[]) {
         if (!this.modifiersAllowed) {
             new Notice("Modifiers are only allowed on dice rolls.");
+            return;
+        }
+        if (this.conditions.length) {
+            new Notice("Modifiers are not permitted on conditioned dice.");
             return;
         }
 
@@ -175,25 +198,21 @@ class DiceRoller extends BaseRoller implements Roller<number> {
          */
         let i = 0,
             toExplode = [...this.results].filter(([, { value }]) =>
-                _checkCondition(value, conditionals)
+                this.checkCondition(value, conditionals)
             );
 
         toExplode.forEach(([index, value]) => {
-            let newRoll = this._getRandomBetween(
-                this.faces.min,
-                this.faces.max
-            );
+            let newRoll = this.getRandomBetween(this.faces.min, this.faces.max);
             i++;
             value.modifiers.add("!");
             value.value += newRoll;
+            value.display = `${value.value}`;
             this.results.set(index, value);
-            while (i < times && _checkCondition(newRoll, conditionals)) {
+            while (i < times && this.checkCondition(newRoll, conditionals)) {
                 i++;
-                newRoll = this._getRandomBetween(
-                    this.faces.min,
-                    this.faces.max
-                );
+                newRoll = this.getRandomBetween(this.faces.min, this.faces.max);
                 value.value += newRoll;
+                value.display = `${value.value}`;
                 this.results.set(index, value);
             }
         });
@@ -201,6 +220,10 @@ class DiceRoller extends BaseRoller implements Roller<number> {
     explode(times: number, conditionals: Conditional[]) {
         if (!this.modifiersAllowed) {
             new Notice("Modifiers are only allowed on dice rolls.");
+            return;
+        }
+        if (this.conditions.length) {
+            new Notice("Modifiers are not permitted on conditioned dice.");
             return;
         }
 
@@ -218,7 +241,7 @@ class DiceRoller extends BaseRoller implements Roller<number> {
          * Find values that pass the conditional
          */
         let toExplode = [...this.results].filter(([, { value }]) =>
-            _checkCondition(value, conditionals)
+            this.checkCondition(value, conditionals)
         );
 
         /** Track how many have been inserted */
@@ -234,19 +257,17 @@ class DiceRoller extends BaseRoller implements Roller<number> {
             /**
              * Explode max rolls.
              */
-            while (i < times && _checkCondition(newRoll, conditionals)) {
+            while (i < times && this.checkCondition(newRoll, conditionals)) {
                 let previous = this.results.get(key + inserted + i);
                 previous.modifiers.add("!");
 
-                newRoll = this._getRandomBetween(
-                    this.faces.min,
-                    this.faces.max
-                );
+                newRoll = this.getRandomBetween(this.faces.min, this.faces.max);
 
                 /** Insert the new roll into the results map */
                 _insertIntoMap(this.results, key + inserted + i + 1, {
                     usable: true,
                     value: newRoll,
+                    display: `${newRoll}`,
                     modifiers: new Set()
                 });
                 i++;
@@ -260,22 +281,54 @@ class DiceRoller extends BaseRoller implements Roller<number> {
             return [Number(this.dice)];
         }
         return [...Array(this.rolls)].map(() =>
-            this._getRandomBetween(this.faces.min, this.faces.max)
+            this.getRandomBetween(this.faces.min, this.faces.max)
         );
     }
     roll() {
         const roll = this._roll();
         this.results = new Map(
             [...roll].map((n, i) => {
-                return [i, { usable: true, value: n, modifiers: new Set() }];
+                return [
+                    i,
+                    {
+                        usable: true,
+                        value: n,
+                        display: `${n}`,
+                        modifiers: new Set()
+                    }
+                ];
             })
         );
 
         for (let [type, modifier] of this.modifiers) {
             this.applyModifier(type, modifier);
         }
+        if (this.conditions.length) this.applyConditions();
 
         return roll;
+    }
+    applyConditions() {
+        for (let [index, result] of this.results) {
+            const negate = this.conditions.find(
+                ({ operator }) => operator === "*=" || operator === "=*"
+            );
+            if (negate) {
+                if (result.value === negate.comparer) {
+                    result.value = -1;
+                    result.modifiers.add("-");
+                    continue;
+                }
+            }
+
+            const check = this.checkCondition(result.value, this.conditions);
+
+            if (!check) {
+                result.usable = false;
+            } else {
+                result.modifiers.add("*");
+                result.value = 1;
+            }
+        }
     }
     applyModifier(type: string, modifier: Modifier) {
         switch (type) {
@@ -299,17 +352,54 @@ class DiceRoller extends BaseRoller implements Roller<number> {
                 this.reroll(modifier.data, modifier.conditionals);
                 break;
             }
+            case "condition": {
+            }
         }
     }
 
-    element() {
-        return createDiv();
+    private checkCondition(
+        value: number,
+        conditions: Conditional[]
+    ): boolean | number {
+        if (!conditions || !conditions.length) return value;
+        return conditions.some(({ operator, comparer }) => {
+            if (Number.isNaN(value) || Number.isNaN(comparer)) {
+                return false;
+            }
+            let result = false;
+            switch (operator) {
+                case "=":
+                    result = value === comparer;
+                    break;
+                case "!=":
+                case "=!":
+                    result = value !== comparer;
+                    break;
+                case "<":
+                    result = value < comparer;
+                    break;
+                case "<=":
+                    result = value <= comparer;
+                    break;
+                case ">":
+                    result = value > comparer;
+                    break;
+                case ">=":
+                    result = value >= comparer;
+                    break;
+            }
+
+            return result;
+        });
+    }
+    getRandomBetween(min: number, max: number): number {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 }
 
 class StuntRoller extends DiceRoller {
-    constructor(dice: string) {
-        super(`3d6`);
+    constructor(dice: string, public lexeme: Lexeme) {
+        super(`3d6`, lexeme);
 
         this.dice = dice;
     }
@@ -340,10 +430,7 @@ export class StackRoller extends GenericRoller<number> {
     get tooltip() {
         let text = this.original;
         this.dice.forEach((dice) => {
-            text = text.replace(
-                `${dice.dice}${Array.from(dice.modifiers).join("")}`,
-                dice.display
-            );
+            text = text.replace(dice.lexeme.original, dice.display);
         });
         return `${this.original}\n${text}`;
     }
@@ -365,6 +452,7 @@ export class StackRoller extends GenericRoller<number> {
         public lexemes: Lexeme[]
     ) {
         super(plugin, original, lexemes);
+        console.log("🚀 ~ file: dice.ts ~ line 375 ~ lexemes", lexemes);
     }
     operators: Record<string, (...args: number[]) => number> = {
         "+": (a: number, b: number): number => a + b,
@@ -379,8 +467,8 @@ export class StackRoller extends GenericRoller<number> {
     dice: DiceRoller[] = [];
     async roll() {
         let index = 0;
-        for (const d of this.lexemes) {
-            switch (d.type) {
+        for (const dice of this.lexemes) {
+            switch (dice.type) {
                 case "+":
                 case "-":
                 case "*":
@@ -392,13 +480,16 @@ export class StackRoller extends GenericRoller<number> {
                     a.roll();
                     b.roll();
 
-                    const result = this.operators[d.data](a.result, b.result);
+                    const result = this.operators[dice.data](
+                        a.result,
+                        b.result
+                    );
 
-                    this.stack.push(new DiceRoller(`${result}`));
+                    this.stack.push(new DiceRoller(`${result}`, dice));
                     break;
                 case "kh": {
                     let diceInstance = this.dice[index - 1];
-                    let data = d.data ? Number(d.data) : 1;
+                    let data = dice.data ? Number(dice.data) : 1;
 
                     /* diceInstance.keepHigh(data); */
 
@@ -410,7 +501,7 @@ export class StackRoller extends GenericRoller<number> {
                 }
                 case "dl": {
                     let diceInstance = this.dice[index - 1];
-                    let data = d.data ? Number(d.data) : 1;
+                    let data = dice.data ? Number(dice.data) : 1;
 
                     data = diceInstance.results.size - data;
 
@@ -423,7 +514,7 @@ export class StackRoller extends GenericRoller<number> {
                 }
                 case "kl": {
                     let diceInstance = this.dice[index - 1];
-                    let data = d.data ? Number(d.data) : 1;
+                    let data = dice.data ? Number(dice.data) : 1;
 
                     /* diceInstance.keepLow(data); */
                     diceInstance.modifiers.set("kl", {
@@ -434,7 +525,7 @@ export class StackRoller extends GenericRoller<number> {
                 }
                 case "dh": {
                     let diceInstance = this.dice[index - 1];
-                    let data = d.data ? Number(d.data) : 1;
+                    let data = dice.data ? Number(dice.data) : 1;
 
                     data = diceInstance.results.size - data;
 
@@ -447,45 +538,45 @@ export class StackRoller extends GenericRoller<number> {
                 }
                 case "!": {
                     let diceInstance = this.dice[index - 1];
-                    let data = Number(d.data) || 1;
+                    let data = Number(dice.data) || 1;
 
                     /* diceInstance.explode(data, d.conditionals); */
                     /* diceInstance.modifiers.add(d.original); */
                     diceInstance.modifiers.set("!", {
                         data,
-                        conditionals: d.conditionals
+                        conditionals: dice.conditionals
                     });
 
                     break;
                 }
                 case "!!": {
                     let diceInstance = this.dice[index - 1];
-                    let data = Number(d.data) || 1;
+                    let data = Number(dice.data) || 1;
 
                     /* diceInstance.explodeAndCombine(data, d.conditionals); */
                     /* diceInstance.modifiers.add(d.original); */
                     diceInstance.modifiers.set("!!", {
                         data,
-                        conditionals: d.conditionals
+                        conditionals: dice.conditionals
                     });
 
                     break;
                 }
                 case "r": {
                     let diceInstance = this.dice[index - 1];
-                    let data = Number(d.data) || 1;
+                    let data = Number(dice.data) || 1;
 
                     /* diceInstance.reroll(data, d.conditionals); */
                     /* diceInstance.modifiers.add(d.original); */
                     diceInstance.modifiers.set("r", {
                         data,
-                        conditionals: d.conditionals
+                        conditionals: dice.conditionals
                     });
                     break;
                 }
                 case "dice":
                     if (!this.dice[index]) {
-                        this.dice[index] = new DiceRoller(d.data);
+                        this.dice[index] = new DiceRoller(dice.data, dice);
                     }
 
                     this.stack.push(this.dice[index]);
@@ -493,7 +584,7 @@ export class StackRoller extends GenericRoller<number> {
                     break;
                 case "stunt":
                     if (!this.dice[index]) {
-                        this.dice[index] = new StuntRoller(d.original);
+                        this.dice[index] = new StuntRoller(dice.original, dice);
                     }
 
                     /* if (stunt.doubles) {

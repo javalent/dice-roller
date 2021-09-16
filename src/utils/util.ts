@@ -1,4 +1,4 @@
-import { Conditional, ResultInterface, ResultMapInterface } from "src/types";
+import { ResultInterface, ResultMapInterface } from "src/types";
 
 const MATCH = /^\|?([\s\S]+?)\|?$/;
 const SPLIT = /\|/;
@@ -62,39 +62,4 @@ export function _insertIntoMap(
     });
     /** Insert the new value at the specified index */
     map.set(index, value);
-}
-
-export function _checkCondition(
-    value: number,
-    conditions: Conditional[]
-): boolean {
-    return conditions.every(({ operator, comparer }) => {
-        if (Number.isNaN(value) || Number.isNaN(comparer)) {
-            return false;
-        }
-        let result = false;
-        switch (operator) {
-            case "=":
-                result = value === comparer;
-                break;
-            case "!=":
-            case "=!":
-                result = value !== comparer;
-                break;
-            case "<":
-                result = value < comparer;
-                break;
-            case "<=":
-                result = value <= comparer;
-                break;
-            case ">":
-                result = value > comparer;
-                break;
-            case ">=":
-                result = value >= comparer;
-                break;
-        }
-
-        return result;
-    });
 }

@@ -16,7 +16,9 @@ import { Parser } from "./parser/parser";
 import { Conditional, Lexeme } from "src/types";
 
 import {
+    CONDITIONAL_REGEX,
     COPY_DEFINITION,
+    DICE_REGEX,
     ICON_DEFINITION,
     MATH_REGEX,
     SECTION_REGEX,
@@ -273,31 +275,37 @@ export default class DiceRollerPlugin extends Plugin {
             };
         });
 
-        this.lexer.addRule(
-            /(-?\d+)([Dd]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?)?/,
-            function (lexeme: string): Lexeme {
-                let [, dice] = lexeme.match(
-                        /(-?\d+(?:[Dd]?\[?(?:-?\d+\s?,)?\s?(?:-?\d+|%|F)\]?)?)/
-                    ),
-                    conditionals: Conditional[] = [];
-                if (/(?:(!?=|=!|>=?|<=?)(\d+))+/.test(lexeme)) {
-                    for (const [, operator, comparer] of lexeme.matchAll(
-                        /(?:(!?=|=!|>=?|<=?)(\d+))/g
-                    )) {
+        this.lexer.addRule(DICE_REGEX, function (lexeme: string): Lexeme {
+            const { dice, conditional } = lexeme.match(DICE_REGEX).groups;
+            console.log(
+                "🚀 ~ file: main.ts ~ line 280 ~ dice",
+                dice,
+                lexeme,
+                conditional
+            );
+            let conditionals: Conditional[] = [];
+            if (conditional) {
+                let matches = conditional.matchAll(CONDITIONAL_REGEX);
+                if (matches) {
+                    for (let match of matches) {
+                        if (!match) continue;
+                        const { comparer, operator } = match.groups;
                         conditionals.push({
-                            operator: operator,
-                            comparer: Number(comparer)
+                            comparer: Number(comparer),
+                            operator
                         });
                     }
                 }
-                return {
-                    type: "dice",
-                    data: dice,
-                    original: lexeme,
-                    conditionals: conditionals
-                }; // symbols
             }
-        );
+            console.log(conditionals);
+
+            return {
+                type: "dice",
+                data: dice,
+                original: lexeme,
+                conditionals
+            }; // symbols
+        });
         this.lexer.addRule(/1[Dd]S/, function (lexeme: string): Lexeme {
             const [, dice] = lexeme.match(/1[Dd]S/) ?? [, "1"];
             return {
