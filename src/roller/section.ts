@@ -15,7 +15,7 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
     results: SectionCache[];
     types: string[];
     content: string;
-    optionsLoaded: boolean;
+    loaded: boolean;
 
     constructor(
         public plugin: DiceRollerPlugin,
@@ -91,8 +91,6 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
 
     async load() {
         await this.getOptions();
-
-        this.roll();
     }
     displayFromCache(cache: SectionCache) {
         let res = this.content.slice(
@@ -123,13 +121,13 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
                 ? this.types.includes(type)
                 : !["yaml", "thematicBreak"].includes(type)
         );
-        this.optionsLoaded = true;
-        this.trigger("options-loaded");
+        this.loaded = true;
+        this.trigger("loaded");
     }
     async roll(): Promise<SectionCache> {
         return new Promise((resolve, reject) => {
-            if (!this.optionsLoaded) {
-                this.on("options-loaded", () => {
+            if (!this.loaded) {
+                this.on("loaded", () => {
                     const options = [...this.options];
 
                     this.results = [...Array(this.rolls)]
@@ -143,6 +141,7 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
                         })
                         .filter((r) => r);
                     this.render();
+                    this.trigger("new-result");
                     resolve(this.results[0]);
                 });
             } else {
@@ -159,6 +158,7 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
                     })
                     .filter((r) => r);
                 this.render();
+                this.trigger("new-result");
                 resolve(this.results[0]);
             }
         });
@@ -235,7 +235,6 @@ export class TagRoller extends GenericRoller<SectionRoller> {
                 false
             );
         });
-        await this.roll();
     }
     result: SectionRoller;
     async build() {
@@ -268,6 +267,7 @@ export class TagRoller extends GenericRoller<SectionRoller> {
     async roll() {
         this.results.forEach(async (section) => await section.roll());
         this.render();
+        this.trigger("new-result");
         return this.result;
     }
     get tooltip() {
@@ -301,6 +301,7 @@ export class LinkRoller extends GenericRoller<TFile> {
             (this.result =
                 this.links[this.getRandomBetween(0, this.links.length - 1)]),
             await this.render(),
+            this.trigger("new-result"),
             this.result
         );
     }
@@ -353,6 +354,5 @@ export class LinkRoller extends GenericRoller<TFile> {
                 this.source
             )
         );
-        await this.roll();
     }
 }

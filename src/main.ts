@@ -106,7 +106,8 @@ export default class DiceRollerPlugin extends Plugin {
                 let nodeList = el.querySelectorAll("code");
                 if (!nodeList.length) return;
 
-                for (const node of Array.from(nodeList)) {
+                for (let index = 0; index < nodeList.length; index++) {
+                    const node = nodeList.item(index);
                     if (!/^dice\+?:\s*([\s\S]+)\s*?/.test(node.innerText))
                         continue;
                     try {
@@ -117,7 +118,10 @@ export default class DiceRollerPlugin extends Plugin {
                             content = this.data.formulas[content];
                         }
 
+                        //build result map;
                         const roller = this.getRoller(content, ctx.sourcePath);
+
+                        await roller.roll();
 
                         node.replaceWith(roller.containerEl);
                     } catch (e) {
@@ -158,6 +162,21 @@ export default class DiceRollerPlugin extends Plugin {
             "/": factor,
             "^": exponent
         });
+    }
+    registerPersistWatcher(
+        roller: BasicRoller,
+        ctx: MarkdownPostProcessorContext
+    ) {
+        this.registerEvent(
+            this.app.metadataCache.on("changed", (file) => {
+                console.log(
+                    "🚀 ~ file: main.ts ~ line 211 ~ file",
+                    file.path == ctx.sourcePath
+                );
+                if (file.path != ctx.sourcePath) return;
+                console.log(ctx.getSectionInfo(roller.containerEl));
+            })
+        );
     }
     getRoller(content: string, source: string): BasicRoller {
         const lexemes = this.parse(content);
