@@ -16,6 +16,7 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
     types: string[];
     content: string;
     loaded: boolean;
+    copy: HTMLDivElement;
 
     constructor(
         public plugin: DiceRollerPlugin,
@@ -28,6 +29,19 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
         this.containerEl.addClasses(["has-embed", "markdown-embed"]);
         this.resultEl.addClass("internal-embed");
         this.resultEl.setAttrs({ src: source });
+        this.copy = this.containerEl.createDiv({
+            cls: "dice-content-copy dice-roller-button no-show",
+            attr: { "aria-label": "Copy Contents" }
+        });
+        this.copy.addEventListener("click", (evt) => {
+            evt.stopPropagation();
+            navigator.clipboard
+                .writeText(this.displayFromCache(...this.results).trim())
+                .then(async () => {
+                    new Notice("Result copied to clipboard.");
+                });
+        });
+        setIcon(this.copy, COPY_DEFINITION);
     }
     get tooltip() {
         return `${this.original}\n${this.path}`;
@@ -39,6 +53,19 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
                 text: `${this.tooltip.split("\n").join(" -> ")} -> `
             });
         }
+
+        if (!this.results || !this.results.length) {
+            this.resultEl.createDiv({
+                cls: "dice-no-results",
+                text: "No results."
+            });
+
+            return;
+        }
+        if (this.plugin.data.copyContentButton) {
+            this.copy.removeClass("no-show");
+        }
+
         for (const result of this.results) {
             this.resultEl.onclick = async (evt) => {
                 if (
@@ -65,9 +92,16 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
 
                 continue;
             }
-            if (this.plugin.data.copyContentButton) {
-                let copy = this.resultEl.createDiv({
-                    cls: "dice-content-copy",
+            MarkdownRenderer.renderMarkdown(
+                this.displayFromCache(result),
+                ret.createDiv(),
+                this.source,
+                null
+            );
+
+            if (this.plugin.data.copyContentButton && this.results.length > 1) {
+                let copy = ret.createDiv({
+                    cls: "dice-content-copy dice-roller-button",
                     attr: { "aria-label": "Copy Contents" }
                 });
                 copy.addEventListener("click", (evt) => {
@@ -80,25 +114,24 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
                 });
                 setIcon(copy, COPY_DEFINITION);
             }
-            MarkdownRenderer.renderMarkdown(
-                this.displayFromCache(result),
-                ret.createDiv(),
-                this.source,
-                null
-            );
         }
     }
 
     async load() {
         await this.getOptions();
     }
-    displayFromCache(cache: SectionCache) {
-        let res = this.content.slice(
-            cache.position.start.offset,
-            cache.position.end.offset
-        );
+    displayFromCache(...caches: SectionCache[]) {
+        let res: string[] = [];
+        for (let cache of caches) {
+            res.push(
+                this.content.slice(
+                    cache.position.start.offset,
+                    cache.position.end.offset
+                )
+            );
+        }
 
-        return `${res}`;
+        return res.join("\n\n");
     }
     getPath() {
         const { groups } = this.lexeme.data.match(SECTION_REGEX);
