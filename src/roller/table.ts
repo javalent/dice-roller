@@ -149,10 +149,12 @@ export class TableRoller extends GenericFileRoller<string> {
     }
     toResult() {
         return {
+            type: "table",
             result: this.result
         };
     }
     async applyResult(result: any) {
+        if (result.type !== "table") return;
         if (result.result) {
             this.result = result.result;
         }

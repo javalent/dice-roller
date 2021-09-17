@@ -198,12 +198,14 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
     }
     toResult() {
         return {
-            results: this.results
+            type: "section",
+            result: this.results
         };
     }
     async applyResult(result: any) {
-        if (result.results) {
-            this.results = result.results;
+        if (result.type !== "section") return;
+        if (result.result) {
+            this.results = result.result;
         }
         await this.render();
     }
@@ -324,8 +326,9 @@ export class TagRoller extends GenericRoller<SectionRoller> {
     }
     toResult() {
         return {
+            type: "tag",
             random: this.chosen,
-            sections: Object.fromEntries(
+            result: Object.fromEntries(
                 this.results.map((section) => [
                     section.path,
                     section.toResult()
@@ -334,13 +337,14 @@ export class TagRoller extends GenericRoller<SectionRoller> {
         };
     }
     async applyResult(result: any) {
-        if (result.sections) {
-            for (let path in result.sections) {
+        if (result.type !== "tag") return;
+        if (result.result) {
+            for (let path in result.result) {
                 const section = this.results.find(
                     (section) => section.path === path
                 );
                 if (!section) continue;
-                section.applyResult(result.sections[path]);
+                section.applyResult(result.result[path]);
             }
         }
         if (result.random) {
@@ -432,13 +436,15 @@ export class LinkRoller extends GenericRoller<TFile> {
     }
     toResult() {
         return {
-            path: this.result.path
+            type: "link",
+            result: this.result.path
         };
     }
     async applyResult(result: any) {
-        if (result.path) {
+        if (result.type !== "link") return;
+        if (result.result) {
             const file = this.plugin.app.vault.getAbstractFileByPath(
-                result.path
+                result.result
             );
             if (file && file instanceof TFile) {
                 this.result = file;

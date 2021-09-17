@@ -629,11 +629,13 @@ export class StackRoller extends GenericRoller<number> {
 
     toResult() {
         return {
+            type: "dice",
             result: this.result,
             tooltip: this.tooltip
         };
     }
     async applyResult(result: any) {
+        if (result.type !== "dice") return;
         if (result.result) {
             this.result = result.result;
         }
