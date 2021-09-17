@@ -69,7 +69,22 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveData(this.plugin.data);
                 });
             });
-
+        const save = new Setting(containerEl)
+            .setName("Globally Save Results")
+            .setDesc(
+                "Dice results will be saved by default. This can be overridden using "
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.persistResults);
+                t.onChange(async (v) => {
+                    this.plugin.data.persistResults = v;
+                    await this.plugin.saveData(this.plugin.data);
+                });
+            });
+        save.descEl.createEl("code", { text: `dice-: formula` });
+        save.descEl.createEl("p", {
+            text: "Please note that the plugin will attempt to save the result but may not be able to."
+        });
         this.additionalContainer = containerEl.createDiv(
             "dice-roller-setting-additional-container"
         );

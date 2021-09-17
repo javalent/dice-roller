@@ -2,7 +2,8 @@ import {
     Plugin,
     MarkdownPostProcessorContext,
     Notice,
-    addIcon
+    addIcon,
+    MarkdownView
 } from "obsidian";
 //@ts-ignore
 import lexer from "lex";
@@ -32,6 +33,7 @@ import {
     TagRoller,
     LinkRoller
 } from "./roller";
+
 import SettingTab from "./settings/settings";
 
 import type { BasicRoller } from "./roller/roller";
@@ -46,6 +48,15 @@ String.prototype.matchAll =
             yield match;
         }
     };
+
+function getId() {
+    return "xyxyxyxyxyxy".replace(/[xy]/g, function (c) {
+        var r = (Math.random() * 16) | 0,
+            v = c == "x" ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+}
+
 //expose dataview plugin for tags
 declare module "obsidian" {
     interface App {
@@ -74,6 +85,8 @@ interface DiceRollerSettings {
     copyContentButton: boolean;
     displayResultsInline: boolean;
     formulas: Record<string, string>;
+    persistResults: boolean;
+    results: any;
 }
 
 const DEFAULT_SETTINGS: DiceRollerSettings = {
@@ -81,7 +94,9 @@ const DEFAULT_SETTINGS: DiceRollerSettings = {
     rollLinksForTags: false,
     copyContentButton: true,
     displayResultsInline: false,
-    formulas: {}
+    formulas: {},
+    persistResults: false,
+    results: {}
 };
 
 export default class DiceRollerPlugin extends Plugin {
@@ -108,22 +123,49 @@ export default class DiceRollerPlugin extends Plugin {
                 let nodeList = el.querySelectorAll("code");
                 if (!nodeList.length) return;
 
+                const path = ctx.sourcePath;
+                const lineStart = ctx.getSectionInfo(el)?.lineStart;
+
+                const toPersist: Record<number, BasicRoller> = {};
+
                 for (let index = 0; index < nodeList.length; index++) {
                     const node = nodeList.item(index);
-                    if (!/^dice\+?:\s*([\s\S]+)\s*?/.test(node.innerText))
+                    if (
+                        !/^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/.test(node.innerText)
+                    )
                         continue;
                     try {
                         let [, content] = node.innerText.match(
-                            /^dice\+?:\s*([\s\S]+)\s*?/
+                            /^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/
                         );
                         if (content in this.data.formulas) {
                             content = this.data.formulas[content];
                         }
-
                         //build result map;
                         const roller = this.getRoller(content, ctx.sourcePath);
 
                         await roller.roll();
+                        console.log(
+                            "🚀 ~ file: main.ts ~ line 154 ~ /dice+/.test(node.innerText)",
+                            /dice\+/.test(node.innerText)
+                        );
+
+                        if (
+                            (this.data.persistResults &&
+                                !/dice\-/.test(node.innerText)) ||
+                            /dice\+/.test(node.innerText)
+                        ) {
+                            toPersist[index] = roller;
+
+                            const result =
+                                this.data.results?.[path]?.[lineStart]?.[
+                                    index
+                                ] ?? null;
+                            console.log(this.data.results[path][lineStart]);
+                            if (result) {
+                                await roller.applyResult(result);
+                            }
+                        }
 
                         node.replaceWith(roller.containerEl);
                     } catch (e) {
@@ -133,6 +175,38 @@ export default class DiceRollerPlugin extends Plugin {
                             5000
                         );
                         continue;
+                    }
+                }
+
+                this.data.results[path][lineStart] = {};
+
+                if (Object.entries(toPersist).length) {
+                    const view =
+                        this.app.workspace.getActiveViewOfType(MarkdownView);
+                    if (view) {
+                        view.register(async () => {
+                            for (let index in toPersist) {
+                                const roller = toPersist[index];
+                                const newLineStart =
+                                    ctx.getSectionInfo(el)?.lineStart;
+
+                                const result = {
+                                    [newLineStart]: {
+                                        ...(this.data.results[path][
+                                            newLineStart
+                                        ] ?? {}),
+                                        [index]: roller.toResult()
+                                    }
+                                };
+
+                                this.data.results[path] = {
+                                    ...(this.data.results[path] ?? {}),
+                                    ...result
+                                };
+
+                                await this.saveData(this.data);
+                            }
+                        });
                     }
                 }
             }
