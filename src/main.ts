@@ -176,7 +176,9 @@ export default class DiceRollerPlugin extends Plugin {
                     }
                 }
 
-                this.data.results[path][lineStart] = {};
+                if (path in this.data.results) {
+                    this.data.results[path][lineStart] = {};
+                }
 
                 if (Object.entries(toPersist).length) {
                     const view =
@@ -192,7 +194,7 @@ export default class DiceRollerPlugin extends Plugin {
 
                                 const result = {
                                     [newLineStart]: {
-                                        ...(this.data.results[path][
+                                        ...(this.data.results[path]?.[
                                             newLineStart
                                         ] ?? {}),
                                         [index]: roller.toResult()
