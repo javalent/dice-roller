@@ -165,6 +165,10 @@ export default class DiceRollerPlugin extends Plugin {
             "^": exponent
         });
     }
+    public async parseDice(content: string, source: string) {
+        const roller = this.getRoller(content, source);
+        return { result: await roller.roll() };
+    }
     getRoller(content: string, source: string): BasicRoller {
         const lexemes = this.parse(content);
 
