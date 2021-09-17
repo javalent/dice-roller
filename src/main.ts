@@ -2,7 +2,8 @@ import {
     Plugin,
     MarkdownPostProcessorContext,
     Notice,
-    addIcon
+    addIcon,
+    MarkdownView
 } from "obsidian";
 //@ts-ignore
 import lexer from "lex";
@@ -21,6 +22,7 @@ import {
     DICE_REGEX,
     ICON_DEFINITION,
     MATH_REGEX,
+    OMITTED_REGEX,
     SECTION_REGEX,
     TABLE_REGEX,
     TAG_REGEX
@@ -32,6 +34,7 @@ import {
     TagRoller,
     LinkRoller
 } from "./roller";
+
 import SettingTab from "./settings/settings";
 
 import type { BasicRoller } from "./roller/roller";
@@ -46,6 +49,7 @@ String.prototype.matchAll =
             yield match;
         }
     };
+
 //expose dataview plugin for tags
 declare module "obsidian" {
     interface App {
@@ -74,6 +78,10 @@ interface DiceRollerSettings {
     copyContentButton: boolean;
     displayResultsInline: boolean;
     formulas: Record<string, string>;
+    persistResults: boolean;
+    results: any;
+    defaultRoll: number;
+    defaultFace: number;
 }
 
 const DEFAULT_SETTINGS: DiceRollerSettings = {
@@ -81,7 +89,11 @@ const DEFAULT_SETTINGS: DiceRollerSettings = {
     rollLinksForTags: false,
     copyContentButton: true,
     displayResultsInline: false,
-    formulas: {}
+    formulas: {},
+    persistResults: false,
+    results: {},
+    defaultRoll: 1,
+    defaultFace: 100
 };
 
 export default class DiceRollerPlugin extends Plugin {
@@ -108,22 +120,44 @@ export default class DiceRollerPlugin extends Plugin {
                 let nodeList = el.querySelectorAll("code");
                 if (!nodeList.length) return;
 
+                const path = ctx.sourcePath;
+                const lineStart = ctx.getSectionInfo(el)?.lineStart;
+
+                const toPersist: Record<number, BasicRoller> = {};
+
                 for (let index = 0; index < nodeList.length; index++) {
                     const node = nodeList.item(index);
-                    if (!/^dice\+?:\s*([\s\S]+)\s*?/.test(node.innerText))
+                    if (
+                        !/^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/.test(node.innerText)
+                    )
                         continue;
                     try {
                         let [, content] = node.innerText.match(
-                            /^dice\+?:\s*([\s\S]+)\s*?/
+                            /^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/
                         );
                         if (content in this.data.formulas) {
                             content = this.data.formulas[content];
                         }
-
                         //build result map;
                         const roller = this.getRoller(content, ctx.sourcePath);
 
                         await roller.roll();
+
+                        if (
+                            (this.data.persistResults &&
+                                !/dice\-/.test(node.innerText)) ||
+                            /dice\+/.test(node.innerText)
+                        ) {
+                            toPersist[index] = roller;
+
+                            const result =
+                                this.data.results?.[path]?.[lineStart]?.[
+                                    index
+                                ] ?? null;
+                            if (result) {
+                                await roller.applyResult(result);
+                            }
+                        }
 
                         node.replaceWith(roller.containerEl);
                     } catch (e) {
@@ -133,6 +167,38 @@ export default class DiceRollerPlugin extends Plugin {
                             5000
                         );
                         continue;
+                    }
+                }
+
+                this.data.results[path][lineStart] = {};
+
+                if (Object.entries(toPersist).length) {
+                    const view =
+                        this.app.workspace.getActiveViewOfType(MarkdownView);
+                    if (view) {
+                        view.register(async () => {
+                            for (let index in toPersist) {
+                                const roller = toPersist[index];
+                                const newLineStart =
+                                    ctx.getSectionInfo(el)?.lineStart;
+
+                                const result = {
+                                    [newLineStart]: {
+                                        ...(this.data.results[path][
+                                            newLineStart
+                                        ] ?? {}),
+                                        [index]: roller.toResult()
+                                    }
+                                };
+
+                                this.data.results[path] = {
+                                    ...(this.data.results[path] ?? {}),
+                                    ...result
+                                };
+
+                                await this.saveData(this.data);
+                            }
+                        });
                     }
                 }
             }
@@ -276,6 +342,36 @@ export default class DiceRollerPlugin extends Plugin {
             return {
                 type: "dice",
                 data: dice,
+                original: lexeme,
+                conditionals
+            }; // symbols
+        });
+
+        this.lexer.addRule(OMITTED_REGEX, (lexeme: string): Lexeme => {
+            const {
+                roll = this.data.defaultRoll,
+                faces = this.data.defaultFace,
+                conditional
+            } = lexeme.match(OMITTED_REGEX).groups;
+
+            let conditionals: Conditional[] = [];
+            if (conditional) {
+                let matches = conditional.matchAll(CONDITIONAL_REGEX);
+                if (matches) {
+                    for (let match of matches) {
+                        if (!match) continue;
+                        const { comparer, operator } = match.groups;
+                        conditionals.push({
+                            comparer: Number(comparer),
+                            operator
+                        });
+                    }
+                }
+            }
+
+            return {
+                type: "dice",
+                data: `${roll}d${faces}`,
                 original: lexeme,
                 conditionals
             }; // symbols

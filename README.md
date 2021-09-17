@@ -2,11 +2,11 @@
 
 Inline dice rolling for Obsidian.md.
 
-## Usage
+# Usage
 
 Simply place a code block with your formula in your note (such as `` `dice: XdX` ``) and in preview mode it will be replaced with the result of the dice rolls. The result can then be re-rolled by clicking on it.
 
-### Dice Formula
+# Number Dice
 
 The parser supports addition, subtraction, multiplication, division, and exponents of an arbitrary number of dice or static numbers. Spaces are removed before the formula is parsed.
 
@@ -19,7 +19,218 @@ There is full order-of-operations support, so it can even nested into parenthese
 | `` `dice: 1d12 + 1d10 + 5` ``             |
 | `` `dice: 3d4+3d4-(3d4 * 1d4) - 2^1d7` `` |
 
-### Random Blocks
+## Faces
+
+The faces can be supplied as either a raw number or as a `[min, max]` array.
+
+Example: `` `dice: 1d[3,5]` `` will roll 1 die between 3 and 5.
+
+## Omitting Values
+
+Both the number of rolls and the faces can be omitted.
+
+Roll will default to `1`.
+
+Faces will default to `100`.
+
+These defaults can be changed in settings.
+
+## Percentile Dice
+
+The parser supports percentile dice. `` `dice: Xd%` `` will roll X d100 dice.
+
+## Fudge/Fate Dice
+
+Use `` `dice: XdF` `` to roll a fudge/fate dice. See [here](<https://en.wikipedia.org/wiki/Fudge_(role-playing_game_system)#Fudge_dice>) for more info on this type of dice.
+
+## Fantasy AGE Stunt Dice
+
+Use `` `dice: 1dS` `` to roll a Fantasy AGE stunt dice. The result will show the total roll and also the stunt points if successful.
+
+## Dice Modifiers
+
+The parser supports several modifiers. If a die has been modified, it will display _how_ it has been modified in the tooltip.
+
+**Modifiers are only supported on basic number dice.**
+
+If a modifier has a parameter, it will default to 1 if not provided.
+
+| Modifier          | Syntax         | Description                                                                                        |
+| ----------------- | -------------- | -------------------------------------------------------------------------------------------------- |
+| Min/Max           | `Xd[Y, Z]`     | Roll a dice with minimum Y, maximum Z.                                                             |
+| Keep Highest      | `k{n}`/`kh{n}` | Keep highest `{n}` dice.                                                                           |
+| Keep Lowest       | `kl{n}`        | Keep lowest `{n}` dice.                                                                            |
+| Drop Lowest       | `d{n}`/`dl{n}` | Drop lowest `{n}` dice.                                                                            |
+| Drop Highest      | `dh{n}`        | Drop highest `{n}` dice.                                                                           |
+| Explode           | `!{n}`, `!i`   | Explode dice `{n}` times. If `i` is provided, will explode "infinitely" (capped at 100).           |
+| Explode & Combine | `!!{n}`, `!!i` | Same as explode, but exploded dice are summed in the display instead of being shown individually.  |
+| Re-roll           | `r{n}`, `ri`   | Re-roll a minimum dice `{n}` times. If `i` is provided, will re-roll "infinitely" (capped at 100). |
+
+### Min/Max
+
+#### Syntax: Xd[Y, Z]
+
+Create a custom die, with a minimum of Y and a maximum of Z.
+
+#### Example
+
+| Formula            | Result         |
+| ------------------ | -------------- |
+| `dice: 4d[7, 8]`   | `[7, 7, 8, 7]` |
+| `dice: 1d[20, 20]` | `[20]`         |
+
+### Keep Highest
+
+#### Syntax: XdXk{n} / XdXkh{n}
+
+Keeps highest `{n}` rolls. `{n}` is optional, and will default to 1. Dropped dice will display as `Nd`.
+
+#### Example
+
+| Formula                          | Result                 |
+| -------------------------------- | ---------------------- |
+| `dice: 2d20k` / `dice: 2d20kh`   | `[7d, 18] = 18`        |
+| `dice: 4d20k2` / `dice: 4d20kh2` | `[4d, 12, 15, 3d = 27` |
+
+### Keep Lowest
+
+#### Syntax: XdXkl{n}
+
+Keeps lowest `{n}` rolls. `{n}` is optional, and will default to 1. Dropped dice will display as `Nd`.
+
+#### Example
+
+| Formula         | Result                 |
+| --------------- | ---------------------- |
+| `dice: 2d20kl`  | `[7, 18d] = 7`         |
+| `dice: 4d20kl2` | `[4, 12d, 15d, 3] = 7` |
+
+### Drop Lowest
+
+#### Syntax: XdXd{n} / XdXdl{n}
+
+Drops lowest `{n}` rolls. `{n}` is optional, and will default to 1. Dropped dice will display as `Nd`.
+
+#### Example
+
+| Formula                          | Result                 |
+| -------------------------------- | ---------------------- |
+| `dice: 2d20d` / `dice: 2d20dl`   | `[7d, 18] = 18`        |
+| `dice: 4d20d2` / `dice: 4d20dl2` | `[4d, 12, 15, 3d = 27` |
+
+### Drop Highest
+
+#### Syntax: XdXdh{n}
+
+Keeps lowest `{n}` rolls. `{n}` is optional, and will default to 1. Dropped dice will display as `Nd`.
+
+#### Example
+
+| Formula         | Result                |
+| --------------- | --------------------- |
+| `dice: 2d20dh`  | `[7, 18d] = 7`        |
+| `dice: 4d20dh2` | `[4, 12d, 15d, 3 = 7` |
+
+### Explode
+
+#### Syntax: XdX!{n|i}
+
+Explode will roll an additional die for each maximum die roll. If `{n}` or `{i}` is provided, it will continue exploding until a number less than the maximum is rolled, or `{n}` attempts have been made. `{i}` is capped at 100 rolls to prevent abuse.
+
+Exploded dice will display as `N!`.
+
+#### Examples
+
+| Formula       | Result                                |
+| ------------- | ------------------------------------- |
+| `dice: 2d20!` | `[7, 20!, 8] = 35`                    |
+| `dice: 2d4!3` | `[3, 4!, 4!, 2] = 13`                 |
+| `dice: 1d1!i` | `[1!, 1!, 1!, ... , 1!, 1!, 1] = 100` |
+
+### Explode & Combine
+
+#### Syntax: XdX!!{n|i}
+
+Equivalent to explode, but exploded dice are combined in the tooltip display.
+
+#### Examples
+
+| Formula        | Result          |
+| -------------- | --------------- |
+| `dice: 2d20!!` | `[7, 28!] = 34` |
+| `dice: 2d4!!3` | `[3, 10!] = 13` |
+| `dice: 1d1!!i` | `[100!] = 100`  |
+
+### Re-roll
+
+#### Syntax: XdXr{n|i}
+
+Re-roll a minimum dice. If `{n}` or `{i}` is provided, it will continue re-rolling until a number greater than the minimum is rolled, or `{n}` attempts have been made.
+
+Re-rolled dice _replace_ their original roll, unlike explode, which _add_ new rolls.
+
+Re-rolled dice will display as `Xr` in the tooltip.
+
+#### Examples
+
+| Formula       | Result          |
+| ------------- | --------------- |
+| `dice: 2d20r` | `[7r, 18] = 15` |
+| `dice: 2d4r3` | `[3, 3r] = 6`   |
+| `dice: 1d2ri` | `[2r] = 2`      |
+
+## Conditions
+
+### Dice Conditions
+
+Dice rolls support conditional parameters as of version 6.0.0. This allows you to specify a set of requirements, one of which the dice must meet to be included in the roll. If the dice meets this requirement, it will be considered a `1` (pass), and if it does not, it will be considered a `0` (failure).
+
+Additionally, a `negative equals` condition may be supplied; if the dice meet this requirement, it will be considered a `-1`.
+
+The following conditions are supported:
+
+| Condition          | Effect                                                             |
+| ------------------ | ------------------------------------------------------------------ |
+| `={n}`             | Only rolls that are equal to `{n}` are successful.                 |
+| `=!{n}`\*          | Only rolls that are not equal to `{n}` are successful.             |
+| `>{n}`             | Only rolls that are greater than `{n}` are successful.             |
+| `<{n}`             | Only rolls that are less than `{n}` are successful.                |
+| `>={n}`            | Only rolls that are greater than or equal to `{n}` are successful. |
+| `<={n}`            | Only rolls that are less than or equal to `{n}` are successful.    |
+| `-={n}` or `=-{n}` | Rolls equal to `{n}` will be considered -1.                        |
+
+\*Not supported on as a dice condition due to a collision with [Explode](#explode). If necessary, use `=!{n}`.
+
+### Modifier Conditions
+
+The [Explode](#explode), [Explode and Combine](#explode--combine) and [Re-roll](#re-roll) modifiers each support an optional _condition_ operator. If provided, the condition operator
+changes the die rolls that the modifier is applied to.
+
+Supported Conditions:
+
+| Condition            | Effect                                                           |
+| -------------------- | ---------------------------------------------------------------- |
+| `={n}`               | Only rolls that are equal to `{n}` are modified.                 |
+| `!={n}`\* or `=!{n}` | Only rolls that are not equal to `{n}` are modified.             |
+| `>{n}`               | Only rolls that are greater than `{n}` are modified.             |
+| `<{n}`               | Only rolls that are less than `{n}` are modified.                |
+| `>={n}`              | Only rolls that are greater than or equal to `{n}` are modified. |
+| `<={n}`              | Only rolls that are less than or equal to `{n}` are modified.    |
+
+\*Not supported as the first conditional on a parameterless [Explode](#explode) due to a collision with [Explode and Combine](#explode--combine). If necessary, use `=!{n}`.
+
+These conditions are fully chainable.
+
+### Examples
+
+| Formula          | Description                               | Result                                   |
+| ---------------- | ----------------------------------------- | ---------------------------------------- |
+| `dice: 1d4!=3`   | Explode rolls equal to 3                  | `[4, 2, 3!, 2] = 11`                     |
+| `dice: 1d4!i!=3` | Explode rolls not equal to 3 infinitely   | `[4!, 2!, 3, 2!, 3, 2!, 1!, 4!, 3] = 24` |
+| `dice: 1d4r<3`   | Re-roll rolls less than 3                 | `[4, 1, 2, 4] -> [4, 4r, 3r, 4] = 15`    |
+| `dice: 1d4r<2>3` | Re-roll rolls less than 2, greater than 3 | `[4, 1, 2, 4] -> [3r, 2r, 2, 2r] = 9`    |
+
+# Block Dice
 
 The Dice Roller can be given a link to a note or a tag, and it will return a random block from the note/notes.
 
@@ -33,31 +244,11 @@ Usage:
 | `` `dice: [[Note]]` `` | Returns a single random block from `Note` |
 | `` `dice: 3d[[Note]]` `` | Returns 3 random blocks from `Note` |
 
-#### Tags
-
-The Dice Roller can also be told to return results from a tag if the [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugin is installed.
-
-By default, this will return 1 result from _every_ file that has the tag. You can change this behavior in settings, or by using the following optional `+` and `-` parameters as shown below.
-
-If results from multiple files are returned, the result **from that file** can be re-rolled by clicking on the block. Clicking on the container or the dice icon will re-roll **all returned results**.
-
-| Example               | Result                                                                                                   |
-| --------------------- | -------------------------------------------------------------------------------------------------------- |
-| `` `dice: #tag` ``    | Return a single random block from notes with `#tag`, behavior depends on settings (default to **every**) |
-| `` `dice: #tag\|-` `` | Return a single random block from **a single, random note** with `#tag`                                  |
-| `` `dice: #tag\|+` `` | Return a single random block from **every note** with `#tag`                                             |
-
-#### Links
-
-If the `Always Return Links for Tags` setting is on, or `|link` is appended to the end of the tag, a link to a random note will be returned instead of sections.
-
-At the moment this will only return a single link regardless of the number of rolls specified. This may change in a later release.
-
-#### Block Types
+## Block Types
 
 Obsidian has several "types" of blocks. Currently, the default behavior of the plugin is to filter out **thematicBreak** and **yaml** from the returned results.
 
-To return a specific block type, you may append `|<type>` to the end of any block roller.
+To return a specific block type, you may append `|<type>` to the end of any block roller. These can be chained by separating them with a comma.
 
 Usage:
 
@@ -100,7 +291,29 @@ I _believe_ that this is a list of block types defined in Obsidian, but use this
 | `definition`         |
 | `footnoteDefinition` |
 
-### Random Tables
+# Tag Dice
+
+The Dice Roller can also be told to return results from a tag if the [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugin is installed.
+
+By default, this will return 1 result from _every_ file that has the tag. You can change this behavior in settings, or by using the following optional `+` and `-` parameters as shown below.
+
+If results from multiple files are returned, the result **from that file** can be re-rolled by clicking on the block. Clicking on the container or the dice icon will re-roll **all returned results**.
+
+Tag dice support the same block-type parameters as above.
+
+| Example               | Result                                                                                                   |
+| --------------------- | -------------------------------------------------------------------------------------------------------- |
+| `` `dice: #tag` ``    | Return a single random block from notes with `#tag`, behavior depends on settings (default to **every**) |
+| `` `dice: #tag\|-` `` | Return a single random block from **a single, random note** with `#tag`                                  |
+| `` `dice: #tag\|+` `` | Return a single random block from **every note** with `#tag`                                             |
+
+## Links
+
+If the `Always Return Links for Tags` setting is on, or `|link` is appended to the end of the tag, a link to a random note will be returned instead of sections.
+
+At the moment this will only return a single link regardless of the number of rolls specified. This may change in a later release.
+
+# Table Dice
 
 The Dice Roller may also be given a link to a table in a note, which it will read and return a random result from the table.
 
@@ -130,7 +343,7 @@ To return multiple elements, use:
 
 Once in preview mode, you may <kbd>Ctrl</kbd> - click on the result to open the block reference in a new pane.
 
-#### Multiple Headers
+## Multiple Headers
 
 If a table provided to the plugin has multiple headers, the plugin will return the entire row unless you specify the header to use:
 
@@ -144,219 +357,50 @@ If a table provided to the plugin has multiple headers, the plugin will return t
 
 `` `dice: [[Note^block-id]]|Header 2` ``
 
-### Tooltip
+# Tooltip
 
 The result in preview mode has a tooltip that will appear when you hover over it.
 
 It displays the formula used to calculate the result on the top line, and displays the calculated rolls on the bottom line.
 
-### Percentile Dice
+# Saving Results
 
-The parser supports percentile dice. `` `dice: Xd%` `` will roll X d100 dice.
+Results can be saved for dice rolls as of version 6.1.0 using either the [Globally Save Results](#globally-save-results) setting or the following syntax:
 
-### Fudge/Fate Dice
+| Syntax       | Description                                                                |
+| ------------ | -------------------------------------------------------------------------- |
+| `dice+: ...` | Save result. Same as `dice: ...` if `Globally Save Results` is on.         |
+| `dice-: ...` | Do not save result. Same as `dice: ...` if `Globally Save Results` is off. |
 
-Use `` `dice: XdF` `` to roll a fudge/fate dice. See [here](<https://en.wikipedia.org/wiki/Fudge_(role-playing_game_system)#Fudge_dice>) for more info on this type of dice.
+# Settings
 
-### Fantasy AGE Stunt Dice
+## Roll All Files for Tags
 
-Use `` `dice: 1dS` `` to roll a Fantasy AGE stunt dice. The result will show the total roll and also the stunt points if successful.
+Turn on to always return X results from _each file_ associated with a tag. Overrideable with `` `dice: #tag|-` ``
 
-# Dice Modifiers
+## Always Return Links for Tags
 
-The parser supports several modifiers. If a die has been modified, it will display _how_ it has been modified in the tooltip.
+Turn on to always return a file link for a tag roller. This option is the same as specifying `` `dice: #tag|link` ``.
 
-**Modifiers are only supported on basic number dice.**
+## Add Copy Button to Section Results
 
-If a modifier has a parameter, it will default to 1 if not provided.
+Add a "Copy Content" button to section results. This button will copy the returned content to your clipboard. If multiple results are returned, there will also be a "Copy All" button that will copy the content to your clipboard separated by two newline characters (`\n`).
 
-| Modifier          | Syntax         | Description                                                                                        |
-| ----------------- | -------------- | -------------------------------------------------------------------------------------------------- |
-| Min/Max           | `Xd[Y, Z]`     | Roll a dice with minimum Y, maximum Z.                                                             |
-| Keep Highest      | `k{n}`/`kh{n}` | Keep highest `{n}` dice.                                                                           |
-| Keep Lowest       | `kl{n}`        | Keep lowest `{n}` dice.                                                                            |
-| Drop Lowest       | `d{n}`/`dl{n}` | Drop lowest `{n}` dice.                                                                            |
-| Drop Highest      | `dh{n}`        | Drop highest `{n}` dice.                                                                           |
-| Explode           | `!{n}`, `!i`   | Explode dice `{n}` times. If `i` is provided, will explode "infinitely" (capped at 100).           |
-| Explode & Combine | `!!{n}`, `!!i` | Same as explode, but exploded dice are summed in the display instead of being shown individually.  |
-| Re-roll           | `r{n}`, `ri`   | Re-roll a minimum dice `{n}` times. If `i` is provided, will re-roll "infinitely" (capped at 100). |
+## Display Formulas with Results
 
-## Min/Max
+Instead of displaying a tooltip, dice rollers will display the formula and result inline.
 
-### Syntax: Xd[Y, Z]
+## Globally Save Results
 
-Create a custom die, with a minimum of Y and a maximum of Z.
+The plugin will attempt to save and reload the results for all dice rollers. Overridable with `` `dice-: ...` ``.
 
-### Example
-
-| Formula            | Result         |
-| ------------------ | -------------- |
-| `dice: 4d[7, 8]`   | `[7, 7, 8, 7]` |
-| `dice: 1d[20, 20]` | `[20]`         |
-
-## Keep Highest
-
-### Syntax: XdXk{n} / XdXkh{n}
-
-Keeps highest `{n}` rolls. `{n}` is optional, and will default to 1. Dropped dice will display as `Nd`.
-
-### Example
-
-| Formula                          | Result                 |
-| -------------------------------- | ---------------------- |
-| `dice: 2d20k` / `dice: 2d20kh`   | `[7d, 18] = 18`        |
-| `dice: 4d20k2` / `dice: 4d20kh2` | `[4d, 12, 15, 3d = 27` |
-
-## Keep Lowest
-
-### Syntax: XdXkl{n}
-
-Keeps lowest `{n}` rolls. `{n}` is optional, and will default to 1. Dropped dice will display as `Nd`.
-
-### Example
-
-| Formula         | Result                 |
-| --------------- | ---------------------- |
-| `dice: 2d20kl`  | `[7, 18d] = 7`         |
-| `dice: 4d20kl2` | `[4, 12d, 15d, 3] = 7` |
-
-## Drop Lowest
-
-### Syntax: XdXd{n} / XdXdl{n}
-
-Drops lowest `{n}` rolls. `{n}` is optional, and will default to 1. Dropped dice will display as `Nd`.
-
-### Example
-
-| Formula                          | Result                 |
-| -------------------------------- | ---------------------- |
-| `dice: 2d20d` / `dice: 2d20dl`   | `[7d, 18] = 18`        |
-| `dice: 4d20d2` / `dice: 4d20dl2` | `[4d, 12, 15, 3d = 27` |
-
-## Drop Highest
-
-### Syntax: XdXdh{n}
-
-Keeps lowest `{n}` rolls. `{n}` is optional, and will default to 1. Dropped dice will display as `Nd`.
-
-### Example
-
-| Formula         | Result                |
-| --------------- | --------------------- |
-| `dice: 2d20dh`  | `[7, 18d] = 7`        |
-| `dice: 4d20dh2` | `[4, 12d, 15d, 3 = 7` |
-
-## Explode
-
-### Syntax: XdX!{n|i}
-
-Explode will roll an additional die for each maximum die roll. If `{n}` or `{i}` is provided, it will continue exploding until a number less than the maximum is rolled, or `{n}` attempts have been made. `{i}` is capped at 100 rolls to prevent abuse.
-
-Exploded dice will display as `N!`.
-
-### Examples
-
-| Formula       | Result                                |
-| ------------- | ------------------------------------- |
-| `dice: 2d20!` | `[7, 20!, 8] = 35`                    |
-| `dice: 2d4!3` | `[3, 4!, 4!, 2] = 13`                 |
-| `dice: 1d1!i` | `[1!, 1!, 1!, ... , 1!, 1!, 1] = 100` |
-
-## Explode & Combine
-
-### Syntax: XdX!!{n|i}
-
-Equivalent to explode, but exploded dice are combined in the tooltip display.
-
-### Examples
-
-| Formula        | Result          |
-| -------------- | --------------- |
-| `dice: 2d20!!` | `[7, 28!] = 34` |
-| `dice: 2d4!!3` | `[3, 10!] = 13` |
-| `dice: 1d1!!i` | `[100!] = 100`  |
-
-## Re-roll
-
-### Syntax: XdXr{n|i}
-
-Re-roll a minimum dice. If `{n}` or `{i}` is provided, it will continue re-rolling until a number greater than the minimum is rolled, or `{n}` attempts have been made.
-
-Re-rolled dice _replace_ their original roll, unlike explode, which _add_ new rolls.
-
-Re-rolled dice will display as `Xr` in the tooltip.
-
-### Examples
-
-| Formula       | Result          |
-| ------------- | --------------- |
-| `dice: 2d20r` | `[7r, 18] = 15` |
-| `dice: 2d4r3` | `[3, 3r] = 6`   |
-| `dice: 1d2ri` | `[2r] = 2`      |
-
-# Conditions
-
-## Dice Conditions
-
-Dice rolls support conditional parameters as of version 6.0.0. This allows you to specify a set of requirements, one of which the dice must meet to be included in the roll. If the dice meets this requirement, it will be considered a `1` (pass), and if it does not, it will be considered a `0` (failure).
-
-Additionally, a `negative equals` condition may be supplied; if the dice meet this requirement, it will be considered a `-1`.
-
-The following conditions are supported:
-
-| Condition          | Effect                                                             |
-| ------------------ | ------------------------------------------------------------------ |
-| `={n}`             | Only rolls that are equal to `{n}` are successful.                 |
-| `=!{n}`\*          | Only rolls that are not equal to `{n}` are successful.             |
-| `>{n}`             | Only rolls that are greater than `{n}` are successful.             |
-| `<{n}`             | Only rolls that are less than `{n}` are successful.                |
-| `>={n}`            | Only rolls that are greater than or equal to `{n}` are successful. |
-| `<={n}`            | Only rolls that are less than or equal to `{n}` are successful.    |
-| `-={n}` or `=-{n}` | Rolls equal to `{n}` will be considered -1.                        |
-
-\*Not supported on as a dice condition due to a collision with [Explode](#explode). If necessary, use `=!{n}`.
-
-## Modifier Conditions
-
-The [Explode](#explode), [Explode and Combine](#explode--combine) and [Re-roll](#re-roll) modifiers each support an optional _condition_ operator. If provided, the condition operator
-changes the die rolls that the modifier is applied to.
-
-Supported Conditions:
-
-| Condition            | Effect                                                           |
-| -------------------- | ---------------------------------------------------------------- |
-| `={n}`               | Only rolls that are equal to `{n}` are modified.                 |
-| `!={n}`\* or `=!{n}` | Only rolls that are not equal to `{n}` are modified.             |
-| `>{n}`               | Only rolls that are greater than `{n}` are modified.             |
-| `<{n}`               | Only rolls that are less than `{n}` are modified.                |
-| `>={n}`              | Only rolls that are greater than or equal to `{n}` are modified. |
-| `<={n}`              | Only rolls that are less than or equal to `{n}` are modified.    |
-
-\*Not supported as the first conditional on a parameterless [Explode](#explode) due to a collision with [Explode and Combine](#explode--combine). If necessary, use `=!{n}`.
-
-These conditions are fully chainable.
-
-## Examples
-
-| Formula          | Description                               | Result                                   |
-| ---------------- | ----------------------------------------- | ---------------------------------------- |
-| `dice: 1d4!=3`   | Explode rolls equal to 3                  | `[4, 2, 3!, 2] = 11`                     |
-| `dice: 1d4!i!=3` | Explode rolls not equal to 3 infinitely   | `[4!, 2!, 3, 2!, 3, 2!, 1!, 4!, 3] = 24` |
-| `dice: 1d4r<3`   | Re-roll rolls less than 3                 | `[4, 1, 2, 4] -> [4, 4r, 3r, 4] = 15`    |
-| `dice: 1d4r<2>3` | Re-roll rolls less than 2, greater than 3 | `[4, 1, 2, 4] -> [3r, 2r, 2, 2r] = 9`    |
-
-# Dice Formulas
+## Dice Formulas
 
 Dice formulas can be created in settings. Formulas must be given an alias; when the plugin detects the formula alias, it will use the defined formula for the roll.
 
 # Coming Soon
 
--   [x] Preview of actual dice results when hovered
--   [x] Drop X number of lowest or highest results
--   [x] Conditionals for modifiers (e.g., changing "maximum" to explode on)
--   [x] Fudge/fate die
--   [ ] Pass/fail states for entire result
--   [ ] Pass/fail states for individual rolls
+At this time, no new features are planned. If there is a specific feature you would like to see, please open an issue!
 
 # Installation
 

@@ -196,6 +196,17 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
             }
         });
     }
+    toResult() {
+        return {
+            results: this.results
+        };
+    }
+    async applyResult(result: any) {
+        if (result.results) {
+            this.results = result.results;
+        }
+        await this.render();
+    }
 }
 
 export class TagRoller extends GenericRoller<SectionRoller> {
@@ -203,6 +214,8 @@ export class TagRoller extends GenericRoller<SectionRoller> {
     collapse: boolean;
     types: string;
     results: SectionRoller[];
+    random: number;
+    chosen: any;
     constructor(
         public plugin: DiceRollerPlugin,
         public original: string,
@@ -278,8 +291,11 @@ export class TagRoller extends GenericRoller<SectionRoller> {
             });
         }
         if (this.collapse) {
-            let section =
-                this.results[this.getRandomBetween(0, this.results.length - 1)];
+            this.chosen =
+                this.random ??
+                this.getRandomBetween(0, this.results.length - 1);
+            let section = this.results[this.chosen];
+            this.random = null;
             const container = this.resultEl.createDiv();
             container.createEl("h5", {
                 cls: "dice-file-name",
@@ -305,6 +321,32 @@ export class TagRoller extends GenericRoller<SectionRoller> {
     }
     get tooltip() {
         return this.original;
+    }
+    toResult() {
+        return {
+            random: this.chosen,
+            sections: Object.fromEntries(
+                this.results.map((section) => [
+                    section.path,
+                    section.toResult()
+                ])
+            )
+        };
+    }
+    async applyResult(result: any) {
+        if (result.sections) {
+            for (let path in result.sections) {
+                const section = this.results.find(
+                    (section) => section.path === path
+                );
+                if (!section) continue;
+                section.applyResult(result.sections[path]);
+            }
+        }
+        if (result.random) {
+            this.random = result.random;
+        }
+        await this.render();
     }
 }
 
@@ -387,5 +429,21 @@ export class LinkRoller extends GenericRoller<TFile> {
                 this.source
             )
         );
+    }
+    toResult() {
+        return {
+            path: this.result.path
+        };
+    }
+    async applyResult(result: any) {
+        if (result.path) {
+            const file = this.plugin.app.vault.getAbstractFileByPath(
+                result.path
+            );
+            if (file && file instanceof TFile) {
+                this.result = file;
+            }
+        }
+        await this.render();
     }
 }

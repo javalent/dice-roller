@@ -74,6 +74,9 @@ export abstract class BasicRoller extends Events {
             await this.roll();
         }
     }
+
+    abstract toResult(): Record<any, any>;
+    abstract applyResult(result: any): Promise<void>;
 }
 
 export abstract class GenericRoller<T> extends BasicRoller {
