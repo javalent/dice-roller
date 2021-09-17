@@ -3,7 +3,10 @@ import {
     MarkdownPostProcessorContext,
     Notice,
     addIcon,
-    MarkdownView
+    MarkdownView,
+    TFile,
+    FileView,
+    MarkdownPreviewView
 } from "obsidian";
 //@ts-ignore
 import lexer from "lex";
@@ -38,6 +41,8 @@ import {
 import SettingTab from "./settings/settings";
 
 import type { BasicRoller } from "./roller/roller";
+
+import { around, serialize } from "monkey-around";
 
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -106,6 +111,7 @@ export default class DiceRollerPlugin extends Plugin {
     lexer: lexer;
     parser: Parser;
     data: DiceRollerSettings;
+    toPersist: Map<string, Record<number, Record<number, BasicRoller>> = new Map();
     async onload() {
         console.log("DiceRoller plugin loaded");
 
@@ -126,11 +132,6 @@ export default class DiceRollerPlugin extends Plugin {
                 let nodeList = el.querySelectorAll("code");
                 if (!nodeList.length) return;
 
-                const path = ctx.sourcePath;
-                const lineStart = ctx.getSectionInfo(el)?.lineStart;
-
-                const toPersist: Record<number, BasicRoller> = {};
-
                 for (let index = 0; index < nodeList.length; index++) {
                     const node = nodeList.item(index);
                     if (
@@ -147,6 +148,9 @@ export default class DiceRollerPlugin extends Plugin {
                         //build result map;
                         const roller = this.getRoller(content, ctx.sourcePath);
 
+                        if (!roller)
+                            throw new Error("Could not parse dice string!");
+
                         await roller.roll();
 
                         if (
@@ -154,7 +158,30 @@ export default class DiceRollerPlugin extends Plugin {
                                 !/dice\-/.test(node.innerText)) ||
                             /dice\+/.test(node.innerText)
                         ) {
-                            toPersist[index] = roller;
+                            console.log(
+                                "🚀 ~ file: main.ts ~ line 163 ~ this.toPersist.has(ctx)",
+                                this.toPersist.has(ctx.sourcePath)
+                            );
+                            if (!this.toPersist.has(ctx.sourcePath)) {
+                                this.toPersist.set(ctx.sourcePath, {})
+                                const view =
+                                    this.app.workspace.getActiveViewOfType(
+                                        MarkdownView
+                                    );
+                                if (!view) continue;
+                                this.registerSaveForView(view, ctx, el);
+                            }
+                            const path = ctx.sourcePath;
+                            const lineStart = ctx.getSectionInfo(el)?.lineStart;
+                            if (!lineStart) continue;
+
+                            const set = this.toPersist.get(path);
+                            set[lineStart] = {
+                                ...(set[lineStart] ?? {}),
+                                [index]: roller
+                            }
+
+                            this.toPersist.set(path, set);
 
                             const result =
                                 this.data.results?.[path]?.[lineStart]?.[
@@ -173,42 +200,6 @@ export default class DiceRollerPlugin extends Plugin {
                             5000
                         );
                         continue;
-                    }
-                }
-
-                if (path in this.data.results) {
-                    this.data.results[path][lineStart] = {};
-                }
-
-                if (Object.entries(toPersist).length) {
-                    const view =
-                        this.app.workspace.getActiveViewOfType(MarkdownView);
-                    if (view) {
-                        view.register(async () => {
-                            for (let index in toPersist) {
-                                const roller = toPersist[index];
-                                const newLineStart =
-                                    ctx.getSectionInfo(el)?.lineStart;
-
-                                if (!newLineStart) continue;
-
-                                const result = {
-                                    [newLineStart]: {
-                                        ...(this.data.results[path]?.[
-                                            newLineStart
-                                        ] ?? {}),
-                                        [index]: roller.toResult()
-                                    }
-                                };
-
-                                this.data.results[path] = {
-                                    ...(this.data.results[path] ?? {}),
-                                    ...result
-                                };
-
-                                await this.saveSettings();
-                            }
-                        });
                     }
                 }
             }
@@ -241,6 +232,95 @@ export default class DiceRollerPlugin extends Plugin {
             "^": exponent
         });
     }
+    registerSaveForView(
+        view: MarkdownView,
+        ctx: MarkdownPostProcessorContext,
+        el: HTMLElement
+    ) {
+        const self = this;
+
+        const path = ctx.sourcePath;
+        const file = this.app.vault.getAbstractFileByPath(path);
+        if (!file || !(file instanceof TFile)) return;
+
+        let unregisterOnUnloadFile = around(view, {
+            onUnloadFile: function (next) {
+                return async function (unloaded: TFile) {
+                    if ((unloaded = file)) {
+                        console.log("unloading");
+                        const toPersist = self.toPersist.get(path);
+                        console.log(
+                            "🚀 ~ file: main.ts ~ line 248 ~ toPersist",
+                            toPersist
+                        );
+                        self.data.results[path] = {};
+
+                        for (let index in toPersist) {
+                            const roller = toPersist[index];
+                            const newLineStart =
+                                ctx.getSectionInfo(el)?.lineStart;
+
+                            if (!newLineStart) continue;
+
+                            const set = self.toPersist.get(path);
+                            set[newLineStart] = {
+                                ...(set[newLineStart] ?? {}),
+                                [index]: roller.toResult()
+                            }
+
+                            const result = {
+                                [newLineStart]: {
+                                    ...(self.data.results[path]?.[
+                                        newLineStart
+                                    ] ?? {}),
+                                    [index]: roller.toResult()
+                                }
+                            };
+
+                            self.data.results[path] = {
+                                ...(self.data.results[path] ?? {}),
+                                ...result
+                            };
+
+                            await self.saveSettings();
+                        }
+                        self.toPersist.delete(path);
+                    }
+                    unregisterOnUnloadFile();
+                    return await next.call(this, unloaded);
+                };
+            }
+        });
+        view.register(unregisterOnUnloadFile);
+
+        view.register(async () => {
+            console.log("unloading");
+            const toPersist = this.toPersist.get(path);
+            console.log("🚀 ~ file: main.ts ~ line 248 ~ toPersist", toPersist);
+            this.data.results[path] = {};
+            for (let index in toPersist) {
+                const roller = toPersist[index];
+                const newLineStart = ctx.getSectionInfo(el)?.lineStart;
+
+                if (!newLineStart) continue;
+
+                const result = {
+                    [newLineStart]: {
+                        ...(this.data.results[path]?.[newLineStart] ?? {}),
+                        [index]: roller.toResult()
+                    }
+                };
+
+                this.data.results[path] = {
+                    ...(this.data.results[path] ?? {}),
+                    ...result
+                };
+
+                await this.saveSettings();
+            }
+            this.toPersist.delete(path);
+        });
+    }
     public async parseDice(content: string, source: string) {
         const roller = this.getRoller(content, source);
         return { result: await roller.roll() };
@@ -266,6 +346,10 @@ export default class DiceRollerPlugin extends Plugin {
 
     getRoller(content: string, source: string): BasicRoller {
         const lexemes = this.parse(content);
+
+        if (!lexemes.length) {
+            throw new Error("Could not parse dice formula!");
+        }
 
         const type = this.getTypeFromLexemes(lexemes);
 
