@@ -162,6 +162,15 @@ Use `` `dice: XdF` `` to roll a fudge/fate dice. See [here](<https://en.wikipedi
 
 Use `` `dice: 1dS` `` to roll a Fantasy AGE stunt dice. The result will show the total roll and also the stunt points if successful.
 
+## Saving Results
+
+Results can be saved for dice rolls as of version 6.1.0 using either the [Globally Save Results](#globally-save-results) setting or the following syntax:
+
+| Syntax       | Description                                                                |
+| ------------ | -------------------------------------------------------------------------- |
+| `dice+: ...` | Save result. Same as `dice: ...` if `Globally Save Results` is on.         |
+| `dice-: ...` | Do not save result. Same as `dice: ...` if `Globally Save Results` is off. |
+
 # Dice Modifiers
 
 The parser supports several modifiers. If a die has been modified, it will display _how_ it has been modified in the tooltip.
@@ -345,7 +354,29 @@ These conditions are fully chainable.
 | `dice: 1d4r<3`   | Re-roll rolls less than 3                 | `[4, 1, 2, 4] -> [4, 4r, 3r, 4] = 15`    |
 | `dice: 1d4r<2>3` | Re-roll rolls less than 2, greater than 3 | `[4, 1, 2, 4] -> [3r, 2r, 2, 2r] = 9`    |
 
-# Dice Formulas
+# Settings
+
+## Roll All Files for Tags
+
+Turn on to always return X results from _each file_ associated with a tag. Overrideable with `` `dice: #tag|-` ``
+
+## Always Return Links for Tags
+
+Turn on to always return a file link for a tag roller. This option is the same as specifying `` `dice: #tag|link` ``.
+
+## Add Copy Button to Section Results
+
+Add a "Copy Content" button to section results. This button will copy the returned content to your clipboard. If multiple results are returned, there will also be a "Copy All" button that will copy the content to your clipboard separated by two newline characters (`\n`).
+
+## Display Formulas with Results
+
+Instead of displaying a tooltip, dice rollers will display the formula and result inline.
+
+## Globally Save Results
+
+The plugin will attempt to save and reload the results for all dice rollers. Overridable with `` `dice-: ...` ``.
+
+## Dice Formulas
 
 Dice formulas can be created in settings. Formulas must be given an alias; when the plugin detects the formula alias, it will use the defined formula for the roll.
 

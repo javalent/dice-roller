@@ -437,7 +437,9 @@ class StuntRoller extends DiceRoller {
 export class StackRoller extends GenericRoller<number> {
     result: number;
     stunted: string = "";
+    private _tooltip: string;
     get tooltip() {
+        if (this._tooltip) return this._tooltip;
         let text = this.original;
         this.dice.forEach((dice) => {
             text = text.replace(dice.lexeme.original, dice.display);
@@ -616,12 +618,28 @@ export class StackRoller extends GenericRoller<number> {
                 this.stunted = ` - ${final.results.get(0).value} Stunt Points`;
             }
         }
-
         this.result = final.result;
+        this._tooltip = null;
 
         this.render();
 
         this.trigger("new-result");
         return this.result;
+    }
+
+    toResult() {
+        return {
+            result: this.result,
+            tooltip: this.tooltip
+        };
+    }
+    async applyResult(result: any) {
+        if (result.result) {
+            this.result = result.result;
+        }
+        if (result.tooltip) {
+            this._tooltip = result.tooltip;
+        }
+        await this.render();
     }
 }

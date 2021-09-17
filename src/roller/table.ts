@@ -31,6 +31,7 @@ export class TableRoller extends GenericFileRoller<string> {
     async build() {
         this.resultEl.empty();
         const result = [this.result];
+
         if (this.plugin.data.displayResultsInline) {
             result.unshift(this.tooltip.split("\n").join(" -> "), " -> ");
         }
@@ -145,6 +146,17 @@ export class TableRoller extends GenericFileRoller<string> {
         }
         this.loaded = true;
         this.trigger("loaded");
+    }
+    toResult() {
+        return {
+            result: this.result
+        };
+    }
+    async applyResult(result: any) {
+        if (result.result) {
+            this.result = result.result;
+        }
+        await this.render();
     }
 }
 const MATCH = /^\|?([\s\S]+?)\|?$/;
