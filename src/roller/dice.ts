@@ -310,7 +310,7 @@ class DiceRoller {
     applyConditions() {
         for (let [index, result] of this.results) {
             const negate = this.conditions.find(
-                ({ operator }) => operator === "*=" || operator === "=*"
+                ({ operator }) => operator === "-=" || operator === "=-"
             );
             if (negate) {
                 if (result.value === negate.comparer) {

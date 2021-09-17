@@ -79,7 +79,13 @@ interface DiceRollerSettings {
     displayResultsInline: boolean;
     formulas: Record<string, string>;
     persistResults: boolean;
-    results: any;
+    results: {
+        [path: string]: {
+            [line: string]: {
+                [index: string]: Record<string, any>;
+            };
+        };
+    };
     defaultRoll: number;
     defaultFace: number;
 }
@@ -182,6 +188,8 @@ export default class DiceRollerPlugin extends Plugin {
                                 const newLineStart =
                                     ctx.getSectionInfo(el)?.lineStart;
 
+                                if (!newLineStart) continue;
+
                                 const result = {
                                     [newLineStart]: {
                                         ...(this.data.results[path][
@@ -196,7 +204,7 @@ export default class DiceRollerPlugin extends Plugin {
                                     ...result
                                 };
 
-                                await this.saveData(this.data);
+                                await this.saveSettings();
                             }
                         });
                     }
@@ -235,6 +243,25 @@ export default class DiceRollerPlugin extends Plugin {
         const roller = this.getRoller(content, source);
         return { result: await roller.roll() };
     }
+    clearEmpties(o: Record<any, any>) {
+        for (var k in o) {
+            if (!o[k] || typeof o[k] !== "object") {
+                continue;
+            }
+
+            this.clearEmpties(o[k]);
+            if (Object.keys(o[k]).length === 0) {
+                delete o[k];
+            }
+        }
+    }
+
+    async saveSettings() {
+        this.clearEmpties(this.data.results);
+
+        await this.saveData(this.data);
+    }
+
     getRoller(content: string, source: string): BasicRoller {
         const lexemes = this.parse(content);
 

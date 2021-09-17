@@ -31,7 +31,7 @@ export default class SettingTab extends PluginSettingTab {
                 t.setValue(this.plugin.data.returnAllTags);
                 t.onChange(async (v) => {
                     this.plugin.data.returnAllTags = v;
-                    await this.plugin.saveData(this.plugin.data);
+                    await this.plugin.saveSettings();
                 });
             });
         new Setting(containerEl)
@@ -43,7 +43,7 @@ export default class SettingTab extends PluginSettingTab {
                 t.setValue(this.plugin.data.rollLinksForTags);
                 t.onChange(async (v) => {
                     this.plugin.data.rollLinksForTags = v;
-                    await this.plugin.saveData(this.plugin.data);
+                    await this.plugin.saveSettings();
                 });
             });
         new Setting(containerEl)
@@ -55,7 +55,7 @@ export default class SettingTab extends PluginSettingTab {
                 t.setValue(this.plugin.data.copyContentButton);
                 t.onChange(async (v) => {
                     this.plugin.data.copyContentButton = v;
-                    await this.plugin.saveData(this.plugin.data);
+                    await this.plugin.saveSettings();
                 });
             });
         new Setting(containerEl)
@@ -67,7 +67,7 @@ export default class SettingTab extends PluginSettingTab {
                 t.setValue(this.plugin.data.displayResultsInline);
                 t.onChange(async (v) => {
                     this.plugin.data.displayResultsInline = v;
-                    await this.plugin.saveData(this.plugin.data);
+                    await this.plugin.saveSettings();
                 });
             });
         const save = new Setting(containerEl)
@@ -79,7 +79,7 @@ export default class SettingTab extends PluginSettingTab {
                 t.setValue(this.plugin.data.persistResults);
                 t.onChange(async (v) => {
                     this.plugin.data.persistResults = v;
-                    await this.plugin.saveData(this.plugin.data);
+                    await this.plugin.saveSettings();
                 });
             });
 
@@ -88,12 +88,13 @@ export default class SettingTab extends PluginSettingTab {
             .setDesc("Use this as the number of rolls when it is omitted.")
             .addText((t) => {
                 t.setValue(`${this.plugin.data.defaultRoll}`);
-                t.inputEl.onblur = () => {
+                t.inputEl.onblur = async () => {
                     if (isNaN(Number(t.inputEl.value))) {
                         new Notice("The default roll must be a number.");
                     }
 
                     this.plugin.data.defaultRoll = Number(t.inputEl.value);
+                    await this.plugin.saveSettings();
                 };
             });
         new Setting(containerEl)
@@ -101,12 +102,13 @@ export default class SettingTab extends PluginSettingTab {
             .setDesc("Use this as the number of faces when it is omitted.")
             .addText((t) => {
                 t.setValue(`${this.plugin.data.defaultFace}`);
-                t.inputEl.onblur = () => {
+                t.inputEl.onblur = async () => {
                     if (isNaN(Number(t.inputEl.value))) {
                         new Notice("The default face must be a number.");
                     }
 
                     this.plugin.data.defaultFace = Number(t.inputEl.value);
+                    await this.plugin.saveSettings();
                 };
             });
         save.descEl.createEl("code", { text: `dice-: formula` });
@@ -145,7 +147,7 @@ export default class SettingTab extends PluginSettingTab {
                             this.plugin.data.formulas[formula.alias] =
                                 formula.formula;
                             this.buildFormulaSettings();
-                            await this.plugin.saveData(this.plugin.data);
+                            await this.plugin.saveSettings();
                         }
                     });
 
@@ -175,7 +177,7 @@ export default class SettingTab extends PluginSettingTab {
                                 this.plugin.data.formulas[edited.alias] =
                                     edited.formula;
                                 this.buildFormulaSettings();
-                                await this.plugin.saveData(this.plugin.data);
+                                await this.plugin.saveSettings();
                             }
                         })
                 )
@@ -185,7 +187,7 @@ export default class SettingTab extends PluginSettingTab {
                         .setTooltip("Delete")
                         .onClick(async () => {
                             delete this.plugin.data.formulas[alias];
-                            await this.plugin.saveData(this.plugin.data);
+                            await this.plugin.saveSettings();
                             this.buildFormulaSettings();
                         })
                 );
