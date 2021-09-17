@@ -22,6 +22,7 @@ import {
     DICE_REGEX,
     ICON_DEFINITION,
     MATH_REGEX,
+    OMITTED_REGEX,
     SECTION_REGEX,
     TABLE_REGEX,
     TAG_REGEX
@@ -145,10 +146,6 @@ export default class DiceRollerPlugin extends Plugin {
                         const roller = this.getRoller(content, ctx.sourcePath);
 
                         await roller.roll();
-                        console.log(
-                            "🚀 ~ file: main.ts ~ line 154 ~ /dice+/.test(node.innerText)",
-                            /dice\+/.test(node.innerText)
-                        );
 
                         if (
                             (this.data.persistResults &&
@@ -161,7 +158,6 @@ export default class DiceRollerPlugin extends Plugin {
                                 this.data.results?.[path]?.[lineStart]?.[
                                     index
                                 ] ?? null;
-                            console.log(this.data.results[path][lineStart]);
                             if (result) {
                                 await roller.applyResult(result);
                             }
@@ -350,6 +346,36 @@ export default class DiceRollerPlugin extends Plugin {
             return {
                 type: "dice",
                 data: dice,
+                original: lexeme,
+                conditionals
+            }; // symbols
+        });
+
+        this.lexer.addRule(OMITTED_REGEX, function (lexeme: string): Lexeme {
+            const {
+                roll = 1,
+                faces = 100,
+                conditional
+            } = lexeme.match(OMITTED_REGEX).groups;
+
+            let conditionals: Conditional[] = [];
+            if (conditional) {
+                let matches = conditional.matchAll(CONDITIONAL_REGEX);
+                if (matches) {
+                    for (let match of matches) {
+                        if (!match) continue;
+                        const { comparer, operator } = match.groups;
+                        conditionals.push({
+                            comparer: Number(comparer),
+                            operator
+                        });
+                    }
+                }
+            }
+
+            return {
+                type: "dice",
+                data: `${roll}d${faces}`,
                 original: lexeme,
                 conditionals
             }; // symbols
