@@ -50,14 +50,6 @@ String.prototype.matchAll =
         }
     };
 
-function getId() {
-    return "xyxyxyxyxyxy".replace(/[xy]/g, function (c) {
-        var r = (Math.random() * 16) | 0,
-            v = c == "x" ? r : (r & 0x3) | 0x8;
-        return v.toString(16);
-    });
-}
-
 //expose dataview plugin for tags
 declare module "obsidian" {
     interface App {
@@ -88,6 +80,8 @@ interface DiceRollerSettings {
     formulas: Record<string, string>;
     persistResults: boolean;
     results: any;
+    defaultRoll: number;
+    defaultFace: number;
 }
 
 const DEFAULT_SETTINGS: DiceRollerSettings = {
@@ -97,7 +91,9 @@ const DEFAULT_SETTINGS: DiceRollerSettings = {
     displayResultsInline: false,
     formulas: {},
     persistResults: false,
-    results: {}
+    results: {},
+    defaultRoll: 1,
+    defaultFace: 100
 };
 
 export default class DiceRollerPlugin extends Plugin {
@@ -351,10 +347,10 @@ export default class DiceRollerPlugin extends Plugin {
             }; // symbols
         });
 
-        this.lexer.addRule(OMITTED_REGEX, function (lexeme: string): Lexeme {
+        this.lexer.addRule(OMITTED_REGEX, (lexeme: string): Lexeme => {
             const {
-                roll = 1,
-                faces = 100,
+                roll = this.data.defaultRoll,
+                faces = this.data.defaultFace,
                 conditional
             } = lexeme.match(OMITTED_REGEX).groups;
 

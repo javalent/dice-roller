@@ -1,6 +1,7 @@
 import {
     App,
     ButtonComponent,
+    Notice,
     PluginSettingTab,
     Setting,
     TextComponent
@@ -80,6 +81,33 @@ export default class SettingTab extends PluginSettingTab {
                     this.plugin.data.persistResults = v;
                     await this.plugin.saveData(this.plugin.data);
                 });
+            });
+
+        new Setting(containerEl)
+            .setName("Default Roll")
+            .setDesc("Use this as the number of rolls when it is omitted.")
+            .addText((t) => {
+                t.setValue(`${this.plugin.data.defaultRoll}`);
+                t.inputEl.onblur = () => {
+                    if (isNaN(Number(t.inputEl.value))) {
+                        new Notice("The default roll must be a number.");
+                    }
+
+                    this.plugin.data.defaultRoll = Number(t.inputEl.value);
+                };
+            });
+        new Setting(containerEl)
+            .setName("Default Face")
+            .setDesc("Use this as the number of faces when it is omitted.")
+            .addText((t) => {
+                t.setValue(`${this.plugin.data.defaultFace}`);
+                t.inputEl.onblur = () => {
+                    if (isNaN(Number(t.inputEl.value))) {
+                        new Notice("The default face must be a number.");
+                    }
+
+                    this.plugin.data.defaultFace = Number(t.inputEl.value);
+                };
             });
         save.descEl.createEl("code", { text: `dice-: formula` });
         save.descEl.createEl("p", {
