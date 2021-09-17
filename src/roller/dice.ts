@@ -93,10 +93,10 @@ class DiceRoller {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
-        if (this.conditions?.length) {
+        /* if (this.conditions?.length) {
             new Notice("Modifiers are not permitted on conditioned dice.");
             return;
-        }
+        } */
 
         [...this.results]
             .sort((a, b) => a[1].value - b[1].value)
@@ -113,10 +113,10 @@ class DiceRoller {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
-        if (this.conditions?.length) {
+        /* if (this.conditions?.length) {
             new Notice("Modifiers are not permitted on conditioned dice.");
             return;
-        }
+        } */
         [...this.results]
             .sort((a, b) => b[1].value - a[1].value)
             .slice(drop)
@@ -132,10 +132,10 @@ class DiceRoller {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
-        if (this.conditions?.length) {
+        /* if (this.conditions?.length) {
             new Notice("Modifiers are not permitted on conditioned dice.");
             return;
-        }
+        } */
         /**
          * Build Conditional
          */
@@ -178,10 +178,10 @@ class DiceRoller {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
-        if (this.conditions?.length) {
+        /* if (this.conditions?.length) {
             new Notice("Modifiers are not permitted on conditioned dice.");
             return;
-        }
+        } */
 
         /**
          * Build Conditional
@@ -222,10 +222,10 @@ class DiceRoller {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
-        if (this.conditions?.length) {
+        /* if (this.conditions?.length) {
             new Notice("Modifiers are not permitted on conditioned dice.");
             return;
-        }
+        } */
 
         /**
          * Build Conditional

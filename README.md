@@ -199,7 +199,7 @@ The following conditions are supported:
 | `<={n}`            | Only rolls that are less than or equal to `{n}` are successful.    |
 | `-={n}` or `=-{n}` | Rolls equal to `{n}` will be considered -1.                        |
 
-\*Not supported on as a dice condition due to a collision with [Explode](#explode). If necessary, use `=!{n}`.
+\*Note that `!={n}` is supported as a dice condition due to a collision with [Explode](#explode). If necessary, use `=!{n}`.
 
 ### Modifier Conditions
 
