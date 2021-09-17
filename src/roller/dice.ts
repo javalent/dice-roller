@@ -485,21 +485,26 @@ export class StackRoller extends GenericRoller<number> {
                 case "/":
                 case "^":
                 case "math":
-                    const b = this.stack.pop(),
+                    let b = this.stack.pop(),
                         a = this.stack.pop();
-                    a.roll();
-                    if (a instanceof StuntRoller) {
-                        if (a.doubles) {
-                            this.stunted = ` - ${
-                                a.results.get(0).value
-                            } Stunt Points`;
-                        }
+                    if (!a) {
+                        this.stack.push(b);
+                        continue;
                     }
                     b.roll();
                     if (b instanceof StuntRoller) {
                         if (b.doubles) {
                             this.stunted = ` - ${
                                 b.results.get(0).value
+                            } Stunt Points`;
+                        }
+                    }
+
+                    a.roll();
+                    if (a instanceof StuntRoller) {
+                        if (a.doubles) {
+                            this.stunted = ` - ${
+                                a.results.get(0).value
                             } Stunt Points`;
                         }
                     }
@@ -514,8 +519,6 @@ export class StackRoller extends GenericRoller<number> {
                     let diceInstance = this.dice[index - 1];
                     let data = dice.data ? Number(dice.data) : 1;
 
-                    /* diceInstance.keepHigh(data); */
-
                     diceInstance.modifiers.set("kh", {
                         data,
                         conditionals: []
@@ -528,7 +531,6 @@ export class StackRoller extends GenericRoller<number> {
 
                     data = diceInstance.results.size - data;
 
-                    /* diceInstance.keepHigh(data); */
                     diceInstance.modifiers.set("kh", {
                         data,
                         conditionals: []
@@ -539,7 +541,6 @@ export class StackRoller extends GenericRoller<number> {
                     let diceInstance = this.dice[index - 1];
                     let data = dice.data ? Number(dice.data) : 1;
 
-                    /* diceInstance.keepLow(data); */
                     diceInstance.modifiers.set("kl", {
                         data,
                         conditionals: []
@@ -552,7 +553,6 @@ export class StackRoller extends GenericRoller<number> {
 
                     data = diceInstance.results.size - data;
 
-                    /* diceInstance.keepLow(data); */
                     diceInstance.modifiers.set("kl", {
                         data,
                         conditionals: []
@@ -563,8 +563,6 @@ export class StackRoller extends GenericRoller<number> {
                     let diceInstance = this.dice[index - 1];
                     let data = Number(dice.data) || 1;
 
-                    /* diceInstance.explode(data, d.conditionals); */
-                    /* diceInstance.modifiers.add(d.original); */
                     diceInstance.modifiers.set("!", {
                         data,
                         conditionals: dice.conditionals
@@ -576,8 +574,6 @@ export class StackRoller extends GenericRoller<number> {
                     let diceInstance = this.dice[index - 1];
                     let data = Number(dice.data) || 1;
 
-                    /* diceInstance.explodeAndCombine(data, d.conditionals); */
-                    /* diceInstance.modifiers.add(d.original); */
                     diceInstance.modifiers.set("!!", {
                         data,
                         conditionals: dice.conditionals
@@ -589,8 +585,6 @@ export class StackRoller extends GenericRoller<number> {
                     let diceInstance = this.dice[index - 1];
                     let data = Number(dice.data) || 1;
 
-                    /* diceInstance.reroll(data, d.conditionals); */
-                    /* diceInstance.modifiers.add(d.original); */
                     diceInstance.modifiers.set("r", {
                         data,
                         conditionals: dice.conditionals
