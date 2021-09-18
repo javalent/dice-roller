@@ -218,6 +218,7 @@ export class TagRoller extends GenericRoller<SectionRoller> {
     results: SectionRoller[];
     random: number;
     chosen: any;
+    loaded: boolean = false;
     constructor(
         public plugin: DiceRollerPlugin,
         public original: string,
@@ -283,6 +284,8 @@ export class TagRoller extends GenericRoller<SectionRoller> {
                 false
             );
         });
+        this.loaded = true;
+        this.trigger("loaded");
     }
     result: SectionRoller;
     async build() {
@@ -315,11 +318,24 @@ export class TagRoller extends GenericRoller<SectionRoller> {
             }
         }
     }
-    async roll() {
-        this.results.forEach(async (section) => await section.roll());
-        this.render();
-        this.trigger("new-result");
-        return this.result;
+    async roll(): Promise<SectionRoller> {
+        return new Promise((resolve, reject) => {
+            if (this.loaded) {
+                this.results.forEach(async (section) => await section.roll());
+                this.render();
+                this.trigger("new-result");
+                resolve(this.result);
+            } else {
+                this.on("loaded", () => {
+                    this.results.forEach(
+                        async (section) => await section.roll()
+                    );
+                    this.render();
+                    this.trigger("new-result");
+                    resolve(this.result);
+                });
+            }
+        });
     }
     get tooltip() {
         return this.original;
