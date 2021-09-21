@@ -446,6 +446,7 @@ export class StackRoller extends GenericRoller<number> {
         });
         return `${this.original}\n${text}`;
     }
+
     async build() {
         const result = [
             this.result.toLocaleString(navigator.language, {
@@ -453,7 +454,7 @@ export class StackRoller extends GenericRoller<number> {
             })
         ];
         if (this.plugin.data.displayResultsInline) {
-            result.unshift(this.tooltip.split("\n").join(" -> "), " -> ");
+            result.unshift(this.inlineText);
         }
         this.resultEl.setText(result.join("") + this.stunted);
     }

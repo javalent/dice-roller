@@ -372,6 +372,20 @@ Results can be saved for dice rolls as of version 6.1.0 using either the [Global
 | `dice+: ...` | Save result. Same as `dice: ...` if `Globally Save Results` is on.         |
 | `dice-: ...` | Do not save result. Same as `dice: ...` if `Globally Save Results` is off. |
 
+# Replacing Note Content
+
+It is possible to tell the plugin to replace the file contents of the note with the calculated dice roll using the `dice-mod: <formula>` syntax.
+
+**This syntax can only be used for Dice Rolls (_not section, table, tag, or link_)**.
+
+The plugin will replace the contents of the note with the syntax:
+
+`<formula> -> <full results> -> <combined results>`
+
+Example:
+
+`dice-mod: 3d100 + 12` => `3d100 + 12 -> [75, 20, 75] + 12 -> 182`
+
 # Settings
 
 ## Roll All Files for Tags

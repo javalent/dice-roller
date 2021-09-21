@@ -131,12 +131,70 @@ export default class DiceRollerPlugin extends Plugin {
                 if (!nodeList.length) return;
 
                 const path = ctx.sourcePath;
+                const info = ctx.getSectionInfo(el);
                 const lineStart = ctx.getSectionInfo(el)?.lineStart;
+                const file = this.app.vault.getAbstractFileByPath(
+                    ctx.sourcePath
+                );
+                if (!file || !(file instanceof TFile) || !info) return;
 
                 const toPersist: Record<number, BasicRoller> = {};
 
                 for (let index = 0; index < nodeList.length; index++) {
                     const node = nodeList.item(index);
+
+                    if (/^dice\-mod:\s*([\s\S]+)\s*?/.test(node.innerText)) {
+                        try {
+                            let [full, content] = node.innerText.match(
+                                /^dice\-mod:\s*([\s\S]+)\s*?/
+                            );
+                            if (content in this.data.formulas) {
+                                content = this.data.formulas[content];
+                            }
+                            if (!DICE_REGEX.test(content)) {
+                                new Notice(
+                                    "Replacing note content may only be done with Dice Rolls."
+                                );
+                                continue;
+                            }
+                            //build result map;
+                            const roller = this.getRoller(
+                                content,
+                                ctx.sourcePath
+                            );
+
+                            await roller.roll();
+
+                            const fileContent = (
+                                await this.app.vault.cachedRead(file)
+                            ).split("\n");
+                            let splitContent = fileContent.slice(
+                                info.lineStart,
+                                info.lineEnd + 1
+                            );
+
+                            splitContent = splitContent
+                                .join("\n")
+                                .replace(
+                                    `\`${full}\``,
+                                    `${roller.inlineText} **${roller.result}**`
+                                )
+                                .split("\n");
+
+                            fileContent.splice(
+                                info.lineStart,
+                                info.lineEnd - info.lineStart + 1,
+                                ...splitContent
+                            );
+
+                            await this.app.vault.modify(
+                                file,
+                                fileContent.join("\n")
+                            );
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
                     if (
                         !/^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/.test(node.innerText)
                     )
@@ -190,10 +248,6 @@ export default class DiceRollerPlugin extends Plugin {
                         this.app.workspace.getActiveViewOfType(MarkdownView);
                     if (view) {
                         const self = this;
-                        const file = this.app.vault.getAbstractFileByPath(
-                            ctx.sourcePath
-                        );
-                        if (!file || !(file instanceof TFile)) return;
                         let unregisterOnUnloadFile = around(view, {
                             onUnloadFile: function (next) {
                                 return async function (unloaded: TFile) {

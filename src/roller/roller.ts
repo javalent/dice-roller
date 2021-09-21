@@ -50,6 +50,9 @@ export abstract class BasicRoller extends Events {
         await this.build();
     }
     abstract get tooltip(): string;
+    get inlineText() {
+        return `${this.tooltip.split("\n").join(" -> ")} -> `;
+    }
     abstract build(): Promise<void>;
     constructor(
         public plugin: DiceRollerPlugin,

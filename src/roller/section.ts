@@ -50,7 +50,7 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
         this.resultEl.empty();
         if (this.plugin.data.displayResultsInline && this.inline) {
             this.resultEl.createSpan({
-                text: `${this.tooltip.split("\n").join(" -> ")} -> `
+                text: this.inlineText
             });
         }
 
@@ -292,7 +292,7 @@ export class TagRoller extends GenericRoller<SectionRoller> {
         this.resultEl.empty();
         if (this.plugin.data.displayResultsInline) {
             this.resultEl.createSpan({
-                text: `${this.tooltip.split("\n").join(" -> ")} -> `
+                text: this.inlineText
             });
         }
         if (this.collapse) {
@@ -404,7 +404,7 @@ export class LinkRoller extends GenericRoller<TFile> {
         this.resultEl.empty();
         if (this.plugin.data.displayResultsInline) {
             this.resultEl.createSpan({
-                text: `${this.tooltip.split("\n").join(" -> ")} -> `
+                text: this.inlineText
             });
         }
         const link = this.resultEl.createEl("a", {

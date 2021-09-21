@@ -33,7 +33,7 @@ export class TableRoller extends GenericFileRoller<string> {
         const result = [this.result];
 
         if (this.plugin.data.displayResultsInline) {
-            result.unshift(this.tooltip.split("\n").join(" -> "), " -> ");
+            result.unshift(this.inlineText);
         }
         const split = result.join("").split(/(\[\[(?:[\s\S]+?)\]\])/);
 
