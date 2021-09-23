@@ -4,7 +4,8 @@ import {
     Notice,
     addIcon,
     MarkdownView,
-    TFile
+    TFile,
+    WorkspaceLeaf
 } from "obsidian";
 //@ts-ignore
 import lexer from "lex";
@@ -40,7 +41,8 @@ import {
 
 import SettingTab from "./settings/settings";
 
-import type { BasicRoller } from "./roller/roller";
+import { BasicRoller } from "./roller/roller";
+import DiceView, { VIEW_TYPE } from "./view/view";
 
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -110,12 +112,52 @@ export default class DiceRollerPlugin extends Plugin {
     parser: Parser;
     data: DiceRollerSettings;
     persistingFiles: Set<string> = new Set();
+
+    get view() {
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE);
+        const leaf = leaves.length ? leaves[0] : null;
+        if (leaf && leaf.view && leaf.view instanceof DiceView)
+            return leaf.view;
+    }
+    async addDiceView() {
+        console.log(
+            "🚀 ~ file: main.ts ~ line 124 ~ this.app.workspace.getLeavesOfType(VIEW_TYPE)",
+            this.app.workspace.getLeavesOfType(VIEW_TYPE)
+        );
+        if (this.app.workspace.getLeavesOfType(VIEW_TYPE).length) {
+            return;
+        }
+        await this.app.workspace.getRightLeaf(false).setViewState({
+            type: VIEW_TYPE
+        });
+        this.app.workspace.revealLeaf(this.view.leaf);
+    }
+
     async onload() {
         console.log("DiceRoller plugin loaded");
 
         this.data = Object.assign(DEFAULT_SETTINGS, await this.loadData());
 
         this.addSettingTab(new SettingTab(this.app, this));
+
+        this.registerView(
+            VIEW_TYPE,
+            (leaf: WorkspaceLeaf) => new DiceView(this, leaf)
+        );
+        this.app.workspace.onLayoutReady(() => this.addDiceView());
+
+        this.addCommand({
+            id: "open-view",
+            name: "Open Dice View",
+            checkCallback: (checking) => {
+                if (!this.view) {
+                    if (!checking) {
+                        this.addDiceView();
+                    }
+                    return true;
+                }
+            }
+        });
 
         const ICON_SVG = icon(faDice).html[0];
 
@@ -244,13 +286,14 @@ export default class DiceRollerPlugin extends Plugin {
                 }
 
                 if (Object.entries(toPersist).length) {
-                    const view =
-                        this.app.workspace.getActiveViewOfType(MarkdownView);
+                    const view = this.app.workspace.getActiveViewOfType(
+                        MarkdownView
+                    );
                     if (view) {
                         const self = this;
                         let unregisterOnUnloadFile = around(view, {
-                            onUnloadFile: function (next) {
-                                return async function (unloaded: TFile) {
+                            onUnloadFile: function(next) {
+                                return async function(unloaded: TFile) {
                                     if ((unloaded = file)) {
                                         if (self.persistingFiles.has(path)) {
                                             self.persistingFiles.delete(path);
@@ -259,10 +302,9 @@ export default class DiceRollerPlugin extends Plugin {
 
                                         for (let index in toPersist) {
                                             const roller = toPersist[index];
-                                            const newLineStart =
-                                                ctx.getSectionInfo(
-                                                    el
-                                                )?.lineStart;
+                                            const newLineStart = ctx.getSectionInfo(
+                                                el
+                                            )?.lineStart;
 
                                             if (newLineStart == null) continue;
 
@@ -297,8 +339,8 @@ export default class DiceRollerPlugin extends Plugin {
                             }
                             for (let index in toPersist) {
                                 const roller = toPersist[index];
-                                const newLineStart =
-                                    ctx.getSectionInfo(el)?.lineStart;
+                                const newLineStart = ctx.getSectionInfo(el)
+                                    ?.lineStart;
 
                                 if (newLineStart == null) continue;
 
@@ -419,14 +461,14 @@ export default class DiceRollerPlugin extends Plugin {
     }
 
     addLexerRules() {
-        this.lexer.addRule(/\s+/, function () {
+        this.lexer.addRule(/\s+/, function() {
             /* skip whitespace */
         });
-        this.lexer.addRule(/[{}]+/, function () {
+        this.lexer.addRule(/[{}]+/, function() {
             /* skip brackets */
         });
 
-        this.lexer.addRule(TABLE_REGEX, function (lexeme: string): Lexeme {
+        this.lexer.addRule(TABLE_REGEX, function(lexeme: string): Lexeme {
             return {
                 type: "table",
                 data: lexeme,
@@ -434,7 +476,7 @@ export default class DiceRollerPlugin extends Plugin {
                 conditionals: null
             };
         });
-        this.lexer.addRule(SECTION_REGEX, function (lexeme: string): Lexeme {
+        this.lexer.addRule(SECTION_REGEX, function(lexeme: string): Lexeme {
             return {
                 type: "section",
                 data: lexeme,
@@ -443,25 +485,28 @@ export default class DiceRollerPlugin extends Plugin {
             };
         });
 
-        this.lexer.addRule(TAG_REGEX, (lexeme: string): Lexeme => {
-            const { groups } = lexeme.match(TAG_REGEX);
-            let type = "tag";
-            if (
-                groups.types === "link" ||
-                (this.data.rollLinksForTags && !groups.types?.length)
-            ) {
-                type = "link";
+        this.lexer.addRule(
+            TAG_REGEX,
+            (lexeme: string): Lexeme => {
+                const { groups } = lexeme.match(TAG_REGEX);
+                let type = "tag";
+                if (
+                    groups.types === "link" ||
+                    (this.data.rollLinksForTags && !groups.types?.length)
+                ) {
+                    type = "link";
+                }
+
+                return {
+                    type,
+                    data: lexeme,
+                    original: lexeme,
+                    conditionals: null
+                };
             }
+        );
 
-            return {
-                type,
-                data: lexeme,
-                original: lexeme,
-                conditionals: null
-            };
-        });
-
-        this.lexer.addRule(DICE_REGEX, function (lexeme: string): Lexeme {
+        this.lexer.addRule(DICE_REGEX, function(lexeme: string): Lexeme {
             const { dice, conditional } = lexeme.match(DICE_REGEX).groups;
             let conditionals: Conditional[] = [];
             if (conditional) {
@@ -486,37 +531,40 @@ export default class DiceRollerPlugin extends Plugin {
             }; // symbols
         });
 
-        this.lexer.addRule(OMITTED_REGEX, (lexeme: string): Lexeme => {
-            const {
-                roll = this.data.defaultRoll,
-                faces = this.data.defaultFace,
-                conditional
-            } = lexeme.match(OMITTED_REGEX).groups;
+        this.lexer.addRule(
+            OMITTED_REGEX,
+            (lexeme: string): Lexeme => {
+                const {
+                    roll = this.data.defaultRoll,
+                    faces = this.data.defaultFace,
+                    conditional
+                } = lexeme.match(OMITTED_REGEX).groups;
 
-            let conditionals: Conditional[] = [];
-            if (conditional) {
-                let matches = conditional.matchAll(CONDITIONAL_REGEX);
-                if (matches) {
-                    for (let match of matches) {
-                        if (!match) continue;
-                        const { comparer, operator } = match.groups;
-                        conditionals.push({
-                            comparer: Number(comparer),
-                            operator
-                        });
+                let conditionals: Conditional[] = [];
+                if (conditional) {
+                    let matches = conditional.matchAll(CONDITIONAL_REGEX);
+                    if (matches) {
+                        for (let match of matches) {
+                            if (!match) continue;
+                            const { comparer, operator } = match.groups;
+                            conditionals.push({
+                                comparer: Number(comparer),
+                                operator
+                            });
+                        }
                     }
                 }
+
+                return {
+                    type: "dice",
+                    data: `${roll}d${faces}`,
+                    original: lexeme,
+                    conditionals
+                }; // symbols
             }
+        );
 
-            return {
-                type: "dice",
-                data: `${roll}d${faces}`,
-                original: lexeme,
-                conditionals
-            }; // symbols
-        });
-
-        this.lexer.addRule(MATH_REGEX, function (lexeme: string): Lexeme {
+        this.lexer.addRule(MATH_REGEX, function(lexeme: string): Lexeme {
             return {
                 type: "math",
                 data: lexeme,
@@ -524,7 +572,7 @@ export default class DiceRollerPlugin extends Plugin {
                 conditionals: null
             };
         });
-        this.lexer.addRule(/1[Dd]S/, function (lexeme: string): Lexeme {
+        this.lexer.addRule(/1[Dd]S/, function(lexeme: string): Lexeme {
             const [, dice] = lexeme.match(/1[Dd]S/) ?? [, "1"];
             return {
                 type: "stunt",
@@ -534,7 +582,7 @@ export default class DiceRollerPlugin extends Plugin {
             }; // symbols
         });
 
-        this.lexer.addRule(/kh?(?!:l)(\d*)/, function (lexeme: string): Lexeme {
+        this.lexer.addRule(/kh?(?!:l)(\d*)/, function(lexeme: string): Lexeme {
             /** keep high */
             return {
                 type: "kh",
@@ -543,7 +591,7 @@ export default class DiceRollerPlugin extends Plugin {
                 conditionals: null
             };
         });
-        this.lexer.addRule(/dl?(?!:h)\d*/, function (lexeme: string): Lexeme {
+        this.lexer.addRule(/dl?(?!:h)\d*/, function(lexeme: string): Lexeme {
             /** drop low */
             return {
                 type: "dl",
@@ -553,7 +601,7 @@ export default class DiceRollerPlugin extends Plugin {
             };
         });
 
-        this.lexer.addRule(/kl\d*/, function (lexeme: string): Lexeme {
+        this.lexer.addRule(/kl\d*/, function(lexeme: string): Lexeme {
             /** keep low */
             return {
                 type: "kl",
@@ -562,7 +610,7 @@ export default class DiceRollerPlugin extends Plugin {
                 conditionals: null
             };
         });
-        this.lexer.addRule(/dh\d*/, function (lexeme: string): Lexeme {
+        this.lexer.addRule(/dh\d*/, function(lexeme: string): Lexeme {
             /** drop high */
             return {
                 type: "dh",
@@ -571,100 +619,100 @@ export default class DiceRollerPlugin extends Plugin {
                 conditionals: null
             };
         });
-        this.lexer.addRule(
-            /!!(i|\d+)?(?:(!?=|=!|>=?|<=?)(-?\d+))*/,
-            function (lexeme: string): Lexeme {
-                /** explode and combine */
-                let [, data = `1`] = lexeme.match(
-                        /!!(i|\d+)?(?:(!?=|=!|>=?|<=?)(-?\d+))*/
-                    ),
-                    conditionals: Conditional[] = [];
-                if (/(?:(!?=|=!|>=?|<=?)(-?\d+))+/.test(lexeme)) {
-                    for (const [, operator, comparer] of lexeme.matchAll(
-                        /(?:(!?=|=!|>=?|<=?)(-?\d+))/g
-                    )) {
-                        conditionals.push({
-                            operator: operator,
-                            comparer: Number(comparer)
-                        });
-                    }
+        this.lexer.addRule(/!!(i|\d+)?(?:(!?=|=!|>=?|<=?)(-?\d+))*/, function(
+            lexeme: string
+        ): Lexeme {
+            /** explode and combine */
+            let [, data = `1`] = lexeme.match(
+                    /!!(i|\d+)?(?:(!?=|=!|>=?|<=?)(-?\d+))*/
+                ),
+                conditionals: Conditional[] = [];
+            if (/(?:(!?=|=!|>=?|<=?)(-?\d+))+/.test(lexeme)) {
+                for (const [, operator, comparer] of lexeme.matchAll(
+                    /(?:(!?=|=!|>=?|<=?)(-?\d+))/g
+                )) {
+                    conditionals.push({
+                        operator: operator,
+                        comparer: Number(comparer)
+                    });
                 }
-                if (/!!i/.test(lexeme)) {
-                    data = `100`;
-                }
-
-                return {
-                    type: "!!",
-                    data: data,
-                    original: lexeme,
-                    conditionals: conditionals
-                };
             }
-        );
-        this.lexer.addRule(
-            /!(i|\d+)?(?:(!?=|=!?|>=?|<=?)(-?\d+))*/,
-            function (lexeme: string): Lexeme {
-                /** explode */
-                let [, data = `1`] = lexeme.match(
-                        /!(i|\d+)?(?:(!?=|=!?|>=?|<=?)(-?\d+))*/
-                    ),
-                    conditionals: Conditional[] = [];
-                if (/(?:(!?=|=!|>=?|<=?)(\d+))+/.test(lexeme)) {
-                    for (const [, operator, comparer] of lexeme.matchAll(
-                        /(?:(!?=|=!?|>=?|<=?)(-?\d+))/g
-                    )) {
-                        conditionals.push({
-                            operator: operator,
-                            comparer: Number(comparer)
-                        });
-                    }
-                }
-                if (/!i/.test(lexeme)) {
-                    data = `100`;
-                }
-
-                return {
-                    type: "!",
-                    data: data,
-                    original: lexeme,
-                    conditionals: conditionals
-                };
+            if (/!!i/.test(lexeme)) {
+                data = `100`;
             }
-        );
 
-        this.lexer.addRule(
-            /r(i|\d+)?(?:(!?=|=!|>=?|<=?)(-?\d+))*/,
-            function (lexeme: string): Lexeme {
-                /** reroll */
-                let [, data = `1`] = lexeme.match(
-                        /r(i|\d+)?(?:(!?=|=!|>=?|<=?)(-?\d+))*/
-                    ),
-                    conditionals: Conditional[] = [];
-                if (/(?:(!?={1,2}|>=?|<=?)(-?\d+))+/.test(lexeme)) {
-                    for (const [, operator, comparer] of lexeme.matchAll(
-                        /(?:(!?=|=!|>=?|<=?)(-?\d+))/g
-                    )) {
-                        conditionals.push({
-                            operator: operator,
-                            comparer: Number(comparer)
-                        });
-                    }
+            return {
+                type: "!!",
+                data: data,
+                original: lexeme,
+                conditionals: conditionals
+            };
+        });
+        this.lexer.addRule(/!(i|\d+)?(?:(!?=|=!?|>=?|<=?)(-?\d+))*/, function(
+            lexeme: string
+        ): Lexeme {
+            /** explode */
+            let [, data = `1`] = lexeme.match(
+                    /!(i|\d+)?(?:(!?=|=!?|>=?|<=?)(-?\d+))*/
+                ),
+                conditionals: Conditional[] = [];
+            if (/(?:(!?=|=!|>=?|<=?)(\d+))+/.test(lexeme)) {
+                for (const [, operator, comparer] of lexeme.matchAll(
+                    /(?:(!?=|=!?|>=?|<=?)(-?\d+))/g
+                )) {
+                    conditionals.push({
+                        operator: operator,
+                        comparer: Number(comparer)
+                    });
                 }
-                if (/ri/.test(lexeme)) {
-                    data = `100`;
-                }
-                return {
-                    type: "r",
-                    data: data,
-                    original: lexeme,
-                    conditionals: conditionals
-                };
             }
-        );
+            if (/!i/.test(lexeme)) {
+                data = `100`;
+            }
+
+            return {
+                type: "!",
+                data: data,
+                original: lexeme,
+                conditionals: conditionals
+            };
+        });
+
+        this.lexer.addRule(/r(i|\d+)?(?:(!?=|=!|>=?|<=?)(-?\d+))*/, function(
+            lexeme: string
+        ): Lexeme {
+            /** reroll */
+            let [, data = `1`] = lexeme.match(
+                    /r(i|\d+)?(?:(!?=|=!|>=?|<=?)(-?\d+))*/
+                ),
+                conditionals: Conditional[] = [];
+            if (/(?:(!?={1,2}|>=?|<=?)(-?\d+))+/.test(lexeme)) {
+                for (const [, operator, comparer] of lexeme.matchAll(
+                    /(?:(!?=|=!|>=?|<=?)(-?\d+))/g
+                )) {
+                    conditionals.push({
+                        operator: operator,
+                        comparer: Number(comparer)
+                    });
+                }
+            }
+            if (/ri/.test(lexeme)) {
+                data = `100`;
+            }
+            return {
+                type: "r",
+                data: data,
+                original: lexeme,
+                conditionals: conditionals
+            };
+        });
     }
 
     onunload() {
         console.log("DiceRoller unloaded");
+        this.app.workspace
+            .getLeavesOfType(VIEW_TYPE)
+            .forEach((leaf) => leaf.detach());
     }
 
     operators: any = {

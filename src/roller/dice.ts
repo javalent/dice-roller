@@ -9,7 +9,7 @@ interface Modifier {
     data: number;
 }
 
-class DiceRoller {
+export class DiceRoller {
     dice: string;
     modifiers: Map<string, Modifier> = new Map();
     rolls: number;
@@ -44,7 +44,12 @@ class DiceRoller {
             )
             .join(", ")}]`;
     }
-    constructor(dice: string, public lexeme: Lexeme) {
+    constructor(dice: string, public lexeme: Lexeme = {
+        original: dice,
+        conditionals: [],
+        type: 'dice',
+        data: dice
+    }) {
         if (!/(\-?\d+)[dD]?(\d+|%|\[\d+,\s?\d+\])?/.test(dice)) {
             throw new Error("Non parseable dice string passed to DiceRoll.");
         }

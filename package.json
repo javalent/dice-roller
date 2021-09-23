@@ -1,31 +1,41 @@
 {
-	"name": "obsidian-dice-roller",
-	"version": "6.4.0",
-	"description": "Inline dice rolling for Obsidian.md",
-	"main": "main.js",
-	"scripts": {
-		"dev": "rollup --config rollup.config-dev.js -w",
-		"build": "rollup --config rollup.config.js"
-	},
-	"keywords": [],
-	"author": "Jeremy Valentine",
-	"license": "MIT",
-	"devDependencies": {
-		"@fortawesome/fontawesome-svg-core": "^1.2.32",
-		"@fortawesome/free-solid-svg-icons": "^5.15.4",
-		"@rollup/plugin-commonjs": "^15.1.0",
-		"@rollup/plugin-node-resolve": "^9.0.0",
-		"@rollup/plugin-typescript": "^6.0.0",
-		"@types/node": "^14.14.2",
-		"lex": "^1.7.9",
-		"obsidian": "^0.12.11",
-		"rollup": "^2.32.1",
-		"rollup-plugin-css-only": "^3.1.0",
-		"tslib": "^2.0.3",
-		"typescript": "^4.0.3"
-	},
-	"dependencies": {
-		"@fortawesome/free-regular-svg-icons": "^5.15.4",
-		"monkey-around": "^2.2.0"
-	}
+    "name": "obsidian-dice-roller",
+    "version": "6.4.0",
+    "description": "Inline dice rolling for Obsidian.md",
+    "main": "main.js",
+    "scripts": {
+        "dev": "webpack --config webpack.dev.js -w",
+        "build": "webpack",
+        "rollup:dev": "rollup --config rollup.config-dev.js -w",
+        "rollup:build": "rollup --config rollup.config.js"
+    },
+    "keywords": [],
+    "author": "Jeremy Valentine",
+    "license": "MIT",
+    "devDependencies": {
+        "@fortawesome/fontawesome-svg-core": "^1.2.32",
+        "@fortawesome/free-solid-svg-icons": "^5.15.4",
+        "@rollup/plugin-commonjs": "^15.1.0",
+        "@rollup/plugin-node-resolve": "^9.0.0",
+        "@rollup/plugin-typescript": "^6.0.0",
+        "@types/node": "^14.14.2",
+        "copy-webpack-plugin": "^9.0.1",
+        "css-loader": "^6.3.0",
+        "lex": "^1.7.9",
+        "mini-css-extract-plugin": "^2.3.0",
+        "obsidian": "^0.12.11",
+        "rollup": "^2.32.1",
+        "rollup-plugin-css-only": "^3.1.0",
+        "ts-loader": "^9.2.6",
+        "tslib": "^2.0.3",
+        "typescript": "^4.0.3",
+        "vue-template-compiler": "^2.6.14",
+        "webpack": "^5.53.0",
+        "webpack-cli": "^4.8.0"
+    },
+    "dependencies": {
+        "@fortawesome/free-regular-svg-icons": "^5.15.4",
+        "@types/vue": "^2.0.0",
+        "monkey-around": "^2.2.0"
+    }
 }
