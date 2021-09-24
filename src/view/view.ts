@@ -4,25 +4,27 @@ import {
     debounce,
     ExtraButtonComponent,
     ItemView,
+    Notice,
     setIcon,
+    TextAreaComponent,
     TextComponent,
     WorkspaceLeaf
 } from "obsidian";
 import DiceRollerPlugin from "src/main";
-import { DiceRoller } from "src/roller";
-import { ICON_DEFINITION } from "src/utils/constants";
+import { DiceRoller, StackRoller } from "src/roller";
+import { COPY_DEFINITION, ICON_DEFINITION } from "src/utils/constants";
 
 import "./view.css";
 
 export const VIEW_TYPE = "DICE_ROLLER_VIEW";
 
-const D4 = `<svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="mdi-dice-d4-outline" viewBox="0 0 24 24"><path d="M13.43,15.15H14.29V16.36H13.43V18H11.92V16.36H8.82L8.75,15.41L11.91,10.42H13.43V15.15M10.25,15.15H11.92V12.47L10.25,15.15M22,21H2C1.64,21 1.31,20.81 1.13,20.5C0.95,20.18 0.96,19.79 1.15,19.5L11.15,3C11.5,2.38 12.5,2.38 12.86,3L22.86,19.5C23.04,19.79 23.05,20.18 22.87,20.5C22.69,20.81 22.36,21 22,21M3.78,19H20.23L12,5.43L3.78,19Z"/></svg>`;
-const D6 = `<svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="mdi-dice-d6-outline" viewBox="0 0 24 24"><path d="M5,3H19A2,2 0 0,1 21,5V19A2,2 0 0,1 19,21H5A2,2 0 0,1 3,19V5A2,2 0 0,1 5,3M5,5V19H19V5H5M13.39,9.53C10.89,9.5 10.86,11.53 10.86,11.53C10.86,11.53 11.41,10.87 12.53,10.87C13.19,10.87 14.5,11.45 14.55,13.41C14.61,15.47 12.77,16 12.77,16C12.77,16 9.27,16.86 9.3,12.66C9.33,7.94 13.39,8.33 13.39,8.33V9.53M11.95,12.1C11.21,12 10.83,12.78 10.83,12.78L10.85,13.5C10.85,14.27 11.39,14.83 12,14.83C12.61,14.83 13.05,14.27 13.05,13.5C13.05,12.73 12.56,12.1 11.95,12.1Z"/></svg>`;
-const D8 = `<svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="mdi-dice-d8-outline" viewBox="0 0 24 24"><path d="M12,8.25C13.31,8.25 14.38,9.2 14.38,10.38C14.38,11.07 14,11.68 13.44,12.07C14.14,12.46 14.6,13.13 14.6,13.9C14.6,15.12 13.44,16.1 12,16.1C10.56,16.1 9.4,15.12 9.4,13.9C9.4,13.13 9.86,12.46 10.56,12.07C10,11.68 9.63,11.07 9.63,10.38C9.63,9.2 10.69,8.25 12,8.25M12,12.65A1.1,1.1 0 0,0 10.9,13.75A1.1,1.1 0 0,0 12,14.85A1.1,1.1 0 0,0 13.1,13.75A1.1,1.1 0 0,0 12,12.65M12,9.5C11.5,9.5 11.1,9.95 11.1,10.5C11.1,11.05 11.5,11.5 12,11.5C12.5,11.5 12.9,11.05 12.9,10.5C12.9,9.95 12.5,9.5 12,9.5M21.54,10.8C22.14,11.5 22.14,12.5 21.54,13.2L13.24,21.5C12.54,22.2 11.54,22.2 10.84,21.5L2.54,13.2C1.84,12.5 1.84,11.5 2.54,10.8L10.84,2.5C11.54,1.8 12.54,1.8 13.24,2.5L21.54,10.8M20.34,12L12.04,3.7L3.74,12L12.04,20.3L20.34,12Z"/></svg>`;
-const D10 = `<svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="mdi-dice-d10-outline" viewBox="0 0 24 24"><path d="M21.5,10.8C22.1,11.5 22.1,12.5 21.5,13.2L13.2,21.5C12.5,22.2 11.5,22.2 10.8,21.5L2.5,13.2C1.8,12.5 1.8,11.5 2.5,10.8L10.8,2.5C11.5,1.8 12.5,1.8 13.2,2.5L21.5,10.8M20.3,12L12,3.7L3.7,12L12,20.3L20.3,12M10.38,15.79H8.88V10L7.08,10.55V9.32L10.22,8.2H10.38V15.79M13.93,8A2.57,2.57 0 0,1 16.5,10.57V13.21C16.5,14.63 15.35,15.78 13.93,15.78C12.5,15.78 11.36,14.63 11.36,13.21V10.57A2.57,2.57 0 0,1 13.93,8M13.92,9.44A1.06,1.06 0 0,0 12.86,10.5V13.27A1.06,1.06 0 0,0 13.92,14.33C14.5,14.33 15,13.85 15,13.27V10.5C15,9.91 14.5,9.44 13.92,9.44Z"/></svg>`;
-const D12 = `<svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="mdi-dice-d12-outline" viewBox="0 0 24 24"><path d="M12,2L1.5,9.64L5.5,22H18.5L22.5,9.64L12,2M17,20H7L3.85,10.4L12,4.47L20.15,10.4L17,20M17,15.75V17H11.66V15.91C11.66,15.91 15.23,12.45 15.23,11.4C15.23,10.12 14.18,10.25 14.18,10.25C13.5,10.3 13,10.87 13,11.55H11.44C11.5,10.09 12.72,8.94 14.27,9C16.74,9 16.77,10.85 16.77,11.3C16.77,13.07 13.58,15.77 13.58,15.77L17,15.75M10.5,17H8.89V10.89L7,11.47V10.19L10.31,9H10.5V17Z"/></svg>`;
-const D20 = `<svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="mdi-dice-d20-outline" viewBox="0 0 24 24"><path d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5M12,4.15L5,8.09V15.91L12,19.85L19,15.91V8.09L12,4.15M14.93,8.27A2.57,2.57 0 0,1 17.5,10.84V13.5C17.5,14.9 16.35,16.05 14.93,16.05C13.5,16.05 12.36,14.9 12.36,13.5V10.84A2.57,2.57 0 0,1 14.93,8.27M14.92,9.71C14.34,9.71 13.86,10.18 13.86,10.77V13.53C13.86,14.12 14.34,14.6 14.92,14.6C15.5,14.6 16,14.12 16,13.53V10.77C16,10.18 15.5,9.71 14.92,9.71M11.45,14.76V15.96L6.31,15.93V14.91C6.31,14.91 9.74,11.58 9.75,10.57C9.75,9.33 8.73,9.46 8.73,9.46C8.73,9.46 7.75,9.5 7.64,10.71L6.14,10.76C6.14,10.76 6.18,8.26 8.83,8.26C11.2,8.26 11.23,10.04 11.23,10.5C11.23,12.18 8.15,14.77 8.15,14.77L11.45,14.76Z"/></svg>`;
-const D100 = `<svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="mdi-percent-outline" viewBox="0 0 24 24"><path d="M18.5 3.5L20.5 5.5L5.5 20.5L3.5 18.5L18.5 3.5M7 4C8.66 4 10 5.34 10 7C10 8.66 8.66 10 7 10C5.34 10 4 8.66 4 7C4 5.34 5.34 4 7 4M17 14C18.66 14 20 15.34 20 17C20 18.66 18.66 20 17 20C15.34 20 14 18.66 14 17C14 15.34 15.34 14 17 14M7 6C6.45 6 6 6.45 6 7C6 7.55 6.45 8 7 8C7.55 8 8 7.55 8 7C8 6.45 7.55 6 7 6M17 16C16.45 16 16 16.45 16 17C16 17.55 16.45 18 17 18C17.55 18 18 17.55 18 17C18 16.45 17.55 16 17 16Z"/></svg>`;
+const D4 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"><defs><style>.cls-1{fill:none;stroke: currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:15px;}</style></defs><g id="Shapes"><path class="cls-1" d="M244.62,49.31,40.31,403.19a6.21,6.21,0,0,0,5.38,9.31H454.31a6.21,6.21,0,0,0,5.38-9.31L255.38,49.31A6.21,6.21,0,0,0,244.62,49.31Z"/></g><g fill="currentColor" id="Layer_1" data-name="Layer 1"><path d="M270.21,278.16h21.7v16.22h-21.7v36.31h-20V294.38H179V282.67l70-108.39h21.16Zm-68.64,0h48.66v-76.7l-2.36,4.3Z"/></g></svg>`;
+const D6 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"><defs><style>.cls-1{fill:none;stroke: currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:15px;}</style></defs><g id="Shapes"><rect class="cls-1" x="87.5" y="87.5" width="325" height="325" rx="10"/></g><g fill="currentColor" id="Layer_1" data-name="Layer 1"><path d="M279.22,174.18V191h-3.65q-23.2.44-37,13.75t-15.9,37.49q12.36-14.17,33.74-14.18,20.4,0,32.6,14.4t12.19,37.17q0,24.16-13.16,38.67t-35.29,14.5q-22.46,0-36.41-17.24t-14-44.42v-7.63q0-43.19,18.42-66t54.84-23.36Zm-26.1,70.47a33.41,33.41,0,0,0-30.73,21.48v7.31q0,19.33,8.7,31.15t21.7,11.81q13.43,0,21.11-9.88t7.68-25.89q0-16.11-7.79-26A25,25,0,0,0,253.12,244.65Z"/></g></svg>`;
+const D8 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"><defs><style>.cls-1{fill:none;stroke: currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:15px;}</style></defs><g id="Shapes"><rect class="cls-1" x="102.75" y="102.75" width="294.51" height="294.51" rx="9.8" transform="translate(-103.55 250) rotate(-45)"/></g><g fill="currentColor" id="Layer_1" data-name="Layer 1"><path d="M292.08,215.1a36.35,36.35,0,0,1-6.17,20.84,42.05,42.05,0,0,1-16.71,14.29,44.8,44.8,0,0,1,19.39,15.36,38.7,38.7,0,0,1,7.15,22.88q0,20.31-13.7,32.34t-36,12q-22.56,0-36.15-12.09t-13.59-32.28a39.84,39.84,0,0,1,6.93-22.88,43.14,43.14,0,0,1,19.18-15.47,40.88,40.88,0,0,1-16.44-14.28,36.85,36.85,0,0,1-6-20.74q0-19.75,12.67-31.36T246,172.14q20.63,0,33.35,11.6T292.08,215.1ZM275.86,288q0-13.1-8.32-21.37t-21.75-8.27q-13.44,0-21.54,8.16T216.14,288q0,13.33,7.89,20.95t22,7.63q14,0,21.91-7.68T275.86,288ZM246,188.46q-11.72,0-19,7.26t-7.25,19.71q0,11.92,7.14,19.28T246,242.07q11.92,0,19.07-7.36t7.14-19.28q0-11.93-7.41-19.45T246,188.46Z"/></g></svg>`;
+const D10 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"><defs><style>.cls-1{fill:none;stroke: currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:15px;}</style></defs><g id="Shapes"><rect class="cls-1" x="102.75" y="102.75" width="294.51" height="294.51" rx="9.8" transform="translate(-103.55 250) rotate(-45)"/></g><g fill="currentColor" id="Layer_1" data-name="Layer 1"><path d="M219,330.69H199V198.24L158.92,213V194.91l56.93-21.38H219Z"/><path d="M344.47,264q0,34.92-11.93,51.89t-37.27,17q-25,0-37.06-16.6t-12.46-49.57V240.13q0-34.47,11.92-51.24t37.38-16.75q25.24,0,37.17,16.16t12.25,49.9ZM324.59,236.8q0-25.23-7.09-36.79t-22.45-11.55q-15.26,0-22.23,11.5t-7.2,35.34v31.8q0,25.35,7.36,37.43t22.29,12.09q14.72,0,21.86-11.39t7.46-35.88Z"/></g></svg>`;
+const D12 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"><defs><style>.cls-1{fill:none;stroke: currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:15px;}</style></defs><g id="Shapes"><path class="cls-1" d="M244.31,29.14,52,168.87a9.72,9.72,0,0,0-3.52,10.84l73.47,226.1a9.69,9.69,0,0,0,9.21,6.69H368.87a9.69,9.69,0,0,0,9.21-6.69l73.47-226.1A9.72,9.72,0,0,0,448,168.87L255.69,29.14A9.66,9.66,0,0,0,244.31,29.14Z"/></g><g fill="currentColor" id="Layer_1" data-name="Layer 1"><path d="M208,330.69H188V198.24L147.93,213V194.91l56.93-21.38H208Z"/><path d="M342.28,330.69H239.8V316.4l54.14-60.15q12-13.65,16.6-22.19a37,37,0,0,0,4.56-17.67q0-12.24-7.41-20.08t-19.77-7.85q-14.82,0-23,8.44t-8.22,23.47H236.79q0-21.6,13.91-34.91t37.22-13.32q21.81,0,34.49,11.44T335.08,214q0,23.1-29.43,55l-41.9,45.44h78.53Z"/></g></svg>`;
+const D20 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"><defs><style>.cls-1{fill:none;stroke: currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:15px;}</style></defs><g id="Shapes"><path class="cls-1" d="M55.14,143.27V356.73a10,10,0,0,0,5,8.66L245,472.11a10,10,0,0,0,10,0L439.86,365.39a10,10,0,0,0,5-8.66V143.27a10,10,0,0,0-5-8.66L255,27.89a10,10,0,0,0-10,0L60.14,134.61A10,10,0,0,0,55.14,143.27Z"/></g><g fill="currentColor" id="Layer_1" data-name="Layer 1"><path d="M251.34,330.69H148.86V316.4L203,256.25q12-13.65,16.6-22.19a37,37,0,0,0,4.57-17.67q0-12.24-7.42-20.08T197,188.46q-14.82,0-23,8.44t-8.22,23.47H145.86q0-21.6,13.91-34.91T197,172.14q21.81,0,34.48,11.44T244.15,214q0,23.1-29.44,55l-41.89,45.44h78.52Z"/><path d="M361.67,264q0,34.92-11.92,51.89t-37.27,17q-25,0-37.06-16.6T263,266.67V240.13q0-34.47,11.93-51.24t37.38-16.75q25.25,0,37.17,16.16t12.24,49.9ZM341.8,236.8q0-25.23-7.09-36.79t-22.45-11.55Q297,188.46,290,200t-7.19,35.34v31.8q0,25.35,7.36,37.43t22.29,12.09q14.72,0,21.86-11.39t7.46-35.88Z"/></g></svg>`;
+const D100 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"><defs><style>.cls-1{fill:none;stroke: currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:15px;}</style></defs><g fill="currentColor" id="Layer_1" data-name="Layer 1"><path d="M172.54,194.88q0-15.7,10.19-25.49t26.72-9.79q16.76,0,27,9.67t10.19,26.19v8.44q0,15.82-10.19,25.43t-26.72,9.61q-16.65,0-26.9-9.67T172.54,203.2Zm22.5,9.17q0,7.06,4,11.37a13.88,13.88,0,0,0,10.61,4.3,13.24,13.24,0,0,0,10.43-4.36Q224,211,224,203.69V195c0-4.71-1.28-8.53-3.86-11.43s-6.14-4.36-10.67-4.36a13.56,13.56,0,0,0-10.43,4.3q-4,4.31-4,12Zm21.33,115.87L199.84,311l83.32-133.36,16.53,8.91Zm37.73-29.06q0-15.83,10.31-25.49t26.72-9.67q16.65,0,26.9,9.55t10.25,26.31V300q0,15.71-10.08,25.37T291.37,335q-16.87,0-27.07-9.73t-10.2-25.78Zm22.5,9.28a15.82,15.82,0,0,0,4.22,11.08,13.71,13.71,0,0,0,10.55,4.6q14.29,0,14.29-15.92V291q0-7.08-4-11.38a15.08,15.08,0,0,0-21.09,0q-4,4.31-4,11.73Z"/><circle class="cls-1" cx="246.23" cy="250" r="189.38"/></g></svg>`;
 
 addIcon("d4", D4);
 addIcon("d6", D6);
@@ -37,22 +39,43 @@ addIcon(
     `<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" data-prefix="far" data-icon="save" class="svg-inline--fa fa-save fa-w-14" role="img" viewBox="0 0 448 512"><path fill="currentColor" d="M433.941 129.941l-83.882-83.882A48 48 0 0 0 316.118 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V163.882a48 48 0 0 0-14.059-33.941zM272 80v80H144V80h128zm122 352H54a6 6 0 0 1-6-6V86a6 6 0 0 1 6-6h42v104c0 13.255 10.745 24 24 24h176c13.255 0 24-10.745 24-24V83.882l78.243 78.243a6 6 0 0 1 1.757 4.243V426a6 6 0 0 1-6 6zM224 232c-48.523 0-88 39.477-88 88s39.477 88 88 88 88-39.477 88-88-39.477-88-88-88zm0 128c-22.056 0-40-17.944-40-40s17.944-40 40-40 40 17.944 40 40-17.944 40-40 40z"/></svg>`
 );
 
+addIcon(
+    "dice-roller-plus",
+    `<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" data-prefix="far" data-icon="plus-square" class="svg-inline--fa fa-plus-square fa-w-14" role="img" viewBox="0 0 448 512"><path fill="currentColor" d="M352 240v32c0 6.6-5.4 12-12 12h-88v88c0 6.6-5.4 12-12 12h-32c-6.6 0-12-5.4-12-12v-88h-88c-6.6 0-12-5.4-12-12v-32c0-6.6 5.4-12 12-12h88v-88c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v88h88c6.6 0 12 5.4 12 12zm96-160v352c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V80c0-26.5 21.5-48 48-48h352c26.5 0 48 21.5 48 48zm-48 346V86c0-3.3-2.7-6-6-6H54c-3.3 0-6 2.7-6 6v340c0 3.3 2.7 6 6 6h340c3.3 0 6-2.7 6-6z"/></svg>`
+);
+addIcon(
+    "dice-roller-minus",
+    `<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" data-prefix="far" data-icon="minus-square" class="svg-inline--fa fa-minus-square fa-w-14" role="img" viewBox="0 0 448 512"><path fill="currentColor" d="M108 284c-6.6 0-12-5.4-12-12v-32c0-6.6 5.4-12 12-12h232c6.6 0 12 5.4 12 12v32c0 6.6-5.4 12-12 12H108zM448 80v352c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V80c0-26.5 21.5-48 48-48h352c26.5 0 48 21.5 48 48zm-48 346V86c0-3.3-2.7-6-6-6H54c-3.3 0-6 2.7-6 6v340c0 3.3 2.7 6 6 6h340c3.3 0 6-2.7 6-6z"/></svg>`
+);
+
 export default class DiceView extends ItemView {
-    dice: Record<string, DiceRoller> = {
-        d4: new DiceRoller(`1d4`),
-        d6: new DiceRoller(`1d6`),
-        d8: new DiceRoller(`1d8`),
-        d10: new DiceRoller(`1d10`),
-        d12: new DiceRoller(`1d12`),
-        d20: new DiceRoller(`1d20`),
-        d100: new DiceRoller(`1d100`)
-    };
+    noResultsEl: HTMLSpanElement;
+    static DICE() {
+        return {
+            d4: 0,
+            d6: 0,
+            d8: 0,
+            d10: 0,
+            d12: 0,
+            d20: 0,
+            d100: 0
+        };
+    }
+    stack: StackRoller;
     gridEl: HTMLDivElement;
     formulaEl: HTMLDivElement;
+    dice: { [dice: string]: number } = DiceView.DICE();
+
+    custom = "";
+    adv = false;
+    dis = false;
+    add = 0;
+
+    formulaComponent: TextAreaComponent;
+    resultEl: HTMLDivElement;
     constructor(public plugin: DiceRollerPlugin, public leaf: WorkspaceLeaf) {
         super(leaf);
-        console.log("Opened Dice View");
-        this.containerEl.addClass("dice-roller-view");
+        this.contentEl.addClass("dice-roller-view");
     }
 
     async onOpen() {
@@ -62,53 +85,208 @@ export default class DiceView extends ItemView {
 
     async display() {
         this.contentEl.empty();
-        this.gridEl = this.contentEl.createDiv("dice-view-grid");
-        this.formulaEl = this.contentEl.createDiv("dice-view-formula");
+        this.gridEl = this.contentEl.createDiv("dice-roller-grid");
+        this.formulaEl = this.contentEl.createDiv("dice-roller-formula");
+
+        const resultsEl = this.contentEl.createDiv(
+            "dice-roller-results-container"
+        );
+        resultsEl.createEl("h4", { text: "Results" });
+        this.resultEl = resultsEl.createDiv("dice-roller-results");
+        this.noResultsEl = this.resultEl.createSpan({
+            text: "No results yet! Roll some dice to get started :)"
+        });
 
         this.buildButtons();
         this.buildFormula();
     }
 
     buildButtons() {
+        this.gridEl.empty();
+        const buttons = this.gridEl.createDiv("dice-buttons");
+
         for (let type in this.dice) {
-            const dice = this.dice[type];
-            new ExtraButtonComponent(this.gridEl.createDiv("dice-button"))
-                .setIcon(type)
-                .onClick(async () => {
-                    await dice.roll();
-                    console.log(dice.result);
-                });
+            const button = new ExtraButtonComponent(
+                buttons.createDiv("dice-button")
+            ).setIcon(type);
+            button.extraSettingsEl.onclick = (evt) => {
+                let add = evt.getModifierState("Shift") ? -1 : 1;
+                this.dice[type] += add;
+                this.setFormula();
+            };
         }
+
+        const advDis = this.gridEl.createDiv("advantage-disadvantage");
+
+        const adv = new ButtonComponent(advDis)
+            .setButtonText("ADV")
+            .onClick(() => {
+                this.adv = !this.adv;
+                this.dis = false;
+
+                if (this.adv) {
+                    adv.setCta();
+                    dis.removeCta();
+                } else {
+                    adv.removeCta();
+                }
+
+                this.setFormula();
+            });
+        const dis = new ButtonComponent(advDis)
+            .setButtonText("DIS")
+            .onClick(() => {
+                this.dis = !this.dis;
+
+                if (this.dis) {
+                    dis.setCta();
+                    adv.removeCta();
+                } else {
+                    dis.removeCta();
+                }
+
+                this.adv = false;
+                this.setFormula();
+            });
+
+        const add = this.gridEl
+            .createDiv("dice-context")
+            .createDiv("add-subtract");
+
+        new ExtraButtonComponent(add)
+            .setIcon("dice-roller-minus")
+            .onClick(() => {
+                this.add -= 1;
+                addComponent.setValue(`${this.add}`);
+                this.setFormula();
+            });
+        const addComponent = new TextComponent(add)
+            .setValue(`${this.add ? this.add : ""}`)
+            .onChange((v) => {
+                if (!isNaN(Number(v))) this.add = Number(v);
+                this.setFormula();
+            });
+        new ExtraButtonComponent(add)
+            .setIcon("dice-roller-plus")
+            .onClick(() => {
+                this.add += 1;
+                addComponent.setValue(`${this.add}`);
+                this.setFormula();
+            });
     }
-    formulaDice: DiceRoller;
+    formulaDice: StackRoller;
     buildFormula() {
-        const formula = new TextComponent(this.formulaEl).setPlaceholder(
-            "Dice Formula"
-        );
+        this.formulaEl.empty();
+        this.formulaComponent = new TextAreaComponent(
+            this.formulaEl
+        ).setPlaceholder("Dice Formula");
 
-        formula.onChange(
-            debounce(
-                async (v) => {
-                    this.formulaDice = new DiceRoller(v);
-                    await this.formulaDice.roll();
-
-                    console.log(this.formulaDice.result);
-                },
-                250,
-                true
-            )
-        );
-
-        new ExtraButtonComponent(this.formulaEl)
+        this.formulaComponent.onChange(debounce(async (v) => {}, 500, true));
+        new ButtonComponent(this.formulaEl)
             .setIcon(ICON_DEFINITION)
+            .setCta()
             .setTooltip("Roll")
             .onClick(async () => {
-                await this.formulaDice.roll();
-                console.log(this.formulaDice.result);
+                const roller = await this.plugin.getRoller(
+                    this.formulaComponent.inputEl.value,
+                    "view"
+                );
+
+                if (!(roller instanceof StackRoller)) {
+                    new Notice("The Dice View only supports dice rolls.");
+                    return;
+                }
+                await roller.roll();
+
+                this.addResult(roller);
+
+                this.dice = DiceView.DICE();
+                this.add = null;
+                this.adv = false;
+                this.dis = false;
+
+                this.buildButtons();
+
+                this.setFormula();
             });
-        new ExtraButtonComponent(this.formulaEl)
-            .setIcon("dice-roller-save")
-            .setTooltip("Save");
+    }
+    addResult(roller: StackRoller) {
+        if (this.noResultsEl) {
+            this.noResultsEl.detach();
+        }
+        const result = createDiv("view-result");
+
+        result.createSpan({
+            text: roller.original
+        });
+        /* result.createSpan({
+            text: roller.resultText
+        }); */
+        result.createEl("strong", {
+            text: `${roller.result}`,
+            attr: {
+                "aria-label": roller.resultText
+            }
+        });
+
+        const context = result.createDiv("result-context");
+
+        context.createEl("em", { text: new Date().toLocaleString() });
+        new ExtraButtonComponent(context).setIcon("trash").onClick(() => {
+            result.detach();
+            if (this.resultEl.children.length === 0) {
+                this.resultEl.prepend(this.noResultsEl);
+            }
+        });
+
+        const copy = new ExtraButtonComponent(context)
+            .setIcon(COPY_DEFINITION)
+            .setTooltip("Copy Result")
+            .onClick(async () => {
+                await navigator.clipboard.writeText(`${roller.result}`);
+            });
+        copy.extraSettingsEl.addClass("dice-content-copy");
+
+        this.resultEl.prepend(result);
+    }
+
+    get formulaString() {
+        const result = [];
+        const dice = Object.entries(this.dice).filter(
+            ([type, num]) => num != 0
+        );
+        if (!dice.length) return "";
+
+        dice.sort((a, b) => Number(b[0].slice(1)) - Number(a[0].slice(1)));
+
+        const first = dice.shift();
+        result.push(`${first[1]}${first[0]}`);
+
+        if (this.adv) {
+            result.push("kh");
+        } else if (this.dis) {
+            result.push("dh");
+        }
+
+        if (dice.length) {
+            result.push(
+                ...dice.map(
+                    ([type, num]) =>
+                        `${num > 0 ? "+" : "-"}${Math.abs(num)}${type}`
+                )
+            );
+        }
+
+        if (this.add && this.add != 0) {
+            result.push(this.add > 0 ? "+" : "-");
+            result.push(Math.abs(this.add));
+        }
+
+        return result.join("");
+    }
+
+    setFormula() {
+        this.formulaComponent.setValue(this.formulaString);
     }
 
     getDisplayText() {

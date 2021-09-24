@@ -120,10 +120,6 @@ export default class DiceRollerPlugin extends Plugin {
             return leaf.view;
     }
     async addDiceView() {
-        console.log(
-            "🚀 ~ file: main.ts ~ line 124 ~ this.app.workspace.getLeavesOfType(VIEW_TYPE)",
-            this.app.workspace.getLeavesOfType(VIEW_TYPE)
-        );
         if (this.app.workspace.getLeavesOfType(VIEW_TYPE).length) {
             return;
         }
@@ -245,9 +241,7 @@ export default class DiceRollerPlugin extends Plugin {
                         let [, content] = node.innerText.match(
                             /^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/
                         );
-                        if (content in this.data.formulas) {
-                            content = this.data.formulas[content];
-                        }
+
                         //build result map;
                         const roller = this.getRoller(content, ctx.sourcePath);
 
@@ -395,7 +389,7 @@ export default class DiceRollerPlugin extends Plugin {
     }
     public async parseDice(content: string, source: string) {
         const roller = this.getRoller(content, source);
-        return { result: await roller.roll() };
+        return { result: await roller.roll(), roller };
     }
     clearEmpties(o: Record<any, any>) {
         for (var k in o) {
@@ -417,6 +411,9 @@ export default class DiceRollerPlugin extends Plugin {
     }
 
     getRoller(content: string, source: string): BasicRoller {
+        if (content in this.data.formulas) {
+            content = this.data.formulas[content];
+        }
         const lexemes = this.parse(content);
 
         const type = this.getTypeFromLexemes(lexemes);

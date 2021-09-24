@@ -19,6 +19,7 @@ export class DiceRoller {
     modifiersAllowed: boolean = true;
     static: boolean = false;
     conditions: Conditional[] = [];
+    multiplier: number;
 
     get text() {
         return `${this.result}`;
@@ -62,7 +63,10 @@ export class DiceRoller {
         let [, rolls, min = null, max = 1] = this.dice.match(
             /(\-?\d+)[dD]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?/
         ) || [, 1, null, 1];
-        this.rolls = Number(rolls) || 1;
+
+        this.multiplier = rolls < 0 ? -1 : 1;
+
+        this.rolls = Math.abs(Number(rolls)) || 1;
         if (Number(max) < 0 && !min) {
             min = -1;
         }
@@ -286,7 +290,7 @@ export class DiceRoller {
             return [Number(this.dice)];
         }
         return [...Array(this.rolls)].map(() =>
-            this.getRandomBetween(this.faces.min, this.faces.max)
+            this.multiplier * this.getRandomBetween(this.faces.min, this.faces.max)
         );
     }
     roll() {
@@ -443,13 +447,15 @@ export class StackRoller extends GenericRoller<number> {
     result: number;
     stunted: string = "";
     private _tooltip: string;
-    get tooltip() {
-        if (this._tooltip) return this._tooltip;
-        let text = this.original;
-        this.dice.forEach((dice) => {
+    get resultText() {let text = this.original;
+         this.dice.forEach((dice) => {
             text = text.replace(dice.lexeme.original, dice.display);
         });
-        return `${this.original}\n${text}`;
+        return text;
+    }
+    get tooltip() {
+        if (this._tooltip) return this._tooltip;
+        return `${this.original}\n${this.resultText}`;
     }
 
     async build() {
@@ -496,6 +502,11 @@ export class StackRoller extends GenericRoller<number> {
                     let b = this.stack.pop(),
                         a = this.stack.pop();
                     if (!a) {
+
+                        if (dice.data === "-") {
+                            b = new DiceRoller(`-${b.dice}`, b.lexeme);
+                        }
+
                         this.stack.push(b);
                         continue;
                     }
