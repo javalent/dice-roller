@@ -123,3 +123,9 @@
     color: var(--text-muted);
     margin: 0 auto;
 }
+
+.dice-renderer {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
