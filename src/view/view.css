@@ -10,6 +10,7 @@
 .dice-roller-view .dice-roller-grid {
     display: grid;
     grid-template-rows: auto auto;
+    justify-content: center;
     gap: 6px;
 }
 
