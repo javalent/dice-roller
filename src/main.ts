@@ -112,7 +112,6 @@ export default class DiceRollerPlugin extends Plugin {
     parser: Parser;
     data: DiceRollerSettings;
     persistingFiles: Set<string> = new Set();
-
     get view() {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE);
         const leaf = leaves.length ? leaves[0] : null;
@@ -126,7 +125,6 @@ export default class DiceRollerPlugin extends Plugin {
         await this.app.workspace.getRightLeaf(false).setViewState({
             type: VIEW_TYPE
         });
-        this.app.workspace.revealLeaf(this.view.leaf);
     }
 
     async onload() {
@@ -140,7 +138,6 @@ export default class DiceRollerPlugin extends Plugin {
             VIEW_TYPE,
             (leaf: WorkspaceLeaf) => new DiceView(this, leaf)
         );
-        this.app.workspace.onLayoutReady(() => this.addDiceView());
 
         this.addCommand({
             id: "open-view",
