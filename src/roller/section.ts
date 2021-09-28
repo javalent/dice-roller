@@ -1,4 +1,5 @@
 import {
+    ListItemCache,
     MarkdownRenderer,
     Notice,
     SectionCache,
@@ -10,9 +11,11 @@ import { Lexeme } from "src/types";
 import { COPY_DEFINITION, SECTION_REGEX, TAG_REGEX } from "src/utils/constants";
 import { GenericFileRoller, GenericRoller } from "./roller";
 
-export class SectionRoller extends GenericFileRoller<SectionCache> {
-    result: SectionCache;
-    results: SectionCache[];
+type RollerCache = SectionCache | ListItemCache;
+
+export class SectionRoller extends GenericFileRoller<RollerCache> {
+    result: RollerCache;
+    results: RollerCache[];
     types: string[];
     content: string;
     copy: HTMLDivElement;
@@ -79,8 +82,9 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
                 cls: "markdown-embed"
             });
             if (!this.plugin.data.displayResultsInline) {
+                const type = "type" in result ? result.type : "List Item";
                 ret.setAttrs({
-                    "aria-label": `${this.file.basename}: ${result.type}`
+                    "aria-label": `${this.file.basename}: ${type}`
                 });
             }
             if (!result) {
@@ -119,7 +123,7 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
     async load() {
         await this.getOptions();
     }
-    displayFromCache(...caches: SectionCache[]) {
+    displayFromCache(...caches: RollerCache[]) {
         let res: string[] = [];
         for (let cache of caches) {
             res.push(
@@ -153,10 +157,13 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
                 ? this.types.includes(type)
                 : !["yaml", "thematicBreak"].includes(type)
         );
+        if (this.types.includes("listItem")) {
+            this.options.push(...this.cache.listItems);
+        }
         this.loaded = true;
         this.trigger("loaded");
     }
-    async roll(): Promise<SectionCache> {
+    async roll(): Promise<RollerCache> {
         return new Promise((resolve, reject) => {
             if (!this.loaded) {
                 this.on("loaded", () => {
