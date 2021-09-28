@@ -1,3 +1,11 @@
+.renderer-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50vw;
+    height: 50vh;
+}
+
 /** Dice Roller View CSS */
 .workspace-split.mod-right-split .view-content.dice-roller-view {
     padding: 0.5rem;
