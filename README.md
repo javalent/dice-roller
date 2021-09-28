@@ -317,8 +317,6 @@ At the moment this will only return a single link regardless of the number of ro
 
 The Dice Roller may also be given a link to a table in a note, which it will read and return a random result from the table.
 
-This feature is still under development and may not work as expected.
-
 Usage:
 
 In a note (such as `Note.md`), create a table & optionally give it a block id:
@@ -356,6 +354,33 @@ If a table provided to the plugin has multiple headers, the plugin will return t
 ^block-id
 
 `` `dice: [[Note^block-id]]|Header 2` ``
+
+# List Dice
+
+The Dice Roller may also be given a link to a list in a note, which it will read and return a random result from the list.
+
+Usage:
+
+In a note (such as `Note.md`), create a list & optionally give it a block id:
+
+-   a
+-   b
+-   c
+-   d
+
+^block-id
+
+Then, in the dice formula, use a wikilink to the block reference of the table:
+
+`` `dice: [[Note^block-id]]` ``
+
+The plugin will read the list and return a random result.
+
+To return multiple elements, use:
+
+`` `dice: Xd[[Note^block-id]]` ``
+
+Once in preview mode, you may <kbd>Ctrl</kbd> - click on the result to open the block reference in a new pane.
 
 # Tooltip
 

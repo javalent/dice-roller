@@ -128,22 +128,31 @@ export class TableRoller extends GenericFileRoller<string> {
             );
         }
 
+        const section = this.cache.sections?.find(
+            (s) => s.position == this.cache.blocks[this.block].position
+        );
         this.position = this.cache.blocks[this.block].position;
-
         this.content = (
             await this.plugin.app.vault.cachedRead(this.file)
         )?.slice(this.position.start.offset, this.position.end.offset);
-        let table = extract(this.content);
 
-        if (this.header && table.columns[this.header]) {
-            this.options = table.columns[this.header];
+        if (section && section.type === "list") {
+            console.log(this.content);
+            this.options = this.content.split("\n");
         } else {
-            if (this.header)
-                throw new Error(
-                    `Header ${this.header} was not found in table ${this.path} > ${this.block}.`
-                );
-            this.options = table.rows;
+            let table = extract(this.content);
+
+            if (this.header && table.columns[this.header]) {
+                this.options = table.columns[this.header];
+            } else {
+                if (this.header)
+                    throw new Error(
+                        `Header ${this.header} was not found in table ${this.path} > ${this.block}.`
+                    );
+                this.options = table.rows;
+            }
         }
+
         this.loaded = true;
         this.trigger("loaded");
     }
