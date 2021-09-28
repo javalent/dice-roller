@@ -157,7 +157,8 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
                 ? this.types.includes(type)
                 : !["yaml", "thematicBreak"].includes(type)
         );
-        if (this.types.includes("listItem")) {
+        
+        if (this.types && this.types.includes("listItem")) {
             this.options.push(...this.cache.listItems);
         }
         this.loaded = true;

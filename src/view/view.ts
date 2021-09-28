@@ -12,7 +12,7 @@ import {
 import DiceRollerPlugin from "src/main";
 import { StackRoller } from "src/roller";
 import { COPY_DEFINITION, ICON_DEFINITION } from "src/utils/constants";
-import DiceRenderer from "./renderer";
+/* import DiceRenderer from "./renderer"; */
 
 import "./view.css";
 
@@ -74,7 +74,7 @@ export default class DiceView extends ItemView {
     formulaComponent: TextAreaComponent;
     resultEl: HTMLDivElement;
 
-    renderer = new DiceRenderer();
+    /* renderer = new DiceRenderer(); */
 
     constructor(public plugin: DiceRollerPlugin, public leaf: WorkspaceLeaf) {
         super(leaf);
@@ -177,13 +177,13 @@ export default class DiceView extends ItemView {
                 this.setFormula();
             });
 
-        new ButtonComponent(this.gridEl).setIcon("blocks").onClick(() => {
+        /* new ButtonComponent(this.gridEl).setIcon("blocks").onClick(() => {
             this.addChild(this.renderer);
         });
         new ButtonComponent(this.gridEl).setIcon("trash").onClick(() => {
             this.renderer.unload();
             this.removeChild(this.renderer);
-        });
+        }); */
     }
     formulaDice: StackRoller;
     buildFormula() {
@@ -311,6 +311,6 @@ export default class DiceView extends ItemView {
     }
     async onClose() {
         await super.onClose();
-        this.renderer.unload();
+        /* this.renderer.unload(); */
     }
 }

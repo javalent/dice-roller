@@ -6,8 +6,7 @@ module.exports = {
     devtool: "eval",
     output: {
         ...config.output,
-        path:
-            "C:/Users/jvalentine/iCloudDrive/iCloud~md~obsidian/The Price of Revenge/.obsidian/plugins/obsidian-dice-roller"
+        path: "/Users/jeremyvalentine/Library/Mobile Documents/iCloud~md~obsidian/Documents/The Price of Revenge/.obsidian/plugins/obsidian-dice-roller"
     },
     watchOptions: {
         ignored: ["styles.css", "*.js", "**/node_modules"]
