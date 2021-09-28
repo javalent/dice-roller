@@ -126,6 +126,8 @@ const MATERIAL_OPTIONS = {
     //shading: THREE.FlatShading,
 };
 
+
+// dice from https://github.com/byWulf/threejs-dice/blob/cd36a626f3f3f11576eb1d694223f07a36371b3b/lib/dice.js
 abstract class DiceObject {
     diceColor = "#202020";
     textColor = "#aaaaaa";
