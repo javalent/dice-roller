@@ -5,17 +5,13 @@ import {
     ExtraButtonComponent,
     ItemView,
     Notice,
-    setIcon,
     TextAreaComponent,
     TextComponent,
     WorkspaceLeaf
 } from "obsidian";
 import DiceRollerPlugin from "src/main";
-import { DiceRoller, StackRoller } from "src/roller";
+import { StackRoller } from "src/roller";
 import { COPY_DEFINITION, ICON_DEFINITION } from "src/utils/constants";
-
-import * as CANNON from "cannon";
-import * as THREE from "three";
 
 import "./view.css";
 
@@ -53,7 +49,6 @@ addIcon(
 
 export default class DiceView extends ItemView {
     noResultsEl: HTMLSpanElement;
-    renderer: THREE.WebGLRenderer;
     static DICE() {
         return {
             d4: 0,
@@ -202,8 +197,6 @@ export default class DiceView extends ItemView {
                 }
                 await roller.roll();
 
-                this.roll();
-
                 this.addResult(roller);
 
                 this.dice = DiceView.DICE();
@@ -215,88 +208,6 @@ export default class DiceView extends ItemView {
 
                 this.setFormula();
             });
-    }
-    async roll() {
-        let world: CANNON.World,
-            shape: CANNON.Box,
-            scene: THREE.Scene,
-            camera: THREE.PerspectiveCamera,
-            geometry: THREE.BoxGeometry,
-            material: THREE.MeshBasicMaterial,
-            mesh: THREE.Mesh,
-            body: CANNON.Body;
-        const initCannon = () => {
-            world = new CANNON.World();
-            world.gravity.set(0, 0, 0);
-            world.broadphase = new CANNON.NaiveBroadphase();
-            world.solver.iterations = 10;
-
-            shape = new CANNON.Box(new CANNON.Vec3(1, 1, 1));
-            let mass = 1;
-            body = new CANNON.Body({
-                mass: 1
-            });
-            body.addShape(shape);
-            body.angularVelocity.set(0, 10, 0);
-            body.angularDamping = 0.5;
-            world.addBody(body);
-        };
-
-        const initThree = () => {
-            scene = new THREE.Scene();
-
-            camera = new THREE.PerspectiveCamera(
-                75,
-                window.innerWidth / window.innerHeight,
-                1,
-                100
-            );
-            camera.position.z = 5;
-            scene.add(camera);
-
-            geometry = new THREE.BoxGeometry(2, 2, 2);
-            material = new THREE.MeshBasicMaterial({
-                color: 0xff0000,
-                wireframe: true
-            });
-
-            mesh = new THREE.Mesh(geometry, material);
-            scene.add(mesh);
-
-            this.renderer = new THREE.WebGLRenderer();
-            this.renderer.domElement.addClass("dice-renderer");
-            this.renderer.setSize(
-                window.innerWidth - 200,
-                window.innerHeight - 200
-            );
-
-            document.body.appendChild(this.renderer.domElement);
-        };
-
-        const animate = () => {
-            requestAnimationFrame(animate);
-            updatePhysics();
-            render();
-        };
-
-        const updatePhysics = () => {
-            // Step the physics world
-            world.step(1 / 60);
-
-            // Copy coordinates from Cannon.js to Three.js
-            //@ts-expect-error
-            mesh.position.copy(body.position);
-            //@ts-expect-error
-            mesh.quaternion.copy(body.quaternion);
-        };
-
-        const render = () => {
-            this.renderer.render(scene, camera);
-        };
-
-        initThree();
-        initCannon();
-        animate();
     }
     addResult(roller: StackRoller) {
         if (this.noResultsEl) {
@@ -386,11 +297,7 @@ export default class DiceView extends ItemView {
     getIcon() {
         return ICON_DEFINITION;
     }
-    async onClose() {
+    /* async onClose() {
         await super.onClose();
-        if (this.renderer) {
-            this.renderer.dispose();
-            this.renderer.domElement.detach();
-        }
-    }
+    } */
 }

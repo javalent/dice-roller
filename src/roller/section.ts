@@ -15,7 +15,6 @@ export class SectionRoller extends GenericFileRoller<SectionCache> {
     results: SectionCache[];
     types: string[];
     content: string;
-    loaded: boolean;
     copy: HTMLDivElement;
 
     constructor(

@@ -45,12 +45,15 @@ export class DiceRoller {
             )
             .join(", ")}]`;
     }
-    constructor(dice: string, public lexeme: Lexeme = {
-        original: dice,
-        conditionals: [],
-        type: 'dice',
-        data: dice
-    }) {
+    constructor(
+        dice: string,
+        public lexeme: Lexeme = {
+            original: dice,
+            conditionals: [],
+            type: "dice",
+            data: dice
+        }
+    ) {
         if (!/(\-?\d+)[dD]?(\d+|%|\[\d+,\s?\d+\])?/.test(dice)) {
             throw new Error("Non parseable dice string passed to DiceRoll.");
         }
@@ -289,8 +292,10 @@ export class DiceRoller {
         if (this.static) {
             return [Number(this.dice)];
         }
-        return [...Array(this.rolls)].map(() =>
-            this.multiplier * this.getRandomBetween(this.faces.min, this.faces.max)
+        return [...Array(this.rolls)].map(
+            () =>
+                this.multiplier *
+                this.getRandomBetween(this.faces.min, this.faces.max)
         );
     }
     roll() {
@@ -447,8 +452,9 @@ export class StackRoller extends GenericRoller<number> {
     result: number;
     stunted: string = "";
     private _tooltip: string;
-    get resultText() {let text = this.original;
-         this.dice.forEach((dice) => {
+    get resultText() {
+        let text = this.original;
+        this.dice.forEach((dice) => {
             text = text.replace(dice.lexeme.original, dice.display);
         });
         return text;
@@ -476,6 +482,8 @@ export class StackRoller extends GenericRoller<number> {
         public lexemes: Lexeme[]
     ) {
         super(plugin, original, lexemes);
+        this.loaded = true;
+        this.trigger("loaded");
     }
     operators: Record<string, (...args: number[]) => number> = {
         "+": (a: number, b: number): number => a + b,
@@ -502,7 +510,6 @@ export class StackRoller extends GenericRoller<number> {
                     let b = this.stack.pop(),
                         a = this.stack.pop();
                     if (!a) {
-
                         if (dice.data === "-") {
                             b = new DiceRoller(`-${b.dice}`, b.lexeme);
                         }

@@ -1,6 +1,5 @@
 import { Component } from "obsidian";
 import * as THREE from "three";
-import { Vector3 } from "three";
 
 export default class DiceRenderer extends Component {
     renderer: THREE.WebGLRenderer;
@@ -160,7 +159,7 @@ class DiceMesh extends Component {
     dice: THREE.PolyhedronGeometry;
     faces: number[][];
     vertices: number[][];
-    vectors: Vector3[];
+    vectors: THREE.Vector3[];
     constructor(public type: DiceSize) {
         super();
         this.vertices = VERTICES[type];

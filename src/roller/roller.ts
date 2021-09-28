@@ -26,6 +26,7 @@ export abstract class Roller<T> {
 
 export abstract class BasicRoller extends Events {
     rolls: number;
+    loaded: boolean = false;
     abstract roll(): Promise<any>;
     result: any;
     containerEl = createDiv({
