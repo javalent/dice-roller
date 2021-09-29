@@ -713,6 +713,10 @@ export default class DiceRollerPlugin extends Plugin {
         this.app.workspace
             .getLeavesOfType(VIEW_TYPE)
             .forEach((leaf) => leaf.detach());
+
+        if ("__THREE__" in window) {
+            delete window.__THREE__;
+        }
     }
 
     operators: any = {
@@ -736,5 +740,10 @@ export default class DiceRollerPlugin extends Plugin {
         try {
             return this.lexer.lex();
         } catch (e) {}
+    }
+}
+declare global {
+    interface Window {
+        __THREE__: string;
     }
 }
