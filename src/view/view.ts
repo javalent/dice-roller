@@ -112,10 +112,17 @@ export default class DiceView extends ItemView {
             const button = new ExtraButtonComponent(
                 buttons.createDiv("dice-button")
             ).setIcon(type);
-            button.extraSettingsEl.onclick = (evt) => {
+            button.extraSettingsEl.onclick = async (evt) => {
                 let add = evt.getModifierState("Shift") ? -1 : 1;
                 this.dice[type] += add;
                 this.setFormula();
+                const roller = await this.plugin.getRoller(
+                    this.formulaComponent.inputEl.value,
+                    "view"
+                );
+                if (roller instanceof StackRoller) {
+                    this.stack = roller;
+                }
             };
         }
 
@@ -177,7 +184,9 @@ export default class DiceView extends ItemView {
                 this.setFormula();
             });
 
-        new ButtonComponent(this.gridEl).setIcon("blocks").onClick(() => {
+        new ButtonComponent(this.gridEl).setIcon("blocks").onClick(async () => {
+            await this.stack.roll();
+            this.renderer.setDice(this.stack.dice);
             this.addChild(this.renderer);
         });
         new ButtonComponent(this.gridEl).setIcon("trash").onClick(() => {
@@ -209,7 +218,39 @@ export default class DiceView extends ItemView {
                 }
                 await roller.roll();
 
-                this.addResult(roller);
+                let resultText = roller.resultText;
+                if (this.plugin.data.renderer) {
+                    this.renderer.setDice(roller.dice);
+                    this.addChild(this.renderer);
+                    const results = await this.renderer.start();
+                    console.log(
+                        "🚀 ~ file: view.ts ~ line 225 ~ results",
+                        results
+                    );
+
+                    let result = 0;
+                    resultText = roller.original;
+
+                    for (let dice of results) {
+                        result += dice[1].reduce((a, b) => a + b);
+                        console.log(
+                            "🚀 ~ file: view.ts ~ line 236 ~ dice[1]",
+                            result,
+                            dice[1]
+                        );
+                        resultText = resultText.replace(
+                            new RegExp(`\\d+d${dice[0]}`),
+                            `[${dice[1]}]`
+                        );
+                    }
+                    roller.result = result;
+                }
+
+                this.addResult({
+                    result: roller.result,
+                    original: roller.original,
+                    resultText
+                });
 
                 this.dice = DiceView.DICE();
                 this.add = null;
@@ -221,7 +262,11 @@ export default class DiceView extends ItemView {
                 this.setFormula();
             });
     }
-    addResult(roller: StackRoller) {
+    addResult(roller: {
+        result: number;
+        original: string;
+        resultText: string;
+    }) {
         if (this.noResultsEl) {
             this.noResultsEl.detach();
         }

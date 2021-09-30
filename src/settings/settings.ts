@@ -3,8 +3,7 @@ import {
     ButtonComponent,
     Notice,
     PluginSettingTab,
-    Setting,
-    TextComponent
+    Setting
 } from "obsidian";
 import type DiceRoller from "../main";
 
@@ -79,6 +78,16 @@ export default class SettingTab extends PluginSettingTab {
                 t.setValue(this.plugin.data.persistResults);
                 t.onChange(async (v) => {
                     this.plugin.data.persistResults = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+        new Setting(containerEl)
+            .setName("Display graphics for Dice View Rolls")
+            .setDesc("Dice rolls from dice view will be displayed on screen.")
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.renderer);
+                t.onChange(async (v) => {
+                    this.plugin.data.renderer = v;
                     await this.plugin.saveSettings();
                 });
             });

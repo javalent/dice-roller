@@ -668,4 +668,7 @@ export class StackRoller extends GenericRoller<number> {
         }
         await this.render();
     }
+    setResult(result: number[]) {
+        
+    }
 }

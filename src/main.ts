@@ -93,6 +93,7 @@ interface DiceRollerSettings {
     };
     defaultRoll: number;
     defaultFace: number;
+    renderer: boolean;
 }
 
 const DEFAULT_SETTINGS: DiceRollerSettings = {
@@ -104,7 +105,8 @@ const DEFAULT_SETTINGS: DiceRollerSettings = {
     persistResults: false,
     results: {},
     defaultRoll: 1,
-    defaultFace: 100
+    defaultFace: 100,
+    renderer: false
 };
 
 export default class DiceRollerPlugin extends Plugin {

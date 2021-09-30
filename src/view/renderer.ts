@@ -1,12 +1,17 @@
-import { Component } from "obsidian";
+import { Component, Events } from "obsidian";
 import * as THREE from "three";
 import * as CANNON from "cannon-es";
 
 import { OrbitControls } from "./orbit";
+import { DiceRoller } from "src/roller";
 
 type DiceSize = "d4" | "d6" | "d8" | "d10" | "d12" | "d20";
 
+const FLOOR = 0;
+
 export default class DiceRenderer extends Component {
+    event = new Events();
+
     renderer: THREE.WebGLRenderer;
     scene: THREE.Scene;
     world: World;
@@ -19,21 +24,18 @@ export default class DiceRenderer extends Component {
     diceColor = "#202020";
     labelColor = "#aaaaaa";
 
-    /*     d20 = new D20Dice(1);
-    d12 = new D12Dice(1);
-    d10 = new D10Dice(1);
-    d8 = new D8Dice(1);
-    d6 = new D6Dice(1);
-    d4 = new D4Dice(1); */
     current: Dice[] = [];
     body: CANNON.ConvexPolyhedron;
     directionalLight: THREE.DirectionalLight;
-    ambientLight: THREE.AmbientLight;
+    ambientLight: THREE.HemisphereLight;
     animation: number;
     sphereMesh: THREE.Mesh<THREE.SphereGeometry, THREE.MeshNormalMaterial>;
     sphereBody: CANNON.Body;
     light: THREE.SpotLight;
     controls: OrbitControls;
+    shadows: boolean = true;
+    desk: any;
+    iterations: number = 0;
 
     get WIDTH() {
         return this.container.clientWidth / 2;
@@ -52,79 +54,432 @@ export default class DiceRenderer extends Component {
         return this.renderer.domElement;
     }
 
-    constructor() {
+    constructor(public dice?: DiceRoller[]) {
         super();
     }
+
+    setDice(dice: DiceRoller[]) {
+        this.dice = dice;
+    }
+
     onload() {
         this.container.empty();
+        this.container.style.opacity = `1`;
         document.body.appendChild(this.container);
-        this.initScene();
-        this.initWorld();
-
-        this.render();
-    }
-    get mw() {
-        return Math.max(this.WIDTH, this.HEIGHT);
-    }
-    initLighting() {
-        this.ambientLight = new THREE.AmbientLight(0x404040);
-        this.scene.add(this.ambientLight);
-
-        this.directionalLight = new THREE.DirectionalLight(0xefdfd5, 0.675);
-        this.directionalLight.position.set(0, 0, 1);
-        this.directionalLight.castShadow = true;
-        this.scene.add(this.directionalLight);
-    }
-    initScene() {
-        this.scene = new THREE.Scene();
-        this.initLighting();
-
-        this.camera = new THREE.PerspectiveCamera(
-            20,
-            this.ASPECT,
-            1,
-            (this.HEIGHT / this.ASPECT / Math.tan((10 * Math.PI) / 180)) * 1.3
-        );
-        this.camera.position.set(this.WIDTH, this.HEIGHT, 200);
-
-        this.camera.updateProjectionMatrix();
 
         this.renderer = new THREE.WebGLRenderer({
             alpha: true,
             antialias: true
         });
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFShadowMap;
-
-        this.renderer.setSize(this.WIDTH * 2, this.HEIGHT * 2);
+        this.renderer.shadowMap.enabled = this.shadows;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.container.appendChild(this.renderer.domElement);
+        this.renderer.setClearColor(0x000000, 0);
 
-        this.current = [new D20Dice(this.WIDTH, this.HEIGHT)];
+        this.initScene();
+        this.initWorld();
+        this.initDice();
+    }
 
-        this.startThrow();
+    async start(): Promise<Array<[number, number[]]>> {
+        return new Promise(async (resolve) => {
+            this.event.on("throw-finished", (result) => {
+                resolve(result);
+            });
+            this.render();
+        });
+    }
+    initDice() {
+        for (let dice of this.dice) {
+            switch (dice.faces.max) {
+                case 4: {
+                    this.current.push(
+                        ...new Array(dice.rolls)
+                            .fill(0)
+                            .map(
+                                (r) =>
+                                    new D4Dice(
+                                        this.WIDTH,
+                                        this.HEIGHT,
+                                        dice.result
+                                    )
+                            )
+                    );
+                    break;
+                }
+                case 6: {
+                    this.current.push(
+                        ...new Array(dice.rolls)
+                            .fill(0)
+                            .map(
+                                (r) =>
+                                    new D6Dice(
+                                        this.WIDTH,
+                                        this.HEIGHT,
+                                        dice.result
+                                    )
+                            )
+                    );
+                    break;
+                }
+                case 8: {
+                    this.current.push(
+                        ...new Array(dice.rolls)
+                            .fill(0)
+                            .map(
+                                (r) =>
+                                    new D8Dice(
+                                        this.WIDTH,
+                                        this.HEIGHT,
+                                        dice.result
+                                    )
+                            )
+                    );
+                    break;
+                }
+                case 10: {
+                    this.current.push(
+                        ...new Array(dice.rolls)
+                            .fill(0)
+                            .map(
+                                (r) =>
+                                    new D10Dice(
+                                        this.WIDTH,
+                                        this.HEIGHT,
+                                        dice.result
+                                    )
+                            )
+                    );
+                    break;
+                }
+                case 12: {
+                    this.current.push(
+                        ...new Array(dice.rolls)
+                            .fill(0)
+                            .map(
+                                (r) =>
+                                    new D12Dice(
+                                        this.WIDTH,
+                                        this.HEIGHT,
+                                        dice.result
+                                    )
+                            )
+                    );
+                    break;
+                }
+                case 20:
+                default: {
+                    this.current.push(
+                        ...new Array(dice.rolls)
+                            .fill(0)
+                            .map(
+                                (r) =>
+                                    new D20Dice(
+                                        this.WIDTH,
+                                        this.HEIGHT,
+                                        dice.result
+                                    )
+                            )
+                    );
+                    break;
+                }
+            }
+        }
 
-        console.log(this.current);
+        if (!this.current) {
+            this.unload();
+            return;
+        }
 
         this.scene.add(...this.current.map((d) => d.geometry));
-    }
-    initWorld() {
-        this.world = new World(this.WIDTH * 2, this.HEIGHT * 2);
         this.world.add(...this.current);
     }
+
+    enableShadows() {
+        this.shadows = true;
+        if (this.renderer) this.renderer.shadowMap.enabled = this.shadows;
+        if (this.light) this.light.castShadow = this.shadows;
+        if (this.desk) this.desk.receiveShadow = this.shadows;
+    }
+    disableShadows() {
+        this.shadows = false;
+        if (this.renderer) this.renderer.shadowMap.enabled = this.shadows;
+        if (this.light) this.light.castShadow = this.shadows;
+        if (this.desk) this.desk.receiveShadow = this.shadows;
+    }
+    colors = {
+        ambient: 0xffffff,
+        spotlight: 0xffffff
+    };
+
+    get mw() {
+        return Math.max(this.WIDTH, this.HEIGHT);
+    }
+    display: { [key: string]: number } = {
+        currentWidth: null,
+        currentHeight: null,
+        containerWidth: null,
+        containerHeight: null,
+        aspect: null,
+        scale: null
+    };
+    cameraHeight: { [key: string]: number } = {
+        max: null,
+        close: null,
+        medium: null,
+        far: null
+    };
+    setDimensions(dimensions?: { w: number; h: number }) {
+        this.display.currentWidth = this.container.clientWidth / 2;
+        this.display.currentHeight = this.container.clientHeight / 2;
+        if (dimensions) {
+            this.display.containerWidth = dimensions.w;
+            this.display.containerHeight = dimensions.h;
+        } else {
+            this.display.containerWidth = this.display.currentWidth;
+            this.display.containerHeight = this.display.currentHeight;
+        }
+        this.display.aspect = Math.min(
+            this.display.currentWidth / this.display.containerWidth,
+            this.display.currentHeight / this.display.containerHeight
+        );
+        this.display.scale =
+            Math.sqrt(
+                this.display.containerWidth * this.display.containerWidth +
+                    this.display.containerHeight * this.display.containerHeight
+            ) / 13;
+
+        this.renderer.setSize(
+            this.display.currentWidth * 2,
+            this.display.currentHeight * 2
+        );
+
+        this.cameraHeight.max =
+            this.display.currentHeight /
+            this.display.aspect /
+            Math.tan((10 * Math.PI) / 180);
+
+        this.cameraHeight.medium = this.cameraHeight.max / 1.5;
+        this.cameraHeight.far = this.cameraHeight.max;
+        this.cameraHeight.close = this.cameraHeight.max / 2;
+    }
+    initCamera() {
+        if (this.camera) this.scene.remove(this.camera);
+        this.camera = new THREE.PerspectiveCamera(
+            20,
+            this.display.currentWidth / this.display.currentHeight,
+            1,
+            this.cameraHeight.max * 1.3
+        );
+
+        this.camera.position.z = this.cameraHeight.far;
+
+        this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+    }
+    initLighting() {
+        const maxwidth = Math.max(
+            this.display.containerWidth,
+            this.display.containerHeight
+        );
+
+        if (this.light) this.scene.remove(this.light);
+        if (this.ambientLight) this.scene.remove(this.ambientLight);
+        this.light = new THREE.SpotLight(this.colors.spotlight, 0.5);
+        this.light.position.set(-maxwidth / 2, maxwidth / 2, maxwidth * 3);
+        this.light.target.position.set(0, 0, 0);
+        this.light.distance = maxwidth * 5;
+        this.light.angle = Math.PI / 4;
+        this.light.castShadow = this.shadows;
+        this.light.shadow.camera.near = maxwidth / 10;
+        this.light.shadow.camera.far = maxwidth * 5;
+        this.light.shadow.camera.fov = 50;
+        this.light.shadow.bias = 0.001;
+        this.light.shadow.mapSize.width = 1024;
+        this.light.shadow.mapSize.height = 1024;
+        this.scene.add(this.light);
+
+        this.ambientLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 1);
+        this.scene.add(this.ambientLight);
+    }
+    initDesk() {
+        if (this.desk) this.scene.remove(this.desk);
+        let shadowplane = new THREE.ShadowMaterial();
+        shadowplane.opacity = 0.5;
+        this.desk = new THREE.Mesh(
+            new THREE.PlaneGeometry(
+                this.display.containerWidth * 6,
+                this.display.containerHeight * 6,
+                1,
+                1
+            ),
+            shadowplane
+        );
+        this.desk.receiveShadow = this.shadows;
+        this.scene.add(this.desk);
+    }
+    initScene() {
+        this.scene = new THREE.Scene();
+
+        this.setDimensions();
+        this.initCamera();
+        this.initLighting();
+        this.initDesk();
+
+        this.camera.updateProjectionMatrix();
+
+        this.renderer.render(this.scene, this.camera);
+
+        /*         this.camera = new THREE.PerspectiveCamera(
+            45,
+            this.ASPECT,
+            1,
+            (this.HEIGHT / this.ASPECT / Math.tan((10 * Math.PI) / 180)) * 1.3
+        );
+
+        this.camera.position.set(0, 0, 1275);
+        this.camera.rotation.set(0, 0, 0); */
+
+        /* this.startThrow();
+         */
+
+        /*         const direction = new THREE.Vector3();
+        this.camera.getWorldDirection(direction);
+
+        this.controls = new OrbitControls(
+            this.camera,
+            this.renderer.domElement
+        );
+        this.camera.getWorldPosition(this.controls.target);
+        this.controls.target.addScaledVector(direction, 5);
+        this.controls.enablePan = true;
+        this.controls.enableZoom = true;
+        this.controls.update();
+        this.controls.target = new THREE.Vector3(0, 0, 0); */
+    }
+    initWorld() {
+        this.world = new World(this.WIDTH, this.HEIGHT);
+        this.iterations = 0;
+        this.buildWalls();
+    }
+
+    dice_body_material = new CANNON.Material();
+    desk_body_material = new CANNON.Material();
+    barrier_body_material = new CANNON.Material();
+
+    buildWalls() {
+        this.world.world.addContactMaterial(
+            new CANNON.ContactMaterial(
+                this.desk_body_material,
+                this.dice_body_material,
+                { friction: 0.01, restitution: 0.5 }
+            )
+        );
+        this.world.world.addContactMaterial(
+            new CANNON.ContactMaterial(
+                this.barrier_body_material,
+                this.dice_body_material,
+                { friction: 0, restitution: 1.0 }
+            )
+        );
+        this.world.world.addContactMaterial(
+            new CANNON.ContactMaterial(
+                this.dice_body_material,
+                this.dice_body_material,
+                { friction: 0, restitution: 0.5 }
+            )
+        );
+        this.world.world.addBody(
+            new CANNON.Body({
+                allowSleep: false,
+                mass: 0,
+                shape: new CANNON.Plane(),
+                material: this.desk_body_material
+            })
+        );
+
+        let barrier = new CANNON.Body({
+            allowSleep: false,
+            mass: 0,
+            shape: new CANNON.Plane(),
+            material: this.barrier_body_material
+        });
+        barrier.quaternion.setFromAxisAngle(
+            new CANNON.Vec3(1, 0, 0),
+            Math.PI / 2
+        );
+        barrier.position.set(0, this.HEIGHT * 0.93, 0);
+        this.world.world.addBody(barrier);
+
+        barrier = new CANNON.Body({
+            allowSleep: false,
+            mass: 0,
+            shape: new CANNON.Plane(),
+            material: this.barrier_body_material
+        });
+        barrier.quaternion.setFromAxisAngle(
+            new CANNON.Vec3(1, 0, 0),
+            -Math.PI / 2
+        );
+        barrier.position.set(0, -this.HEIGHT * 0.93, 0);
+        this.world.world.addBody(barrier);
+
+        barrier = new CANNON.Body({
+            allowSleep: false,
+            mass: 0,
+            shape: new CANNON.Plane(),
+            material: this.barrier_body_material
+        });
+        barrier.quaternion.setFromAxisAngle(
+            new CANNON.Vec3(0, 1, 0),
+            -Math.PI / 2
+        );
+        barrier.position.set(this.WIDTH * 0.93, 0, 0);
+        this.world.world.addBody(barrier);
+
+        barrier = new CANNON.Body({
+            allowSleep: false,
+            mass: 0,
+            shape: new CANNON.Plane(),
+            material: this.barrier_body_material
+        });
+        barrier.quaternion.setFromAxisAngle(
+            new CANNON.Vec3(0, 1, 0),
+            Math.PI / 2
+        );
+        barrier.position.set(-this.WIDTH * 0.93, 0, 0);
+        this.world.world.addBody(barrier);
+    }
+
     render() {
+        if (this.throwFinished()) {
+            const map: { [key: number]: number[] } = {};
+            this.current.forEach((dice) => {
+                map[dice.sides] = [
+                    ...(map[dice.sides] ?? []),
+                    dice.getUpsideValue()
+                ];
+            });
+            const sorted = Object.entries(map).sort((a, b) => b[0] - a[0]);
+            this.event.trigger("throw-finished", sorted);
+            this.registerInterval(
+                window.setTimeout(() => {
+                    this.container.style.opacity = `0`;
+                    this.registerInterval(
+                        window.setTimeout(() => this.unload(), 2000)
+                    );
+                }, 2000)
+            );
+
+            return;
+        }
         this.animation = requestAnimationFrame(() => this.render());
-        /* this.current.forEach((dice) => {
-            dice.rotation.x += 0.05;
-            dice.rotation.y += 0.01;
-        }); */
+
         this.world.step(1 / 60);
         this.current.forEach((dice) => {
             dice.set();
         });
-        /* console.log(this.current[0].geometry.position.x); */
 
-        this.camera.updateProjectionMatrix();
-
+        this.controls?.update();
         this.renderer.render(this.scene, this.camera);
     }
     dispose(...children: any[]) {
@@ -142,7 +497,9 @@ export default class DiceRenderer extends Component {
         this.renderer.dispose();
 
         this.ambientLight.dispose();
-        this.directionalLight.dispose();
+        this.light.dispose();
+
+        this.controls?.dispose();
 
         this.scene.children.forEach((child) => this.dispose(child));
 
@@ -159,114 +516,21 @@ export default class DiceRenderer extends Component {
                     : [dice.geometry.material])
             ];
             materials.forEach((material) => material && material.dispose());
+            this.world.world.removeBody(dice.body);
         });
-
+        this.current = [];
         //causes white flash?
         //this.renderer.forceContextLoss();
     }
 
-    startThrow(
-        vector: Vector = {
-            x: /* (Math.random() * 2 - 1) * */ this.WIDTH,
-            y: /* -(Math.random() * 2 - 1) * */ this.HEIGHT
-        }
-    ) {
-        this.dispose(...this.current.map((d) => d.geometry));
-        this.current = [];
+    onThrowFinished() {}
 
-        const dist = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
-        const boost = (Math.random() + 3) * dist;
-
-        vector.x /= dist;
-        vector.y /= dist;
-
-        const vectors = this.generateVectorsForThrow(vector, boost);
-
-        for (const vector of vectors) {
-            let dice: Dice;
-            switch (Math.floor(Math.random() * 5)) {
-                default:
-                case 0: {
-                    dice = new D20Dice(this.WIDTH, this.HEIGHT /* , vector */);
-                    break;
-                }
-                case 1: {
-                    dice = new D12Dice(this.WIDTH, this.HEIGHT /* , vector */);
-                    break;
-                }
-                case 2: {
-                    dice = new D10Dice(this.WIDTH, this.HEIGHT /* , vector */);
-                    break;
-                }
-                case 3: {
-                    dice = new D8Dice(this.WIDTH, this.HEIGHT /* , vector */);
-                    break;
-                }
-                case 4: {
-                    dice = new D6Dice(this.WIDTH, this.HEIGHT /* , vector */);
-                    break;
-                }
-                case 5: {
-                    dice = new D4Dice(this.WIDTH, this.HEIGHT /* , vector */);
-                    break;
-                }
-            }
-
-            //const dice = new D20Dice(this.WIDTH, this.HEIGHT, vector);
-            this.current.push(dice);
-        }
-    }
-    generateVectorsForThrow(vector: Vector, boost: number) {
-        const vectors = [];
-        for (let i = 0; i < Math.floor(Math.random() * 5) + 1; i++) {
-            const vec = this.randomVector(vector);
-            const pos = {
-                x: this.WIDTH /* * (vec.x > 0 ? -1 : 1) */ * Math.random(),
-                y: this.HEIGHT /* * (vec.y > 0 ? -1 : 1) */ * Math.random(),
-                z: 125
-            };
-            const projector = Math.abs(vec.x / vec.y);
-            if (projector > 1.0) pos.y /= projector;
-            else pos.x *= projector;
-            const velvec = this.randomVector(vector);
-            const velocity = {
-                x: velvec.x * boost,
-                y: velvec.y * boost,
-                z: -1
-            };
-            const angle = {
-                x: -((Math.random() * vec.y * 5) /* + inertia * vec.y */),
-                y: Math.random() * vec.x * 5 /*  + inertia * vec.x */,
-                z: 0
-            };
-            const axis = {
-                x: Math.random(),
-                y: Math.random(),
-                z: Math.random(),
-                w: Math.random()
-            };
-            vectors.push({
-                pos: pos
-                /* velocity: velocity,
-                angle: angle,
-                axis: axis */
-            });
-        }
-        return vectors;
-    }
-    randomVector(vector: Vector) {
-        var random_angle = (Math.random() * Math.PI) / 5 - Math.PI / 5 / 2;
-        var vec = {
-            x:
-                vector.x * Math.cos(random_angle) -
-                vector.y * Math.sin(random_angle),
-            y:
-                vector.x * Math.sin(random_angle) +
-                vector.y * Math.cos(random_angle)
-        };
-        if (vec.x == 0) vec.x = 0.01;
-        if (vec.y == 0) vec.y = 0.01;
-        return vec;
+    throwFinished() {
+        return (
+            this.current?.every((d) => d.isFinished()) ??
+            this.iterations > 1000 ??
+            false
+        );
     }
 }
 
@@ -304,59 +568,34 @@ class World {
         }
         this.lastCallTime = time;
     }
-    world = new CANNON.World({ gravity: new CANNON.Vec3(0, 0, -9.82 * 5) });
-    ground = new CANNON.Body({
-        type: CANNON.Body.STATIC,
-        shape: new CANNON.Plane()
-    });
-    constructor(public w: number, public h: number) {
+    world = new CANNON.World({ gravity: new CANNON.Vec3(0, 0, -9.82 * 100) });
+    ground = this.getPlane();
+    constructor(public WIDTH: number, public HEIGHT: number) {
         this.world.broadphase = new CANNON.NaiveBroadphase();
-        this.ground.quaternion.setFromEuler(0, 0, 0);
-        this.ground.position.set(0, 0, 100);
+        this.world.allowSleep = true;
+        this.ground.position.set(0, 0, FLOOR);
         this.world.addBody(this.ground);
-
-        const left = new CANNON.Body({
+    }
+    getPlane() {
+        return new CANNON.Body({
             type: CANNON.Body.STATIC,
             shape: new CANNON.Plane()
         });
-        left.position.set(0, 0, 100);
-        left.quaternion.setFromEuler(0, Math.PI / 2, 0);
-
-        this.world.addBody(left);
-        /* const bottom = new CANNON.Body({
-            type: CANNON.Body.STATIC,
-            shape: new CANNON.Plane(),
-            position: new CANNON.Vec3(0, this.h, 0)
-        });
-        bottom.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
-        this.world.addBody(bottom); */
-
-        /* 
-
-        const right = new CANNON.Body({
-            type: CANNON.Body.STATIC,
-            shape: new CANNON.Plane(),
-            position: new CANNON.Vec3(-this.w * 0.93, 0, 0)
-        });
-        right.quaternion.setFromAxisAngle(
-            new CANNON.Vec3(0, 1, 0),
-            -Math.PI / 2
-        );
-        this.world.addBody(right); */
     }
 }
 
 const DEFAULT_DICE_OPTIONS = {
     radius: 1,
-    diceColor: "#202020"
+    diceColor: "#202020",
+    textColor: "#aaaaaa"
 };
 
 // dice from https://github.com/byWulf/threejs-dice/blob/cd36a626f3f3f11576eb1d694223f07a36371b3b/lib/dice.js
 abstract class Dice {
-    textColor = "#aaaaaa";
-
     geometry: THREE.Mesh;
     shape: CANNON.ConvexPolyhedron;
+
+    scale = 50;
 
     abstract af: number;
     abstract chamfer: number;
@@ -395,15 +634,19 @@ abstract class Dice {
     abstract scaleFactor: number;
     abstract tab: number;
 
+    abstract values: number[];
     abstract vertices: number[][];
     body: CANNON.Body;
+    chamferGeometry: { vectors: THREE.Vector3[]; faces: any[][] };
 
     constructor(
         public w: number,
         public h: number,
+        public result?: number,
         public options = {
             radius: 1,
-            diceColor: "#202020"
+            diceColor: "#202020",
+            textColor: "#aaaaaa"
         }
     ) {
         this.options = {
@@ -413,14 +656,89 @@ abstract class Dice {
     }
 
     get radius() {
-        return this.options.radius;
+        return this.options.radius * this.scale * this.scaleFactor;
     }
     get diceColor() {
         return this.options.diceColor;
     }
-
+    get textColor() {
+        return this.options.textColor;
+    }
     get vectors() {
         return;
+    }
+
+    isFinished() {
+        let threshold = 0.5;
+
+        let angularVelocity = this.body.angularVelocity;
+        let velocity = this.body.velocity;
+
+        return (
+            Math.abs(angularVelocity.x) < threshold &&
+            Math.abs(angularVelocity.y) < threshold &&
+            Math.abs(angularVelocity.z) < threshold &&
+            Math.abs(velocity.x) < threshold &&
+            Math.abs(velocity.y) < threshold &&
+            Math.abs(velocity.z) < threshold
+        );
+    }
+    get buffer() {
+        return this.geometry.geometry;
+    }
+    getUpsideValue() {
+        let vector = new THREE.Vector3(0, 0, this.sides == 4 ? -1 : 1);
+        let closest_face,
+            closest_angle = Math.PI * 2;
+        const normals = this.buffer.getAttribute("normal").array;
+        for (let i = 0, l = this.buffer.groups.length; i < l; ++i) {
+            const face = this.buffer.groups[i];
+            if (face.materialIndex == 0) continue;
+            let startVertex = i * 9;
+            const normal = new THREE.Vector3(
+                normals[startVertex],
+                normals[startVertex + 1],
+                normals[startVertex + 2]
+            );
+            const angle = normal
+                .clone()
+                .applyQuaternion(
+                    new THREE.Quaternion(
+                        this.body.quaternion.x,
+                        this.body.quaternion.y,
+                        this.body.quaternion.z,
+                        this.body.quaternion.w
+                    )
+                )
+                .angleTo(vector);
+            if (angle < closest_angle) {
+                closest_angle = angle;
+                closest_face = face;
+            }
+        }
+        let matindex = closest_face.materialIndex - 1;
+        if (this.sides == 10 && matindex == 0) matindex = 10;
+        return matindex;
+    }
+
+    shiftUpperValue(to: number) {
+        let geometry = this.geometry.geometry.clone();
+
+        let from = this.getUpsideValue();
+        for (let i = 0, l = geometry.groups.length; i < l; ++i) {
+            let materialIndex = geometry.groups[i].materialIndex;
+            if (materialIndex === 0) continue;
+
+            materialIndex += to - from - 1;
+            while (materialIndex > this.sides) materialIndex -= this.sides;
+            while (materialIndex < 1) materialIndex += this.sides;
+
+            geometry.groups[i].materialIndex = materialIndex + 1;
+        }
+
+        /* this.updateMaterialsForValue(toValue - fromValue);
+
+        this.geometry.geometry = geometry; */
     }
 
     generateVector() {}
@@ -441,28 +759,20 @@ abstract class Dice {
 
     create() {
         this.geometry = new THREE.Mesh(this.getGeometry(), this.getMaterials());
-
         this.geometry.receiveShadow = true;
         this.geometry.castShadow = true;
 
         this.body.position.set(
-            this
-                .w /*  + Math.round(Math.random()) * 2 - 1 * Math.random() * 10 */,
-            this
-                .h /*  + Math.round(Math.random()) * 2 - 1 * Math.random() * 10 */,
-
-            150
+            0 + this.radius * 2 * Math.random(),
+            0 + this.radius * 2 * Math.random(),
+            FLOOR + this.radius * 4
         );
-        this.body.angularVelocity.set(
-            Math.random() * 5,
-            Math.random() * 5,
-            Math.random() * 5
-        );
-        //this.body.velocity.set(0, Math.random() * 25, 0);
+        this.body.velocity.x = 500 * Math.random() * 2 - 1;
+        this.body.velocity.y = 500 * Math.random() * 2 - 1;
+        this.body.angularVelocity.x = 100 * Math.random();
+        this.body.angularVelocity.y = 100 * Math.random();
     }
     getGeometry() {
-        let radius = this.radius * this.scaleFactor;
-
         let vectors = new Array(this.vertices.length);
         for (let i = 0; i < this.vertices.length; ++i) {
             vectors[i] = new THREE.Vector3()
@@ -470,17 +780,10 @@ abstract class Dice {
                 .normalize();
         }
 
-        let chamferGeometry = this.getChamferGeometry(
-            vectors,
-            this.faces,
-            this.chamfer
-        );
+        this.chamferGeometry = this.getChamferGeometry(vectors);
         let geometry = this.makeGeometry(
-            chamferGeometry.vectors,
-            chamferGeometry.faces,
-            radius,
-            this.tab,
-            this.af
+            this.chamferGeometry.vectors,
+            this.chamferGeometry.faces
         );
 
         this.shape = this.makeShape(vectors);
@@ -508,17 +811,13 @@ abstract class Dice {
         }
         return new CANNON.ConvexPolyhedron({ vertices: cv, faces: cf });
     }
-    getChamferGeometry(
-        vectors: THREE.Vector3[],
-        faces: number[][],
-        chamfer: number
-    ) {
+    getChamferGeometry(vectors: THREE.Vector3[]) {
         let chamfer_vectors = [],
             chamfer_faces = [],
             corner_faces = new Array(vectors.length);
         for (let i = 0; i < vectors.length; ++i) corner_faces[i] = [];
-        for (let i = 0; i < faces.length; ++i) {
-            let ii = faces[i],
+        for (let i = 0; i < this.faces.length; ++i) {
+            let ii = this.faces[i],
                 fl = ii.length - 1;
             let center_point = new THREE.Vector3();
             let face = new Array(fl);
@@ -533,19 +832,19 @@ abstract class Dice {
             for (let j = 0; j < fl; ++j) {
                 let vv = chamfer_vectors[face[j]];
                 vv.subVectors(vv, center_point)
-                    .multiplyScalar(chamfer)
+                    .multiplyScalar(this.chamfer)
                     .addVectors(vv, center_point);
             }
             face.push(ii[fl]);
             chamfer_faces.push(face);
         }
-        for (let i = 0; i < faces.length - 1; ++i) {
-            for (let j = i + 1; j < faces.length; ++j) {
+        for (let i = 0; i < this.faces.length - 1; ++i) {
+            for (let j = i + 1; j < this.faces.length; ++j) {
                 let pairs = [],
                     lastm = -1;
-                for (let m = 0; m < faces[i].length - 1; ++m) {
-                    let n = faces[j].indexOf(faces[i][m]);
-                    if (n >= 0 && n < faces[j].length - 1) {
+                for (let m = 0; m < this.faces[i].length - 1; ++m) {
+                    let n = this.faces[j].indexOf(this.faces[i][m]);
+                    if (n >= 0 && n < this.faces[j].length - 1) {
                         if (lastm >= 0 && m !== lastm + 1)
                             pairs.unshift([i, m], [j, n]);
                         else pairs.push([i, m], [j, n]);
@@ -567,7 +866,7 @@ abstract class Dice {
                 face = [cf[0]],
                 count = cf.length - 1;
             while (count) {
-                for (let m = faces.length; m < chamfer_faces.length; ++m) {
+                for (let m = this.faces.length; m < chamfer_faces.length; ++m) {
                     let index = chamfer_faces[m].indexOf(face[face.length - 1]);
                     if (index >= 0 && index < 4) {
                         if (--index === -1) index = 3;
@@ -585,17 +884,11 @@ abstract class Dice {
         }
         return { vectors: chamfer_vectors, faces: chamfer_faces };
     }
-    makeGeometry(
-        vertices: THREE.Vector3[],
-        faces: number[][],
-        radius = this.radius,
-        tab = this.tab,
-        af = this.af
-    ) {
+    makeGeometry(vertices: THREE.Vector3[], faces: number[][]) {
         let geom = new THREE.BufferGeometry();
 
         for (let i = 0; i < vertices.length; ++i) {
-            vertices[i] = vertices[i].multiplyScalar(radius);
+            vertices[i] = vertices[i].multiplyScalar(this.radius);
         }
 
         let positions = [];
@@ -631,16 +924,24 @@ abstract class Dice {
 
                 //UVs
                 uvs.push(
-                    (Math.cos(af) + 1 + tab) / 2 / (1 + tab),
-                    (Math.sin(af) + 1 + tab) / 2 / (1 + tab)
+                    (Math.cos(this.af) + 1 + this.tab) / 2 / (1 + this.tab),
+                    (Math.sin(this.af) + 1 + this.tab) / 2 / (1 + this.tab)
                 );
                 uvs.push(
-                    (Math.cos(aa * (j + 1) + af) + 1 + tab) / 2 / (1 + tab),
-                    (Math.sin(aa * (j + 1) + af) + 1 + tab) / 2 / (1 + tab)
+                    (Math.cos(aa * (j + 1) + this.af) + 1 + this.tab) /
+                        2 /
+                        (1 + this.tab),
+                    (Math.sin(aa * (j + 1) + this.af) + 1 + this.tab) /
+                        2 /
+                        (1 + this.tab)
                 );
                 uvs.push(
-                    (Math.cos(aa * (j + 2) + af) + 1 + tab) / 2 / (1 + tab),
-                    (Math.sin(aa * (j + 2) + af) + 1 + tab) / 2 / (1 + tab)
+                    (Math.cos(aa * (j + 2) + this.af) + 1 + this.tab) /
+                        2 /
+                        (1 + this.tab),
+                    (Math.sin(aa * (j + 2) + this.af) + 1 + this.tab) /
+                        2 /
+                        (1 + this.tab)
                 );
             }
 
@@ -661,14 +962,17 @@ abstract class Dice {
             new THREE.Float32BufferAttribute(normals, 3)
         );
         geom.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
-        geom.boundingSphere = new THREE.Sphere(new THREE.Vector3(), radius);
+        geom.boundingSphere = new THREE.Sphere(
+            new THREE.Vector3(),
+            this.radius
+        );
         return geom;
     }
     getMaterials() {
         let materials: THREE.MeshPhongMaterial[] = [];
         for (let i = 0; i < this.labels.length; ++i) {
             let texture = null;
-            texture = this.createTextTexture(this.labels[i]);
+            texture = this.createTextTexture(i);
 
             materials.push(
                 new THREE.MeshPhongMaterial(
@@ -684,29 +988,51 @@ abstract class Dice {
             Math.pow(2, Math.floor(Math.log(approx) / Math.log(2)))
         );
     }
-    createTextTexture(text: string) {
+    createTextTexture(index: number) {
+        let text = this.labels[index];
+        if (text == undefined) return null;
         let canvas = document.createElement("canvas");
-        let context = canvas.getContext("2d");
+        let ctx = canvas.getContext("2d");
         let ts =
             this.calculateTextureSize(
-                this.radius / 2 + this.radius * this.margin
+                this.radius + this.radius * 2 * this.margin
             ) * 2;
         canvas.width = canvas.height = ts;
-        context.font = ts / (1 + 2 * this.margin) + "pt Arial";
-        context.fillStyle = this.diceColor;
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        context.fillStyle = this.textColor;
-        context.fillText(text, canvas.width / 2, canvas.height / 2);
-        let texture = new THREE.Texture(canvas);
+        let textstarty = canvas.height / 2;
+        let textstartx = canvas.width / 2;
+        let fontsize = ts / (1 + 2 * this.margin);
+
+        if (this.sides == 10) {
+            fontsize = fontsize * 0.75;
+            textstarty = textstarty * 1.25;
+            textstartx = textstartx * 0.9;
+        } else if (this.sides == 20) {
+            textstartx = textstartx * 0.98;
+        }
+
+        ctx.font = fontsize + "pt Arial";
+        ctx.fillStyle = this.diceColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = this.textColor;
+        if (this.sides == 10) {
+            ctx.translate(textstartx, textstarty);
+            ctx.rotate((75 * Math.PI) / 180);
+            ctx.translate(-textstartx, -textstarty);
+        }
+        ctx.fillText(text, textstartx, textstarty);
+        if (text == "6" || text == "9") {
+            ctx.fillText("  .", canvas.width / 2, canvas.height / 2);
+        }
+        var texture = new THREE.Texture(canvas);
         texture.needsUpdate = true;
         return texture;
     }
 }
 
 class D20Dice extends Dice {
-    sides = 8;
+    sides = 20;
     tab = -0.2;
     af = -Math.PI / 4 / 2;
     chamfer = 0.955;
@@ -734,7 +1060,7 @@ class D20Dice extends Dice {
         [9, 8, 1, 20]
     ];
     scaleFactor = 1;
-    values = 20;
+    values = [...Array(20).keys()];
     margin = 1;
 
     mass = 400;
@@ -742,15 +1068,10 @@ class D20Dice extends Dice {
     constructor(
         w: number,
         h: number,
-        vector?: {
-            pos?: Vector;
-            velocity?: Vector;
-            angle?: Vector;
-            axis?: Quarternion;
-        },
+        result?: number,
         options = DEFAULT_DICE_OPTIONS
     ) {
-        super(w, h, options);
+        super(w, h, result, options);
 
         let t = (1 + Math.sqrt(5)) / 2;
         this.vertices = [
@@ -769,29 +1090,12 @@ class D20Dice extends Dice {
         ];
 
         this.create();
-        const { pos, velocity, angle, axis } = vector ?? {};
-
-        if (pos) {
-            this.body.position.set(pos.x, pos.y, pos.z);
-        }
-        if (velocity) {
-            this.body.velocity.set(velocity.x, velocity.y, velocity.z);
-        }
-        if (angle) {
-            this.body.angularVelocity.set(angle.x, angle.y, angle.z);
-        }
-        if (axis) {
-            this.body.quaternion.setFromAxisAngle(
-                new CANNON.Vec3(axis.x, axis.y, axis.z),
-                axis.w * Math.PI * 2
-            );
-        }
     }
 }
 
 class D12Dice extends Dice {
     mass = 350;
-    sides = 8;
+    sides = 12;
     tab = 0.2;
     af = -Math.PI / 4 / 2;
     chamfer = 0.968;
@@ -811,20 +1115,15 @@ class D12Dice extends Dice {
         [3, 19, 7, 17, 1, 12]
     ];
     scaleFactor = 0.9;
-    values = 12;
+    values = [...Array(12).keys()];
     margin = 1;
     constructor(
         w: number,
         h: number,
-        vector?: {
-            pos?: Vector;
-            velocity?: Vector;
-            angle?: Vector;
-            axis?: Quarternion;
-        },
+        result?: number,
         options = DEFAULT_DICE_OPTIONS
     ) {
-        super(w, h, options);
+        super(w, h, result, options);
 
         let p = (1 + Math.sqrt(5)) / 2;
         let q = 1 / p;
@@ -851,23 +1150,6 @@ class D12Dice extends Dice {
             [-1, -1, -1]
         ];
         this.create();
-        const { pos, velocity, angle, axis } = vector ?? {};
-
-        if (pos) {
-            this.body.position.set(pos.x, pos.y, pos.z);
-        }
-        if (velocity) {
-            this.body.velocity.set(velocity.x, velocity.y, velocity.z);
-        }
-        if (angle) {
-            this.body.angularVelocity.set(angle.x, angle.y, angle.z);
-        }
-        if (axis) {
-            this.body.quaternion.setFromAxisAngle(
-                new CANNON.Vec3(axis.x, axis.y, axis.z),
-                axis.w * Math.PI * 2
-            );
-        }
     }
 }
 
@@ -901,20 +1183,15 @@ class D10Dice extends Dice {
         [9, 0, 1, -1]
     ];
     scaleFactor = 0.9;
-    values = 10;
+    values = [...Array(10).keys()];
     margin = 1;
     constructor(
         w: number,
         h: number,
-        vector?: {
-            pos?: Vector;
-            velocity?: Vector;
-            angle?: Vector;
-            axis?: Quarternion;
-        },
+        result?: number,
         options = DEFAULT_DICE_OPTIONS
     ) {
-        super(w, h, options);
+        super(w, h, result, options);
         for (let i = 0, b = 0; i < 10; ++i, b += (Math.PI * 2) / 10) {
             this.vertices.push([
                 Math.cos(b),
@@ -926,23 +1203,6 @@ class D10Dice extends Dice {
         this.vertices.push([0, 0, 1]);
 
         this.create();
-        const { pos, velocity, angle, axis } = vector ?? {};
-
-        if (pos) {
-            this.body.position.set(pos.x, pos.y, pos.z);
-        }
-        if (velocity) {
-            this.body.velocity.set(velocity.x, velocity.y, velocity.z);
-        }
-        if (angle) {
-            this.body.angularVelocity.set(angle.x, angle.y, angle.z);
-        }
-        if (axis) {
-            this.body.quaternion.setFromAxisAngle(
-                new CANNON.Vec3(axis.x, axis.y, axis.z),
-                axis.w * Math.PI * 2
-            );
-        }
     }
 }
 
@@ -971,38 +1231,16 @@ class D8Dice extends Dice {
         [1, 5, 3, 8]
     ];
     scaleFactor = 1;
-    values = 8;
+    values = [...Array(8).keys()];
     margin = 1.2;
     constructor(
         w: number,
         h: number,
-        vector?: {
-            pos?: Vector;
-            velocity?: Vector;
-            angle?: Vector;
-            axis?: Quarternion;
-        },
+        result?: number,
         options = DEFAULT_DICE_OPTIONS
     ) {
-        super(w, h, options);
+        super(w, h, result, options);
         this.create();
-        const { pos, velocity, angle, axis } = vector ?? {};
-
-        if (pos) {
-            this.body.position.set(pos.x, pos.y, pos.z);
-        }
-        if (velocity) {
-            this.body.velocity.set(velocity.x, velocity.y, velocity.z);
-        }
-        if (angle) {
-            this.body.angularVelocity.set(angle.x, angle.y, angle.z);
-        }
-        if (axis) {
-            this.body.quaternion.setFromAxisAngle(
-                new CANNON.Vec3(axis.x, axis.y, axis.z),
-                axis.w * Math.PI * 2
-            );
-        }
     }
 }
 
@@ -1032,37 +1270,16 @@ class D6Dice extends Dice {
     scaleFactor = 0.9;
     sides = 6;
     margin = 1.0;
+    values = [...Array(6).keys()];
 
     constructor(
         w: number,
         h: number,
-        vector?: {
-            pos?: Vector;
-            velocity?: Vector;
-            angle?: Vector;
-            axis?: Quarternion;
-        },
+        result?: number,
         options = DEFAULT_DICE_OPTIONS
     ) {
-        super(w, h, options);
+        super(w, h, result, options);
         this.create();
-        const { pos, velocity, angle, axis } = vector ?? {};
-
-        if (pos) {
-            this.body.position.set(pos.x, pos.y, pos.z);
-        }
-        if (velocity) {
-            this.body.velocity.set(velocity.x, velocity.y, velocity.z);
-        }
-        if (angle) {
-            this.body.angularVelocity.set(angle.x, angle.y, angle.z);
-        }
-        if (axis) {
-            this.body.quaternion.setFromAxisAngle(
-                new CANNON.Vec3(axis.x, axis.y, axis.z),
-                axis.w * Math.PI * 2
-            );
-        }
     }
 }
 class D4Dice extends Dice {
@@ -1085,78 +1302,60 @@ class D4Dice extends Dice {
     scaleFactor = 1.2;
     sides = 4;
     margin = 1.0;
+    d4FaceTexts = [
+        [[], [0, 0, 0], [2, 4, 3], [1, 3, 4], [2, 1, 4], [1, 2, 3]],
+        [[], [0, 0, 0], [2, 3, 4], [3, 1, 4], [2, 4, 1], [3, 2, 1]],
+        [[], [0, 0, 0], [4, 3, 2], [3, 4, 1], [4, 2, 1], [3, 1, 2]],
+        [[], [0, 0, 0], [4, 2, 3], [1, 4, 3], [4, 1, 2], [1, 3, 2]]
+    ];
+    values = [...Array(4).keys()];
     constructor(
         w: number,
         h: number,
-        vector?: {
-            pos?: Vector;
-            velocity?: Vector;
-            angle?: Vector;
-            axis?: Quarternion;
-        },
+        result?: number,
         options = DEFAULT_DICE_OPTIONS
     ) {
-        super(w, h, options);
+        super(w, h, result, options);
         this.create();
-        const { pos, velocity, angle, axis } = vector ?? {};
+    }
+    getMaterials() {
+        let materials: THREE.MeshPhongMaterial[] = [];
+        for (let i = 0; i < this.d4FaceTexts[0].length; ++i) {
+            let texture = null;
+            texture = this.createTextTexture(i);
 
-        if (pos) {
-            this.body.position.set(pos.x, pos.y, pos.z);
-        }
-        if (velocity) {
-            this.body.velocity.set(velocity.x, velocity.y, velocity.z);
-        }
-        if (angle) {
-            this.body.angularVelocity.set(angle.x, angle.y, angle.z);
-        }
-        if (axis) {
-            this.body.quaternion.setFromAxisAngle(
-                new CANNON.Vec3(axis.x, axis.y, axis.z),
-                axis.w * Math.PI * 2
+            materials.push(
+                new THREE.MeshPhongMaterial(
+                    Object.assign({}, MATERIAL_OPTIONS, { map: texture })
+                )
             );
         }
+        return materials;
+    }
+    createTextTexture(index: number) {
+        let canvas = document.createElement("canvas");
+        let ctx = canvas.getContext("2d");
+        let ts =
+            this.calculateTextureSize(this.radius / 2 + this.radius * 2) * 2;
+        canvas.width = canvas.height = ts;
+        ctx.font = ts / 5 + "pt Arial";
+        ctx.fillStyle = this.diceColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = this.textColor;
+        for (let i in this.d4FaceTexts[0][index]) {
+            ctx.fillText(
+                `${this.d4FaceTexts[0][index][i]}`,
+                canvas.width / 2,
+                canvas.height / 2 - ts * 0.3
+            );
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate((Math.PI * 2) / 3);
+            ctx.translate(-canvas.width / 2, -canvas.height / 2);
+        }
+        let texture = new THREE.Texture(canvas);
+        texture.needsUpdate = true;
+        return texture;
     }
 }
-
-/**
- const top = new CANNON.Body({
-            type: CANNON.Body.STATIC,
-            shape: new CANNON.Plane(),
-            position: new CANNON.Vec3(0, this.height * 0.93, 0)
-        });
-        top.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), Math.PI / 2);
-        this.world.addBody(top);
-
-        const bottom = new CANNON.Body({
-            type: CANNON.Body.STATIC,
-            shape: new CANNON.Plane(),
-            position: new CANNON.Vec3(0, -this.height * 0.93, 0)
-        });
-        bottom.quaternion.setFromAxisAngle(
-            new CANNON.Vec3(1, 0, 0),
-            -Math.PI / 2
-        );
-        this.world.addBody(bottom);
-
-        const left = new CANNON.Body({
-            type: CANNON.Body.STATIC,
-            shape: new CANNON.Plane(),
-            position: new CANNON.Vec3(this.width * 0.93, 0, 0)
-        });
-        left.quaternion.setFromAxisAngle(
-            new CANNON.Vec3(0, 1, 0),
-            -Math.PI / 2
-        );
-        this.world.addBody(left);
-
-        const right = new CANNON.Body({
-            type: CANNON.Body.STATIC,
-            shape: new CANNON.Plane(),
-            position: new CANNON.Vec3(-this.width * 0.93, 0, 0)
-        });
-        right.quaternion.setFromAxisAngle(
-            new CANNON.Vec3(0, 1, 0),
-            -Math.PI / 2
-        );
-        this.world.addBody(right);
- */

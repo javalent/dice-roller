@@ -5,6 +5,8 @@
     width: 100vw;
     height: 100vh;
     pointer-events: none;
+    z-index: 9999999;
+    transition: opacity 2s ease-out;
 }
 
 /** Dice Roller View CSS */
