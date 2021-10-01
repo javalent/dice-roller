@@ -137,7 +137,6 @@ export class TableRoller extends GenericFileRoller<string> {
         )?.slice(this.position.start.offset, this.position.end.offset);
 
         if (section && section.type === "list") {
-            console.log(this.content);
             this.options = this.content.split("\n");
         } else {
             let table = extract(this.content);

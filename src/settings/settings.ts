@@ -91,21 +91,55 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 });
             });
+        const diceColor = new Setting(containerEl)
+            .setName("Dice Base Color")
+            .setDesc("Rendered dice will be this color.");
+        diceColor.controlEl.createEl(
+            "input",
+            {
+                type: "color",
+                value: this.plugin.data.diceColor
+            },
+            (el) => {
+                el.value = this.plugin.data.diceColor;
+                el.onchange = async ({ target }) => {
+                    let color = (target as HTMLInputElement).value;
 
-        new Setting(containerEl)
-            .setName("Default Roll")
-            .setDesc("Use this as the number of rolls when it is omitted.")
-            .addText((t) => {
-                t.setValue(`${this.plugin.data.defaultRoll}`);
-                t.inputEl.onblur = async () => {
-                    if (isNaN(Number(t.inputEl.value))) {
-                        new Notice("The default roll must be a number.");
-                    }
+                    this.plugin.data.diceColor = color;
 
-                    this.plugin.data.defaultRoll = Number(t.inputEl.value);
                     await this.plugin.saveSettings();
+
+                    this.plugin.app.workspace.trigger(
+                        "dice-roller:update-colors"
+                    );
                 };
-            });
+            }
+        );
+
+        const textColor = new Setting(containerEl)
+            .setName("Dice Text Color")
+            .setDesc("Rendered dice will use this color for their numbers.");
+        textColor.controlEl.createEl(
+            "input",
+            {
+                type: "color",
+                value: this.plugin.data.textColor
+            },
+            (el) => {
+                el.value = this.plugin.data.textColor;
+                el.onchange = async ({ target }) => {
+                    let color = (target as HTMLInputElement).value;
+
+                    if (!color) return;
+                    this.plugin.data.textColor = color;
+                    await this.plugin.saveSettings();
+                    this.plugin.app.workspace.trigger(
+                        "dice-roller:update-colors"
+                    );
+                };
+            }
+        );
+
         new Setting(containerEl)
             .setName("Default Face")
             .setDesc("Use this as the number of faces when it is omitted.")

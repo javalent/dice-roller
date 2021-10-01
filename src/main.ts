@@ -75,6 +75,9 @@ declare module "obsidian" {
             };
         };
     }
+    interface Workspace {
+        on(name: "dice-roller:update-colors", callback: () => void): EventRef;
+    }
 }
 
 interface DiceRollerSettings {
@@ -94,6 +97,8 @@ interface DiceRollerSettings {
     defaultRoll: number;
     defaultFace: number;
     renderer: boolean;
+    diceColor: string;
+    textColor: string;
 }
 
 const DEFAULT_SETTINGS: DiceRollerSettings = {
@@ -106,7 +111,9 @@ const DEFAULT_SETTINGS: DiceRollerSettings = {
     results: {},
     defaultRoll: 1,
     defaultFace: 100,
-    renderer: false
+    renderer: false,
+    diceColor: "#202020",
+    textColor: "#ffffff"
 };
 
 export default class DiceRollerPlugin extends Plugin {

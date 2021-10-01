@@ -4,11 +4,16 @@
     left: 0;
     width: 100vw;
     height: 100vh;
+    
     pointer-events: none;
     z-index: 9999999;
-    transition: opacity 2s ease-out;
+    transition: opacity 1s ease-out;
 }
 
+.dice-roller-view .dice-roller-roll:disabled {
+    cursor: not-allowed;
+    opacity: 0.75;
+}
 /** Dice Roller View CSS */
 .workspace-split.mod-right-split .view-content.dice-roller-view {
     padding: 0.5rem;

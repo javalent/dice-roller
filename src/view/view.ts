@@ -74,11 +74,17 @@ export default class DiceView extends ItemView {
     formulaComponent: TextAreaComponent;
     resultEl: HTMLDivElement;
 
-    renderer = new DiceRenderer();
+    renderer = new DiceRenderer(this.plugin);
 
     constructor(public plugin: DiceRollerPlugin, public leaf: WorkspaceLeaf) {
         super(leaf);
         this.contentEl.addClass("dice-roller-view");
+
+        this.registerEvent(
+            this.plugin.app.workspace.on("dice-roller:update-colors", () => {
+                this.renderer.factory.updateColors();
+            })
+        );
     }
 
     async onOpen() {
@@ -183,16 +189,6 @@ export default class DiceView extends ItemView {
                 addComponent.setValue(`${this.add}`);
                 this.setFormula();
             });
-
-        new ButtonComponent(this.gridEl).setIcon("blocks").onClick(async () => {
-            await this.stack.roll();
-            this.renderer.setDice(this.stack.dice);
-            this.addChild(this.renderer);
-        });
-        new ButtonComponent(this.gridEl).setIcon("trash").onClick(() => {
-            this.renderer.unload();
-            this.removeChild(this.renderer);
-        });
     }
     formulaDice: StackRoller;
     buildFormula() {
@@ -202,11 +198,12 @@ export default class DiceView extends ItemView {
         ).setPlaceholder("Dice Formula");
 
         this.formulaComponent.onChange(debounce(async (v) => {}, 500, true));
-        new ButtonComponent(this.formulaEl)
+        const roll = new ButtonComponent(this.formulaEl)
             .setIcon(ICON_DEFINITION)
             .setCta()
             .setTooltip("Roll")
             .onClick(async () => {
+                roll.setDisabled(true);
                 const roller = await this.plugin.getRoller(
                     this.formulaComponent.inputEl.value,
                     "view"
@@ -220,31 +217,37 @@ export default class DiceView extends ItemView {
 
                 let resultText = roller.resultText;
                 if (this.plugin.data.renderer) {
-                    this.renderer.setDice(roller.dice);
                     this.addChild(this.renderer);
-                    const results = await this.renderer.start();
-                    console.log(
-                        "🚀 ~ file: view.ts ~ line 225 ~ results",
-                        results
-                    );
 
+                    this.renderer.setDice(roller.dice);
+                    const results = await this.renderer.start();
                     let result = 0;
                     resultText = roller.original;
 
-                    for (let dice of results) {
-                        result += dice[1].reduce((a, b) => a + b);
-                        console.log(
-                            "🚀 ~ file: view.ts ~ line 236 ~ dice[1]",
-                            result,
-                            dice[1]
-                        );
+                    for (let i = 0; i < results.length; i++) {
+                        const dice = results[i];
+                        let text;
+                        if ((this.adv || this.dis) && i == 0) {
+                            const target = this.adv
+                                ? Math.max(...dice[1])
+                                : Math.min(...dice[1]);
+                            result += target;
+                            text = `[${dice[1].map((n) => {
+                                if (n != target) return `${n}d`;
+                                return `${n}`;
+                            })}]`;
+                        } else {
+                            result += dice[1].reduce((a, b) => a + b);
+                            text = `[${dice[1]}]`;
+                        }
                         resultText = resultText.replace(
                             new RegExp(`\\d+d${dice[0]}`),
-                            `[${dice[1]}]`
+                            text
                         );
                     }
                     roller.result = result;
                 }
+                roll.setDisabled(false);
 
                 this.addResult({
                     result: roller.result,
@@ -261,6 +264,7 @@ export default class DiceView extends ItemView {
 
                 this.setFormula();
             });
+        roll.buttonEl.addClass("dice-roller-roll");
     }
     addResult(roller: {
         result: number;
