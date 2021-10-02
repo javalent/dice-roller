@@ -105,7 +105,8 @@ export default class DiceRenderer extends Component {
     }
 
     async start(): Promise<Array<[number, number[]]>> {
-        return new Promise(async (resolve) => {
+        return new Promise(async (resolve, reject) => {
+            if (!this.current.length) reject();
             this.event.on("throw-finished", (result) => {
                 resolve(result);
             });

@@ -203,6 +203,9 @@ export default class DiceView extends ItemView {
             .setCta()
             .setTooltip("Roll")
             .onClick(async () => {
+                if (!this.formulaComponent.inputEl.value) {
+                    return;
+                }
                 roll.setDisabled(true);
                 const roller = await this.plugin.getRoller(
                     this.formulaComponent.inputEl.value,
@@ -214,12 +217,23 @@ export default class DiceView extends ItemView {
                     return;
                 }
                 await roller.roll();
+                if (!roller.dice.length) {
+                    new Notice("Invalid formula.");
+                    return;
+                }
 
                 let resultText = roller.resultText;
-                if (this.plugin.data.renderer) {
+                if (
+                    this.plugin.data.renderer &&
+                    roller.dice.filter((dice) => !dice.static).length
+                ) {
                     this.addChild(this.renderer);
-
-                    this.renderer.setDice(roller.dice);
+                    const staticDice = roller.dice.filter(
+                        (dice) => dice.static
+                    );
+                    this.renderer.setDice(
+                        roller.dice.filter((dice) => !dice.static)
+                    );
                     const results = await this.renderer.start();
                     let result = 0;
                     resultText = roller.original;
@@ -245,7 +259,11 @@ export default class DiceView extends ItemView {
                             text
                         );
                     }
-                    roller.result = result;
+                    const staticResult =
+                        staticDice
+                            ?.map((d) => d.result)
+                            ?.reduce((a, b) => a + b, 0) ?? 0;
+                    roller.result = result + staticResult;
                 }
                 roll.setDisabled(false);
 

@@ -1,6 +1,6 @@
 {
     "name": "obsidian-dice-roller",
-    "version": "7.0.0",
+    "version": "7.0.1",
     "description": "Inline dice rolling for Obsidian.md",
     "main": "main.js",
     "scripts": {
