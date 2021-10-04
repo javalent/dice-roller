@@ -385,8 +385,8 @@ Example:
 | dice:1d% | Result                               |
 | -------- | ------------------------------------ |
 | 01–50    | Nothing                              |
-| 51–60    | dice: [[Encounters^easy-encounters]] |
-| 61–100   | dice: [[Encounters^hard-encounters]] |
+| 51–60    | `dice: [[Encounters^easy-encounters]]` |
+| 61–100   | `dice: [[Encounters^hard-encounters]]` |
 ^encounter
 
 `dice: [[ThisNote^encounter]]`
