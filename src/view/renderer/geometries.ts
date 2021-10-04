@@ -21,30 +21,9 @@ abstract class DiceShape {
     abstract af: number;
     abstract chamfer: number;
     abstract faces: number[][];
-    labels = [
-        " ",
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9",
-        "10",
-        "11",
-        "12",
-        "13",
-        "14",
-        "15",
-        "16",
-        "17",
-        "18",
-        "19",
-        "20"
-    ];
+
+    // An array containing [" ", "0", "1", ... "N"]
+    labels = [" "].concat(Array.from({length: 20}, (_, i) => str(i)));
 
     abstract margin: number;
 
