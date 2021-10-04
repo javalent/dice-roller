@@ -74,7 +74,6 @@ export class TableRoller extends GenericFileRoller<string> {
     async getResult() {
         if (this.isLookup) {
             const result = await this.lookupRoller.roll();
-            console.log("🚀 ~ file: table.ts ~ line 77 ~ result", result);
             const option = this.lookupRanges.find(
                 ([range]) =>
                     (range[1] === undefined && result === range[0]) ||
@@ -86,14 +85,9 @@ export class TableRoller extends GenericFileRoller<string> {
                 const results = [];
 
                 while (iteration < 5 && /dice:\s?[\s\S]+\s?/.test(ret)) {
-                    console.log("🚀 ~ file: table.ts ~ line 90 ~ ret", ret);
                     iteration++;
                     let [, full, content] =
                         ret.match(/(`dice:\s*([\s\S]+)`)\s?/) ?? [];
-                    console.log(
-                        "🚀 ~ file: table.ts ~ line 93 ~ content",
-                        content
-                    );
                     if (!content) break;
 
                     const roller = await this.plugin.getRoller(
