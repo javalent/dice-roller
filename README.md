@@ -355,6 +355,43 @@ If a table provided to the plugin has multiple headers, the plugin will return t
 
 `` `dice: [[Note^block-id]]|Header 2` ``
 
+## Lookup Tables
+
+The dice roller can also be used as a lookup table by passing a block-id to a table with the following format:
+
+```markdown
+| dice: 1d20 | Heading  |
+| ---------- | -------- |
+| 1-2        | Option 1 |
+| 3-4        | Option 2 |
+| 5-10       | Option 3 |
+| 11         | Option 4 |
+| 13,14      | Option 5 |
+| 15-20      | Option 6 |
+```
+
+Requirements:
+
+1. The table must only be **two columns**.
+2. The first column **must be a valid dice roll syntax**.
+
+The Table roller will roll the supplied dice formula, and return the matching result.
+
+The options can _also_ be a roller (of any type). This allows you to nest rollers: for example, you could supply a reference to different treasure tables, and when the treasure table is returned, the roller will get a random result from that table.
+
+Example:
+
+```markdown
+| dice:1d% | Result                               |
+| -------- | ------------------------------------ |
+| 01–50    | Nothing                              |
+| 51–60    | dice: [[Encounters^easy-encounters]] |
+| 61–100   | dice: [[Encounters^hard-encounters]] |
+^encounter
+
+`dice: [[ThisNote^encounter]]`
+```
+
 # List Dice
 
 The Dice Roller may also be given a link to a list in a note, which it will read and return a random result from the list.

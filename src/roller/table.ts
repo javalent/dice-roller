@@ -78,7 +78,9 @@ export class TableRoller extends GenericFileRoller<string> {
         if (this.isLookup) {
             const result = await this.lookupRoller.roll();
             const option = this.lookupRanges.find(
-                ([range]) => result >= range[0] && range[1] >= result
+                ([range]) =>
+                    (range[1] === undefined && result === range[0]) ||
+                    (result >= range[0] && range[1] >= result)
             );
             if (option) {
                 let ret =
@@ -171,8 +173,9 @@ export class TableRoller extends GenericFileRoller<string> {
                         const [range, option] = row
                             .split("|")
                             .map((s) => s.trim());
+
                         let [, min, max] =
-                            range.match(/(\d+)[^\d]+?(\d+)/) ?? [];
+                            range.match(/(\d+)(?:[^\d]+?(\d+))?/) ?? [];
 
                         if (!min && !max) return;
 
@@ -183,7 +186,10 @@ export class TableRoller extends GenericFileRoller<string> {
                             );
                             ret = this.plugin.getRoller(content, this.source);
                         }
-                        return [[Number(min), Number(max)], ret];
+                        return [
+                            [Number(min), max ? Number(max) : undefined],
+                            ret
+                        ];
                     });
                     this.isLookup = true;
                 }
