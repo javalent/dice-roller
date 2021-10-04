@@ -11,10 +11,7 @@ export class TableRoller extends GenericFileRoller<string> {
     header: string;
     isLookup: any;
     lookupRoller: StackRoller;
-    lookupRanges: [
-        range: [min: number, max: number],
-        option: BasicRoller | string
-    ][];
+    lookupRanges: [range: [min: number, max: number], option: string][];
     getPath() {
         const { groups } = this.lexeme.data.match(TABLE_REGEX);
 
@@ -77,18 +74,46 @@ export class TableRoller extends GenericFileRoller<string> {
     async getResult() {
         if (this.isLookup) {
             const result = await this.lookupRoller.roll();
+            console.log("🚀 ~ file: table.ts ~ line 77 ~ result", result);
             const option = this.lookupRanges.find(
                 ([range]) =>
                     (range[1] === undefined && result === range[0]) ||
                     (result >= range[0] && range[1] >= result)
             );
             if (option) {
-                let ret =
-                    option[1] instanceof BasicRoller
-                        ? await option[1].roll()
-                        : option[1];
+                let iteration = 0;
+                let ret = option[1];
+                const results = [];
 
-                return `${result}: ${ret}`;
+                while (iteration < 5 && /dice:\s?[\s\S]+\s?/.test(ret)) {
+                    console.log("🚀 ~ file: table.ts ~ line 90 ~ ret", ret);
+                    iteration++;
+                    let [, full, content] =
+                        ret.match(/(`dice:\s*([\s\S]+)`)\s?/) ?? [];
+                    console.log(
+                        "🚀 ~ file: table.ts ~ line 93 ~ content",
+                        content
+                    );
+                    if (!content) break;
+
+                    const roller = await this.plugin.getRoller(
+                        content,
+                        this.source
+                    );
+                    if (!roller) break;
+                    ret = await roller.roll();
+                    results.push({
+                        full,
+                        result: ret
+                    });
+                }
+
+                let actual = option[1];
+                results.forEach(({ full, result }) => {
+                    actual = actual.replace(full, result);
+                });
+
+                return `${result} > ${actual}`;
             }
         }
         const options = [...this.options];
@@ -157,9 +182,7 @@ export class TableRoller extends GenericFileRoller<string> {
             /** Check for Lookup Table */
             if (
                 Object.keys(table.columns).length === 2 &&
-                new RegExp(`dice:\\s?${DICE_REGEX.source}`).test(
-                    Object.keys(table.columns)[0]
-                )
+                /dice:\s*([\s\S]+)\s*?/.test(Object.keys(table.columns)[0])
             ) {
                 const roller = this.plugin.getRoller(
                     Object.keys(table.columns)[0].split(":").pop(),
@@ -178,17 +201,9 @@ export class TableRoller extends GenericFileRoller<string> {
                             range.match(/(\d+)(?:[^\d]+?(\d+))?/) ?? [];
 
                         if (!min && !max) return;
-
-                        let ret: BasicRoller | string = option;
-                        if (/^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/.test(option)) {
-                            let [, content] = option.match(
-                                /^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/
-                            );
-                            ret = this.plugin.getRoller(content, this.source);
-                        }
                         return [
                             [Number(min), max ? Number(max) : undefined],
-                            ret
+                            option
                         ];
                     });
                     this.isLookup = true;
