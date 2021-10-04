@@ -1,13 +1,20 @@
 import type { Pos } from "obsidian";
 
-import { TABLE_REGEX } from "src/utils/constants";
-import { GenericFileRoller } from "./roller";
+import { DICE_REGEX, TABLE_REGEX } from "src/utils/constants";
+import { StackRoller } from ".";
+import { BasicRoller, GenericFileRoller } from "./roller";
 
 export class TableRoller extends GenericFileRoller<string> {
     content: string;
     position: Pos;
     block: string;
     header: string;
+    isLookup: any;
+    lookupRoller: StackRoller;
+    lookupRanges: [
+        range: [min: number, max: number],
+        option: BasicRoller | string
+    ][];
     getPath() {
         const { groups } = this.lexeme.data.match(TABLE_REGEX);
 
@@ -67,40 +74,44 @@ export class TableRoller extends GenericFileRoller<string> {
             this.resultEl.createSpan({ text: str });
         }
     }
-    async roll(): Promise<string> {
-        return new Promise((resolve) => {
-            if (this.loaded) {
-                const options = [...this.options];
+    async getResult() {
+        if (this.isLookup) {
+            const result = await this.lookupRoller.roll();
+            const option = this.lookupRanges.find(
+                ([range]) => result >= range[0] && range[1] >= result
+            );
+            if (option) {
+                let ret =
+                    option[1] instanceof BasicRoller
+                        ? await option[1].roll()
+                        : option[1];
 
-                this.result = [...Array(this.rolls)]
-                    .map(() => {
-                        let option =
-                            options[
-                                this.getRandomBetween(0, options.length - 1)
-                            ];
-                        options.splice(options.indexOf(option), 1);
-                        return option;
-                    })
-                    .join("||");
+                return `${result}: ${ret}`;
+            }
+        }
+        const options = [...this.options];
+
+        return [...Array(this.rolls)]
+            .map(() => {
+                let option =
+                    options[this.getRandomBetween(0, options.length - 1)];
+                options.splice(options.indexOf(option), 1);
+                return option;
+            })
+            .join("||");
+    }
+    async roll(): Promise<string> {
+        return new Promise(async (resolve) => {
+            if (this.loaded) {
+                this.result = await this.getResult();
 
                 this.render();
 
                 this.trigger("new-result");
                 resolve(this.result);
             } else {
-                this.on("loaded", () => {
-                    const options = [...this.options];
-
-                    this.result = [...Array(this.rolls)]
-                        .map(() => {
-                            let option =
-                                options[
-                                    this.getRandomBetween(0, options.length - 1)
-                                ];
-                            options.splice(options.indexOf(option), 1);
-                            return option;
-                        })
-                        .join("||");
+                this.on("loaded", async () => {
+                    this.result = await this.getResult();
 
                     this.render();
 
@@ -140,6 +151,43 @@ export class TableRoller extends GenericFileRoller<string> {
             this.options = this.content.split("\n");
         } else {
             let table = extract(this.content);
+
+            /** Check for Lookup Table */
+            if (
+                Object.keys(table.columns).length === 2 &&
+                new RegExp(`dice:\\s?${DICE_REGEX.source}`).test(
+                    Object.keys(table.columns)[0]
+                )
+            ) {
+                const roller = this.plugin.getRoller(
+                    Object.keys(table.columns)[0].split(":").pop(),
+                    this.source
+                );
+                if (roller instanceof StackRoller) {
+                    this.lookupRoller = roller;
+                    await this.lookupRoller.roll();
+
+                    this.lookupRanges = table.rows.map((row) => {
+                        const [range, option] = row
+                            .split("|")
+                            .map((s) => s.trim());
+                        let [, min, max] =
+                            range.match(/(\d+)[^\d]+?(\d+)/) ?? [];
+
+                        if (!min && !max) return;
+
+                        let ret: BasicRoller | string = option;
+                        if (/^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/.test(option)) {
+                            let [, content] = option.match(
+                                /^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/
+                            );
+                            ret = this.plugin.getRoller(content, this.source);
+                        }
+                        return [[Number(min), Number(max)], ret];
+                    });
+                    this.isLookup = true;
+                }
+            }
 
             if (this.header && table.columns[this.header]) {
                 this.options = table.columns[this.header];
