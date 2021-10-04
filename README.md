@@ -382,11 +382,12 @@ The options can _also_ be a roller (of any type). This allows you to nest roller
 Example:
 
 ```markdown
-| dice:1d% | Result                               |
-| -------- | ------------------------------------ |
-| 01–50    | Nothing                              |
+| dice:1d% | Result                                 |
+| -------- | -------------------------------------- |
+| 01–50    | Nothing                                |
 | 51–60    | `dice: [[Encounters^easy-encounters]]` |
 | 61–100   | `dice: [[Encounters^hard-encounters]]` |
+
 ^encounter
 
 `dice: [[ThisNote^encounter]]`
