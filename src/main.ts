@@ -260,7 +260,7 @@ export default class DiceRollerPlugin extends Plugin {
                             ) {
                                 this.persistingFiles.add(ctx.sourcePath);
                                 toPersist[index] = roller;
-
+                                roller.save = true;
                                 const result =
                                     this.data.results?.[path]?.[lineStart]?.[
                                         index

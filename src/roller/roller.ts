@@ -36,6 +36,7 @@ export abstract class BasicRoller extends Events {
             "data-dice": this.original
         }
     });
+    save: boolean = false;
     resultEl = this.containerEl.createDiv("dice-roller-result");
     setTooltip() {
         if (this.plugin.data.displayResultsInline) return;
@@ -123,6 +124,7 @@ export abstract class GenericFileRoller<T> extends GenericRoller<T> {
     registerFileWatcher() {
         this.plugin.registerEvent(
             this.plugin.app.vault.on("modify", async (file) => {
+                if (this.save) return;
                 if (file !== this.file) return;
                 await this.getOptions();
             })
