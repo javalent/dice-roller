@@ -4,7 +4,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    
+
     pointer-events: none;
     z-index: 9999999;
     transition: opacity 1s ease-out;
@@ -87,10 +87,19 @@
     margin-bottom: 0;
 }
 
-.dice-roller-view .dice-roller-results-container h4 {
-    margin-top: 6px;
+.dice-roller-view .dice-roller-results-container .dice-roller-results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 6px 0px;
     width: 100%;
     border-bottom: 1px solid var(--background-modifier-border);
+}
+.dice-roller-view
+    .dice-roller-results-container
+    .dice-roller-results-header
+    h4 {
+    margin: 0px;
 }
 
 .dice-roller-view .dice-roller-results {

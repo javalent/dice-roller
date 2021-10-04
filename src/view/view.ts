@@ -100,7 +100,15 @@ export default class DiceView extends ItemView {
         const resultsEl = this.contentEl.createDiv(
             "dice-roller-results-container"
         );
-        resultsEl.createEl("h4", { text: "Results" });
+        const headerEl = resultsEl.createDiv("dice-roller-results-header");
+        headerEl.createEl("h4", { text: "Results" });
+        new ExtraButtonComponent(headerEl.createDiv("clear-all"))
+            .setIcon("trash")
+            .setTooltip("Clear All")
+            .onClick(() => {
+                this.resultEl.empty();
+                this.resultEl.append(this.noResultsEl);
+            });
         this.resultEl = resultsEl.createDiv("dice-roller-results");
         this.noResultsEl = this.resultEl.createSpan({
             text: "No results yet! Roll some dice to get started :)"
