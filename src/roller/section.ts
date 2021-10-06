@@ -157,7 +157,7 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
                 ? this.types.includes(type)
                 : !["yaml", "thematicBreak"].includes(type)
         );
-        
+
         if (this.types && this.types.includes("listItem")) {
             this.options.push(...this.cache.listItems);
         }
@@ -265,6 +265,7 @@ export class TagRoller extends GenericRoller<SectionRoller> {
             this.plugin.app.plugins.plugins.dataview.index.tags.invMap.get(
                 this.tag
             );
+
         if (files) files.delete(this.source);
         if (!files || !files.size) {
             throw new Error(
@@ -398,14 +399,26 @@ export class LinkRoller extends GenericRoller<TFile> {
     get tooltip() {
         return `${this.original}\n${this.result.basename}`;
     }
-    async roll() {
-        return (
-            (this.result =
-                this.links[this.getRandomBetween(0, this.links.length - 1)]),
-            await this.render(),
-            this.trigger("new-result"),
-            this.result
-        );
+    async roll(): Promise<TFile> {
+        return new Promise((resolve, reject) => {
+            if (this.loaded) {
+                this.result =
+                    this.links[this.getRandomBetween(0, this.links.length - 1)];
+                this.render();
+                this.trigger("new-result");
+                resolve(this.result);
+            } else {
+                this.on("loaded", () => {
+                    this.result =
+                        this.links[
+                            this.getRandomBetween(0, this.links.length - 1)
+                        ];
+                    this.render();
+                    this.trigger("new-result");
+                    resolve(this.result);
+                });
+            }
+        });
     }
     async build() {
         this.resultEl.empty();
@@ -456,6 +469,8 @@ export class LinkRoller extends GenericRoller<TFile> {
                 this.source
             )
         );
+        this.loaded = true;
+        this.trigger("loaded");
     }
     toResult() {
         return {
