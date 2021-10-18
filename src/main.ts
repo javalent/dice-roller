@@ -99,6 +99,7 @@ interface DiceRollerSettings {
     renderer: boolean;
     diceColor: string;
     textColor: string;
+    showLeafOnStartup: boolean;
 }
 
 const DEFAULT_SETTINGS: DiceRollerSettings = {
@@ -113,7 +114,8 @@ const DEFAULT_SETTINGS: DiceRollerSettings = {
     defaultFace: 100,
     renderer: false,
     diceColor: "#202020",
-    textColor: "#ffffff"
+    textColor: "#ffffff",
+    showLeafOnStartup: true
 };
 
 export default class DiceRollerPlugin extends Plugin {
@@ -127,14 +129,15 @@ export default class DiceRollerPlugin extends Plugin {
         if (leaf && leaf.view && leaf.view instanceof DiceView)
             return leaf.view;
     }
-    async addDiceView() {
+    async addDiceView(startup = false) {
+        if (startup && !this.data.showLeafOnStartup) return;
         if (this.app.workspace.getLeavesOfType(VIEW_TYPE).length) {
             return;
         }
         await this.app.workspace.getRightLeaf(false).setViewState({
             type: VIEW_TYPE
         });
-        this.app.workspace.revealLeaf(this.view.leaf);
+        /* this.app.workspace.revealLeaf(this.view.leaf); */
     }
 
     async onload() {
@@ -148,7 +151,7 @@ export default class DiceRollerPlugin extends Plugin {
             VIEW_TYPE,
             (leaf: WorkspaceLeaf) => new DiceView(this, leaf)
         );
-        this.app.workspace.onLayoutReady(() => this.addDiceView());
+        this.app.workspace.onLayoutReady(() => this.addDiceView(true));
 
         this.addCommand({
             id: "open-view",
