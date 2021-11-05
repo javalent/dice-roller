@@ -2,7 +2,7 @@ import { Component, Events } from "obsidian";
 import * as THREE from "three";
 import * as CANNON from "cannon-es";
 
-import { DiceRoller } from "src/roller";
+import { DiceRoller, StackRoller } from "src/roller";
 import {
     D100DiceShape,
     D10DiceShape,
@@ -24,7 +24,7 @@ export default class DiceRenderer extends Component {
 
     container: HTMLElement = createDiv("renderer-container");
 
-    current: Dice[] = [];
+    current: Map<DiceRoller, Dice[]>;
     directionalLight: THREE.DirectionalLight;
     ambientLight: THREE.AmbientLight;
 
@@ -37,6 +37,7 @@ export default class DiceRenderer extends Component {
 
     factory = new DiceFactory(this.WIDTH, this.HEIGHT, this.plugin);
     frame_rate = 1 / 60;
+    stack: any;
 
     get WIDTH() {
         return this.container.clientWidth / 2;
@@ -66,7 +67,23 @@ export default class DiceRenderer extends Component {
         this.addChild(this.factory);
     }
 
-    setDice(dice: DiceRoller[]) {
+    setDice(stack: StackRoller) {
+        if (this.animating) {
+            this.unload();
+            this.load();
+        }
+        this.stack = stack;
+        this.current = this.factory.getDice(this.stack, {
+            x: (Math.random() * 2 - 1) * this.WIDTH,
+            y: -(Math.random() * 2 - 1) * this.HEIGHT
+        });
+        this.scene.add(
+            ...[...this.current.values()].flat().map((d) => d.geometry)
+        );
+        this.world.add(...[...this.current.values()].flat());
+    }
+
+    /* setDiceOld(dice: DiceRoller[]) {
         if (this.animating) {
             this.unload();
             this.load();
@@ -81,7 +98,7 @@ export default class DiceRenderer extends Component {
         }
         this.scene.add(...this.current.map((d) => d.geometry));
         this.world.add(...this.current);
-    }
+    } */
 
     onload() {
         this.container.empty();
@@ -106,9 +123,12 @@ export default class DiceRenderer extends Component {
 
     async start(): Promise<Array<[number, number[]]>> {
         return new Promise(async (resolve, reject) => {
-            if (!this.current.length) reject();
+            if (!this.current.size) reject();
             this.event.on("throw-finished", (result) => {
                 resolve(result);
+            });
+            this.event.on("error", (e) => {
+                reject(e);
             });
             this.animating = true;
             this.render();
@@ -255,55 +275,61 @@ export default class DiceRenderer extends Component {
         this.world = new World(this.WIDTH, this.HEIGHT);
         this.iterations = 0;
     }
+    returnResult() {
+        for (const [roller, diceArray] of this.current) {
+            const percentile = diceArray.filter(
+                (d) => d instanceof D10Dice && d.isPercentile
+            );
+            const chunked: Array<[Dice, Dice]> = [];
+            for (let i = 0; i < percentile.length; i += 2) {
+                chunked.push(percentile.slice(i, i + 2) as [Dice, Dice]);
+            }
 
+            let results = [
+                ...diceArray
+                    .filter((d) => !(d instanceof D10Dice && d.isPercentile))
+                    .map((dice) => {
+                        return dice.getUpsideValue();
+                    })
+                    .filter((r) => r),
+                ...chunked
+                    .map(([tensDice, onesDice]) => {
+                        let tens = tensDice.getUpsideValue();
+                        if (!onesDice) return tens;
+                        let ones = onesDice.getUpsideValue();
+
+                        if (tens === 10 && ones == 10) {
+                            return 100;
+                        } else {
+                            if (ones == 10) ones = 0;
+                            if (tens == 10) tens = 0;
+                            return tens * 10 + ones;
+                        }
+                    })
+                    .filter((r) => r)
+            ];
+            roller.setResults(results);
+        }
+        this.event.trigger("throw-finished", this.stack);
+    }
     render() {
         if (this.throwFinished()) {
-            const map: { [key: number]: number[] } = {};
-
-            let percents: D10Dice[] = (this.current.filter(
-                (d) => d instanceof D10Dice && d.isPercentile
-            ) ?? []) as D10Dice[];
-            if (percents.length % 2 != 0) {
-                percents[percents.length - 1].isPercentile = false;
-                percents.pop();
+            try {
+                this.returnResult();
+                this.registerInterval(
+                    window.setTimeout(() => {
+                        this.container.style.opacity = `0`;
+                        this.registerInterval(
+                            window.setTimeout(() => {
+                                this.animating = false;
+                                this.unload();
+                            }, 1000)
+                        );
+                    }, 2000)
+                );
+            } catch (e) {
+                this.event.trigger("error", e);
             }
-            for (let i = 0; i < percents.length; i += 2) {
-                const percent = percents.slice(i, i + 2);
-                let tens = percent[0].getUpsideValue();
-                let ones = percent[1].getUpsideValue();
-
-                if (tens === 10 && ones == 10) {
-                    map[100] = [...(map[100] ?? []), 100];
-                } else {
-                    if (ones == 10) ones = 0;
-                    if (tens == 10) tens = 0;
-                    map[100] = [...(map[100] ?? []), tens * 10 + ones];
-                }
-                this.dispose(...percent.map((p) => p.geometry));
-            }
-            this.current = this.current.filter(
-                (d) => !(d instanceof D10Dice && d.isPercentile)
-            );
-
-            this.current.forEach((dice) => {
-                map[dice.sides] = [
-                    ...(map[dice.sides] ?? []),
-                    dice.getUpsideValue()
-                ];
-            });
-            const sorted = Object.entries(map).sort((a, b) => b[0] - a[0]);
-            this.event.trigger("throw-finished", sorted);
-            this.registerInterval(
-                window.setTimeout(() => {
-                    this.container.style.opacity = `0`;
-                    this.registerInterval(
-                        window.setTimeout(() => {
-                            this.animating = false;
-                            this.unload();
-                        }, 1000)
-                    );
-                }, 2000)
-            );
 
             return;
         }
@@ -312,7 +338,7 @@ export default class DiceRenderer extends Component {
         this.world.step(this.frame_rate);
         this.iterations++;
         this.current.forEach((dice) => {
-            dice.set();
+            dice.map((d) => d.set());
         });
 
         this.renderer.render(this.scene, this.camera);
@@ -341,19 +367,21 @@ export default class DiceRenderer extends Component {
         this.scene.remove(
             this.scene,
             ...this.scene.children,
-            ...this.current.map((d) => d.geometry)
+            ...[...this.current.values()].flat().map((d) => d.geometry)
         );
 
-        this.current.forEach((dice) => {
-            let materials = [
-                ...(Array.isArray(dice.geometry.material)
-                    ? dice.geometry.material
-                    : [dice.geometry.material])
-            ];
-            materials.forEach((material) => material && material.dispose());
-            this.world.world.removeBody(dice.body);
+        this.current.forEach((arr) => {
+            arr.forEach((dice) => {
+                let materials = [
+                    ...(Array.isArray(dice.geometry.material)
+                        ? dice.geometry.material
+                        : [dice.geometry.material])
+                ];
+                materials.forEach((material) => material && material.dispose());
+                this.world.world.removeBody(dice.body);
+            });
         });
-        this.current = [];
+        this.current = new Map();
 
         //causes white flash?
         //this.renderer.forceContextLoss();
@@ -365,32 +393,34 @@ export default class DiceRenderer extends Component {
         let res = true;
         const threshold = 6;
         if (this.iterations < 10 / this.frame_rate) {
-            for (let i = 0; i < this.current.length; ++i) {
-                const dice = this.current[i];
-                if (dice.stopped === true) continue;
-                const a = dice.body.angularVelocity,
-                    v = dice.body.velocity;
+            for (const diceArray of this.current.values()) {
+                /* const dice = this.current[i]; */
+                for (const dice of diceArray) {
+                    if (dice.stopped === true) continue;
+                    const a = dice.body.angularVelocity,
+                        v = dice.body.velocity;
 
-                if (
-                    Math.abs(a.x) < threshold &&
-                    Math.abs(a.y) < threshold &&
-                    Math.abs(a.z) < threshold &&
-                    Math.abs(v.x) < threshold &&
-                    Math.abs(v.y) < threshold &&
-                    Math.abs(v.z) < threshold
-                ) {
-                    if (dice.stopped) {
-                        if (this.iterations - dice.stopped > 3) {
-                            dice.stopped = true;
-                            continue;
+                    if (
+                        Math.abs(a.x) < threshold &&
+                        Math.abs(a.y) < threshold &&
+                        Math.abs(a.z) < threshold &&
+                        Math.abs(v.x) < threshold &&
+                        Math.abs(v.y) < threshold &&
+                        Math.abs(v.z) < threshold
+                    ) {
+                        if (dice.stopped) {
+                            if (this.iterations - dice.stopped > 3) {
+                                dice.stopped = true;
+                                continue;
+                            }
+                        } else {
+                            dice.stopped = this.iterations;
                         }
+                        res = false;
                     } else {
-                        dice.stopped = this.iterations;
+                        dice.stopped = undefined;
+                        res = false;
                     }
-                    res = false;
-                } else {
-                    dice.stopped = undefined;
-                    res = false;
                 }
             }
         }
@@ -804,7 +834,139 @@ class DiceFactory extends Component {
         this.disposeChildren(this.d6.geometry.children);
         this.disposeChildren(this.d4.geometry.children);
     }
-    getDice(rollers: DiceRoller[], vector?: { x: number; y: number }) {
+    getDice(stack: StackRoller, vector: { x: number; y: number }) {
+        const map: Map<DiceRoller, Dice[]> = new Map();
+
+        for (const roller of stack.dynamic) {
+            const dice = [];
+            switch (roller.faces.max) {
+                case 4: {
+                    dice.push(
+                        ...new Array(roller.rolls)
+                            .fill(0)
+                            .map(
+                                (r) =>
+                                    new D4Dice(
+                                        this.width,
+                                        this.height,
+                                        this.d4.clone(),
+                                        vector
+                                    )
+                            )
+                    );
+                    break;
+                }
+                case 6: {
+                    dice.push(
+                        ...new Array(roller.rolls)
+                            .fill(0)
+                            .map(
+                                (r) =>
+                                    new D6Dice(
+                                        this.width,
+                                        this.height,
+                                        this.d6.clone(),
+                                        vector
+                                    )
+                            )
+                    );
+                    break;
+                }
+                case 8: {
+                    dice.push(
+                        ...new Array(roller.rolls)
+                            .fill(0)
+                            .map(
+                                (r) =>
+                                    new D8Dice(
+                                        this.width,
+                                        this.height,
+                                        this.d8.clone(),
+                                        vector
+                                    )
+                            )
+                    );
+                    break;
+                }
+                case 10: {
+                    dice.push(
+                        ...new Array(roller.rolls)
+                            .fill(0)
+                            .map(
+                                (r) =>
+                                    new D10Dice(
+                                        this.width,
+                                        this.height,
+                                        this.d10.clone(),
+                                        vector
+                                    )
+                            )
+                    );
+                    break;
+                }
+                case 12: {
+                    dice.push(
+                        ...new Array(roller.rolls)
+                            .fill(0)
+                            .map(
+                                (r) =>
+                                    new D12Dice(
+                                        this.width,
+                                        this.height,
+                                        this.d12.clone(),
+                                        vector
+                                    )
+                            )
+                    );
+                    break;
+                }
+                case 100: {
+                    dice.push(
+                        ...new Array(roller.rolls)
+                            .fill(0)
+                            .map((r) => [
+                                new D10Dice(
+                                    this.width,
+                                    this.height,
+                                    this.d100.clone(),
+                                    vector,
+                                    true
+                                ),
+                                new D10Dice(
+                                    this.width,
+                                    this.height,
+                                    this.d10.clone(),
+                                    vector,
+                                    true
+                                )
+                            ])
+                            .flat()
+                    );
+                    break;
+                }
+                case 20:
+                default: {
+                    dice.push(
+                        ...new Array(roller.rolls)
+                            .fill(0)
+                            .map(
+                                (r) =>
+                                    new D20Dice(
+                                        this.width,
+                                        this.height,
+                                        this.d20.clone(),
+                                        vector
+                                    )
+                            )
+                    );
+                    break;
+                }
+            }
+            map.set(roller, dice);
+        }
+        return map;
+    }
+    getDiceOld(rollers: DiceRoller[], vector?: { x: number; y: number }) {
         const dice: Dice[] = [];
         for (const roller of rollers) {
             switch (roller.faces.max) {
