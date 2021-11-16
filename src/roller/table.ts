@@ -86,29 +86,32 @@ export class TableRoller extends GenericFileRoller<string> {
 
                 while (iteration < 5 && /dice:\s?[\s\S]+\s?/.test(ret)) {
                     iteration++;
-                    let [, full, content] =
-                        ret.match(/(`dice:\s*([\s\S]+)`)\s?/) ?? [];
-                    if (!content) break;
 
-                    const roller = await this.plugin.getRoller(
-                        content,
-                        this.source
-                    );
-                    if (!roller) break;
-                    ret = await roller.roll();
-                    results.push({
-                        full,
-                        result: ret
-                    });
+                    for (let match of ret.matchAll(/(`dice:\s*([\s\S]+?)`)/g)) {
+                        let [, full, content] =
+                            match[0].match(/(`dice:\s*([\s\S]+?)`)\s?/) ?? [];
+                        if (!content) break;
+
+                        const roller = await this.plugin.getRoller(
+                            content,
+                            this.source
+                        );
+                        if (!roller) break;
+                        ret = await roller.roll();
+                        results.push({
+                            full,
+                            result: ret
+                        });
+                    }
                 }
 
                 let actual = option[1];
                 results.forEach(({ full, result }) => {
                     actual = actual.replace(full, result);
                 });
-                
+
                 if (!this.plugin.data.displayLookupRoll) {
-                    return `${actual}`
+                    return `${actual}`;
                 }
 
                 return `${result} > ${actual}`;
@@ -207,14 +210,14 @@ export class TableRoller extends GenericFileRoller<string> {
                     this.isLookup = true;
                 }
             }
-
             if (this.header && table.columns[this.header]) {
                 this.options = table.columns[this.header];
             } else {
-                if (this.header)
+                if (this.header) {
                     throw new Error(
                         `Header ${this.header} was not found in table ${this.path} > ${this.block}.`
                     );
+                }
                 this.options = table.rows;
             }
         }
