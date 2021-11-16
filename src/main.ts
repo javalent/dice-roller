@@ -85,6 +85,7 @@ interface DiceRollerSettings {
     rollLinksForTags: boolean;
     copyContentButton: boolean;
     displayResultsInline: boolean;
+    displayLookupRoll: boolean;
     formulas: Record<string, string>;
     persistResults: boolean;
     results: {
@@ -106,6 +107,7 @@ const DEFAULT_SETTINGS: DiceRollerSettings = {
     rollLinksForTags: false,
     copyContentButton: true,
     displayResultsInline: false,
+    displayLookupRoll: true,
     formulas: {},
     persistResults: false,
     results: {},

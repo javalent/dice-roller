@@ -106,6 +106,10 @@ export class TableRoller extends GenericFileRoller<string> {
                 results.forEach(({ full, result }) => {
                     actual = actual.replace(full, result);
                 });
+                
+                if (!this.plugin.data.displayLookupRoll) {
+                    return `${actual}`
+                }
 
                 return `${result} > ${actual}`;
             }

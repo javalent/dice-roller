@@ -69,6 +69,18 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 });
             });
+        new Setting(containerEl)
+            .setName("Display Lookup Table Roll")
+            .setDesc(
+                "Lookup table rolls will display the rolled number along with the result."
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.displayLookupRoll);
+                t.onChange(async (v) => {
+                    this.plugin.data.displayLookupRoll = v;
+                    await this.plugin.saveSettings();
+                });
+            });
         const save = new Setting(containerEl)
             .setName("Globally Save Results")
             .setDesc(
