@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.2.2](https://github.com/valentine195/obsidian-dice-roller/compare/7.2.1...7.2.2) (2021-11-16)
+
+
+### Bug Fixes
+
+* lookup tables now work with multiple rollers in a cell ([f0abb51](https://github.com/valentine195/obsidian-dice-roller/commit/f0abb5196b65a1b2272bd295fd620b55045c5055))
+
 ### [7.2.1](https://github.com/valentine195/obsidian-dice-roller/compare/7.2.0...7.2.1) (2021-11-16)
 
 
