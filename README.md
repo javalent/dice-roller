@@ -400,13 +400,14 @@ The Dice Roller may also be given a link to a list in a note, which it will read
 Usage:
 
 In a note (such as `Note.md`), create a list & optionally give it a block id:
-
+```mardkwon
 -   a
 -   b
 -   c
 -   d
 
 ^block-id
+```
 
 Then, in the dice formula, use a wikilink to the block reference of the table:
 

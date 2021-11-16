@@ -74,7 +74,11 @@ export default class DiceView extends ItemView {
     formulaComponent: TextAreaComponent;
     resultEl: HTMLDivElement;
 
-    renderer = new DiceRenderer(this.plugin);
+    /* renderer = new DiceRenderer(this.plugin); */
+
+    get renderer() {
+        return this.plugin.renderer;
+    }
 
     constructor(public plugin: DiceRollerPlugin, public leaf: WorkspaceLeaf) {
         super(leaf);
@@ -230,55 +234,26 @@ export default class DiceView extends ItemView {
                     return;
                 }
 
-                let resultText = roller.resultText;
-                if (
-                    this.plugin.data.renderer &&
-                    roller.dice.filter((dice) => !dice.static).length
-                ) {
-                    this.addChild(this.renderer);
-                    const staticDice = roller.dice.filter(
-                        (dice) => dice.static
-                    );
-                    this.renderer.setDice(
-                        roller.dice.filter((dice) => !dice.static)
-                    );
-                    const results = await this.renderer.start();
-                    let result = 0;
-                    resultText = roller.original;
+                try {
+                    if (this.plugin.data.renderer) {
+                        this.addChild(this.renderer);
+                        this.renderer.setDice(roller);
 
-                    for (let i = 0; i < results.length; i++) {
-                        const dice = results[i];
-                        let text;
-                        if ((this.adv || this.dis) && i == 0) {
-                            const target = this.adv
-                                ? Math.max(...dice[1])
-                                : Math.min(...dice[1]);
-                            result += target;
-                            text = `[${dice[1].map((n) => {
-                                if (n != target) return `${n}d`;
-                                return `${n}`;
-                            })}]`;
-                        } else {
-                            result += dice[1].reduce((a, b) => a + b);
-                            text = `[${dice[1]}]`;
-                        }
-                        resultText = resultText.replace(
-                            new RegExp(`\\d+d${dice[0]}`),
-                            text
-                        );
+                        await this.renderer.start();
+
+                        roller.recalculate();
                     }
-                    const staticResult =
-                        staticDice
-                            ?.map((d) => d.result)
-                            ?.reduce((a, b) => a + b, 0) ?? 0;
-                    roller.result = result + staticResult;
+                } catch (e) {
+                    new Notice("There was an error rendering the roll.");
+                    console.error(e);
                 }
+
                 roll.setDisabled(false);
 
                 this.addResult({
                     result: roller.result,
                     original: roller.original,
-                    resultText
+                    resultText: roller.resultText
                 });
 
                 this.dice = DiceView.DICE();

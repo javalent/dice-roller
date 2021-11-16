@@ -43,6 +43,7 @@ import SettingTab from "./settings/settings";
 
 import { BasicRoller } from "./roller/roller";
 import DiceView, { VIEW_TYPE } from "./view/view";
+import DiceRenderer from "./view/renderer";
 
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -77,6 +78,14 @@ declare module "obsidian" {
     }
     interface Workspace {
         on(name: "dice-roller:update-colors", callback: () => void): EventRef;
+        on(
+            name: "dice-roller:render-dice",
+            callback: (roll: string) => void
+        ): EventRef;
+        on(
+            name: "dice-roller:rendered-result",
+            callback: (result: number) => void
+        ): EventRef;
     }
 }
 
@@ -100,6 +109,7 @@ interface DiceRollerSettings {
     renderer: boolean;
     diceColor: string;
     textColor: string;
+    showLeafOnStartup: boolean;
 }
 
 const DEFAULT_SETTINGS: DiceRollerSettings = {
@@ -115,13 +125,17 @@ const DEFAULT_SETTINGS: DiceRollerSettings = {
     defaultFace: 100,
     renderer: false,
     diceColor: "#202020",
-    textColor: "#ffffff"
+    textColor: "#ffffff",
+    showLeafOnStartup: true
 };
 
 export default class DiceRollerPlugin extends Plugin {
     lexer: lexer;
     parser: Parser;
     data: DiceRollerSettings;
+
+    renderer: DiceRenderer;
+
     persistingFiles: Set<string> = new Set();
     get view() {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE);
@@ -129,14 +143,15 @@ export default class DiceRollerPlugin extends Plugin {
         if (leaf && leaf.view && leaf.view instanceof DiceView)
             return leaf.view;
     }
-    async addDiceView() {
+    async addDiceView(startup = false) {
+        if (startup && !this.data.showLeafOnStartup) return;
         if (this.app.workspace.getLeavesOfType(VIEW_TYPE).length) {
             return;
         }
         await this.app.workspace.getRightLeaf(false).setViewState({
             type: VIEW_TYPE
         });
-        this.app.workspace.revealLeaf(this.view.leaf);
+        /* this.app.workspace.revealLeaf(this.view.leaf); */
     }
 
     async onload() {
@@ -144,13 +159,53 @@ export default class DiceRollerPlugin extends Plugin {
 
         this.data = Object.assign(DEFAULT_SETTINGS, await this.loadData());
 
+        this.renderer = new DiceRenderer(this);
+
         this.addSettingTab(new SettingTab(this.app, this));
 
         this.registerView(
             VIEW_TYPE,
             (leaf: WorkspaceLeaf) => new DiceView(this, leaf)
         );
-        this.app.workspace.onLayoutReady(() => this.addDiceView());
+        this.app.workspace.onLayoutReady(() => this.addDiceView(true));
+
+        this.registerEvent(
+            this.app.workspace.on("dice-roller:update-colors", () => {
+                this.renderer.factory.updateColors();
+            })
+        );
+
+        this.registerEvent(
+            this.app.workspace.on("dice-roller:render-dice", async (roll) => {
+                const roller = await this.getRoller(roll, "external");
+
+                if (!(roller instanceof StackRoller)) {
+                    new Notice("The Dice View only supports dice rolls.");
+                    return;
+                }
+                await roller.roll();
+                if (!roller.dice.length) {
+                    new Notice("Invalid formula.");
+                    return;
+                }
+                try {
+                    this.addChild(this.renderer);
+                    this.renderer.setDice(roller);
+
+                    await this.renderer.start();
+
+                    roller.recalculate();
+                } catch (e) {
+                    new Notice("There was an error rendering the roll.");
+                    console.error(e);
+                }
+
+                this.app.workspace.trigger(
+                    "dice-roller:rendered-result",
+                    roller.result
+                );
+            })
+        );
 
         this.addCommand({
             id: "open-view",
@@ -517,7 +572,7 @@ export default class DiceRollerPlugin extends Plugin {
             };
         });
 
-        this.lexer.addRule(DICE_REGEX, function (lexeme: string): Lexeme {
+        /* this.lexer.addRule(DICE_REGEX, function (lexeme: string): Lexeme {
             const { dice, conditional } = lexeme.match(DICE_REGEX).groups;
             let conditionals: Conditional[] = [];
             if (conditional) {
@@ -540,7 +595,7 @@ export default class DiceRollerPlugin extends Plugin {
                 original: lexeme,
                 conditionals
             }; // symbols
-        });
+        }); */
 
         this.lexer.addRule(OMITTED_REGEX, (lexeme: string): Lexeme => {
             const {
@@ -570,6 +625,14 @@ export default class DiceRollerPlugin extends Plugin {
                 original: lexeme,
                 conditionals
             }; // symbols
+        });
+        this.lexer.addRule(/\d+/, function (lexeme: string): Lexeme {
+            return {
+                type: "dice",
+                data: lexeme,
+                original: lexeme,
+                conditionals: []
+            };
         });
 
         this.lexer.addRule(MATH_REGEX, function (lexeme: string): Lexeme {

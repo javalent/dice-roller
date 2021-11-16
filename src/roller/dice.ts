@@ -298,6 +298,21 @@ export class DiceRoller {
                 this.getRandomBetween(this.faces.min, this.faces.max)
         );
     }
+    setResults(results: number[]) {
+        this.results = new Map(
+            [...results].map((n, i) => {
+                return [
+                    i,
+                    {
+                        usable: true,
+                        value: n,
+                        display: `${n}`,
+                        modifiers: new Set()
+                    }
+                ];
+            })
+        );
+    }
     roll() {
         const roll = this._roll();
         this.results = new Map(
@@ -476,6 +491,13 @@ export class StackRoller extends GenericRoller<number> {
         this.resultEl.setText(result.join("") + this.stunted);
     }
 
+    get dynamic() {
+        return this.dice.filter((d) => !d.static);
+    }
+    get static() {
+        return this.dice.filter((d) => d.static);
+    }
+
     constructor(
         public plugin: DiceRollerPlugin,
         public original: string,
@@ -495,6 +517,7 @@ export class StackRoller extends GenericRoller<number> {
         }
     };
     stack: DiceRoller[] = [];
+    stackCopy: Array<DiceRoller | string> = [];
     dice: DiceRoller[] = [];
     async roll() {
         let index = 0;
@@ -513,10 +536,11 @@ export class StackRoller extends GenericRoller<number> {
                         if (dice.data === "-") {
                             b = new DiceRoller(`-${b.dice}`, b.lexeme);
                         }
-
+                        this.stackCopy.push(dice.data);
                         this.stack.push(b);
                         continue;
                     }
+
                     b.roll();
                     if (b instanceof StuntRoller) {
                         if (b.doubles) {
@@ -539,6 +563,7 @@ export class StackRoller extends GenericRoller<number> {
                         b.result
                     );
 
+                    this.stackCopy.push(dice.data);
                     this.stack.push(new DiceRoller(`${result}`, dice));
                     break;
                 case "kh": {
@@ -623,6 +648,7 @@ export class StackRoller extends GenericRoller<number> {
                     }
 
                     this.stack.push(this.dice[index]);
+                    this.stackCopy.push(this.dice[index]);
                     index++;
                     break;
                 case "stunt":
@@ -631,6 +657,7 @@ export class StackRoller extends GenericRoller<number> {
                     }
 
                     this.stack.push(this.dice[index]);
+                    this.stackCopy.push(this.dice[index]);
                     index++;
             }
         }
@@ -651,6 +678,37 @@ export class StackRoller extends GenericRoller<number> {
         return this.result;
     }
 
+    recalculate() {
+        let stack = [];
+        let result = 0;
+
+        for (let item of this.stackCopy) {
+            if (typeof item === "string") {
+                let b: DiceRoller = stack.pop(),
+                    a = stack.pop();
+
+                if (!a) {
+                    if (item === "-") {
+                        b = new DiceRoller(`-${b.result}`, b.lexeme);
+                    }
+                    stack.push(b);
+                    continue;
+                }
+
+                const r = this.operators[item](a.result, b.result);
+                stack.push(new DiceRoller(`${r}`));
+            } else {
+                stack.push(item);
+            }
+        }
+
+        if (stack.length && stack[0] instanceof DiceRoller) {
+            result += stack[0].result;
+        }
+
+        this.result = result;
+    }
+
     toResult() {
         return {
             type: "dice",
@@ -668,7 +726,5 @@ export class StackRoller extends GenericRoller<number> {
         }
         await this.render();
     }
-    setResult(result: number[]) {
-        
-    }
+    setResult(result: number[]) {}
 }

@@ -94,6 +94,18 @@ export default class SettingTab extends PluginSettingTab {
                 });
             });
         new Setting(containerEl)
+            .setName("Open Dice View on Startup")
+            .setDesc(
+                "The dice view can always be opened using the command from the command palette."
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.showLeafOnStartup);
+                t.onChange(async (v) => {
+                    this.plugin.data.showLeafOnStartup = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+        new Setting(containerEl)
             .setName("Display graphics for Dice View Rolls")
             .setDesc("Dice rolls from dice view will be displayed on screen.")
             .addToggle((t) => {
