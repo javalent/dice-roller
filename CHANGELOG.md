@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.3.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.2.2...7.3.0) (2021-11-17)
+
+
+### Features
+
+* added "reroll all dice" command to reroll all dice in note ([b87577f](https://github.com/valentine195/obsidian-dice-roller/commit/b87577fc93e9e1127f281c1b8629e342cdc561d0))
+
 ### [7.2.2](https://github.com/valentine195/obsidian-dice-roller/compare/7.2.1...7.2.2) (2021-11-16)
 
 
