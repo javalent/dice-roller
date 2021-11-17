@@ -160,7 +160,7 @@ export default class DiceRollerPlugin extends Plugin {
     async onload() {
         console.log("DiceRoller plugin loaded");
         this.data = Object.assign(DEFAULT_SETTINGS, await this.loadData());
-        window.dice = this;
+
         this.renderer = new DiceRenderer(this);
 
         this.addSettingTab(new SettingTab(this.app, this));
