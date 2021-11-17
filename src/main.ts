@@ -137,6 +137,9 @@ export default class DiceRollerPlugin extends Plugin {
     renderer: DiceRenderer;
 
     persistingFiles: Set<string> = new Set();
+
+    fileMap: Map<TFile, BasicRoller[]> = new Map();
+
     get view() {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE);
         const leaf = leaves.length ? leaves[0] : null;
@@ -156,9 +159,8 @@ export default class DiceRollerPlugin extends Plugin {
 
     async onload() {
         console.log("DiceRoller plugin loaded");
-
         this.data = Object.assign(DEFAULT_SETTINGS, await this.loadData());
-
+        window.dice = this;
         this.renderer = new DiceRenderer(this);
 
         this.addSettingTab(new SettingTab(this.app, this));
@@ -214,6 +216,29 @@ export default class DiceRollerPlugin extends Plugin {
                 if (!this.view) {
                     if (!checking) {
                         this.addDiceView();
+                    }
+                    return true;
+                }
+            }
+        });
+
+        this.addCommand({
+            id: "reroll",
+            name: "Re-roll Dice",
+            checkCallback: (checking) => {
+                const view =
+                    this.app.workspace.getActiveViewOfType(MarkdownView);
+                if (
+                    view &&
+                    view.getMode() === "preview" &&
+                    this.fileMap.has(view.file)
+                ) {
+                    if (!checking) {
+                        const dice = this.fileMap.get(view.file);
+
+                        dice.forEach((roller) => {
+                            roller.roll();
+                        });
                     }
                     return true;
                 }
@@ -336,6 +361,41 @@ export default class DiceRollerPlugin extends Plugin {
                             roller.on("loaded", async () => {
                                 await load();
                             });
+                        }
+
+                        if (!this.fileMap.has(file)) {
+                            this.fileMap.set(file, []);
+                        }
+                        this.fileMap.set(file, [
+                            ...this.fileMap.get(file),
+                            roller
+                        ]);
+
+                        const view =
+                            this.app.workspace.getActiveViewOfType(
+                                MarkdownView
+                            );
+                        if (
+                            view &&
+                            this.fileMap.has(file) &&
+                            this.fileMap.get(file).length === 1
+                        ) {
+                            const self = this;
+
+                            let unregisterOnUnloadFile = around(view, {
+                                onUnloadFile: function (next) {
+                                    return async function (unloaded: TFile) {
+                                        if (unloaded == file) {
+                                            self.fileMap.delete(file);
+                                            unregisterOnUnloadFile();
+                                        }
+
+                                        return await next.call(this, unloaded);
+                                    };
+                                }
+                            });
+                            view.register(unregisterOnUnloadFile);
+                            view.register(() => this.fileMap.delete(file))
                         }
                     } catch (e) {
                         console.error(e);
