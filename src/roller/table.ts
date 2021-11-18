@@ -1,3 +1,4 @@
+import { decode } from "he";
 import type { Pos } from "obsidian";
 
 import { DICE_REGEX, TABLE_REGEX } from "src/utils/constants";
@@ -111,10 +112,10 @@ export class TableRoller extends GenericFileRoller<string> {
                 });
 
                 if (!this.plugin.data.displayLookupRoll) {
-                    return `${actual}`;
+                    return `${decode(actual)}`;
                 }
 
-                return `${result} > ${actual}`;
+                return `${result} > ${decode(actual)}`;
             }
         }
         const options = [...this.options];

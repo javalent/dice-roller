@@ -19,6 +19,7 @@ import { Parser } from "./parser/parser";
 import { Conditional, Lexeme } from "src/types";
 
 import { around } from "monkey-around";
+import { decode } from "he";
 
 import {
     CONDITIONAL_REGEX,
@@ -547,7 +548,7 @@ export default class DiceRollerPlugin extends Plugin {
     getRoller(content: string, source: string): BasicRoller {
         let showDice = content.includes("|nodice") ? false : this.data.showDice;
 
-        content = content.replace("|nodice", "");
+        content = decode(content.replace("|nodice", ""));
 
         if (content in this.data.formulas) {
             content = this.data.formulas[content];
