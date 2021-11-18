@@ -4,6 +4,9 @@
     cursor: pointer;
     margin: 0 0.25em 0 0;
 }
+.dice-roller.no-icon {
+    margin: 0;
+}
 .dice-roller > div {
     display: inline-block;
 }

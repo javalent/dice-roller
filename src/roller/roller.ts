@@ -69,6 +69,8 @@ export abstract class BasicRoller extends Events {
             });
             setIcon(icon, ICON_DEFINITION);
             icon.onclick = this.onClick.bind(this);
+        } else {
+            this.containerEl.addClass("no-icon");
         }
 
         this.containerEl.onclick = this.onClick.bind(this);
