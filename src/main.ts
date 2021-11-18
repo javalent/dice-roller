@@ -97,6 +97,7 @@ interface DiceRollerSettings {
     displayLookupRoll: boolean;
     formulas: Record<string, string>;
     persistResults: boolean;
+    showDice: boolean;
     results: {
         [path: string]: {
             [line: string]: {
@@ -126,7 +127,8 @@ const DEFAULT_SETTINGS: DiceRollerSettings = {
     renderer: false,
     diceColor: "#202020",
     textColor: "#ffffff",
-    showLeafOnStartup: true
+    showLeafOnStartup: true,
+    showDice: true
 };
 
 export default class DiceRollerPlugin extends Plugin {
@@ -395,7 +397,7 @@ export default class DiceRollerPlugin extends Plugin {
                                 }
                             });
                             view.register(unregisterOnUnloadFile);
-                            view.register(() => this.fileMap.delete(file))
+                            view.register(() => this.fileMap.delete(file));
                         }
                     } catch (e) {
                         console.error(e);
@@ -543,6 +545,10 @@ export default class DiceRollerPlugin extends Plugin {
     }
 
     getRoller(content: string, source: string): BasicRoller {
+        let showDice = content.includes("|nodice") ? false : this.data.showDice;
+
+        content = content.replace("|nodice", "");
+
         if (content in this.data.formulas) {
             content = this.data.formulas[content];
         }
@@ -552,13 +558,25 @@ export default class DiceRollerPlugin extends Plugin {
 
         switch (type) {
             case "dice": {
-                return new StackRoller(this, content, lexemes);
+                return new StackRoller(this, content, lexemes, showDice);
             }
             case "table": {
-                return new TableRoller(this, content, lexemes[0], source);
+                return new TableRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
             }
             case "section": {
-                return new SectionRoller(this, content, lexemes[0], source);
+                return new SectionRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
             }
             case "tag": {
                 if (!this.app.plugins.plugins.dataview) {
@@ -566,10 +584,22 @@ export default class DiceRollerPlugin extends Plugin {
                         "Tags are only supported with the Dataview plugin installed."
                     );
                 }
-                return new TagRoller(this, content, lexemes[0], source);
+                return new TagRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
             }
             case "link": {
-                return new LinkRoller(this, content, lexemes[0], source);
+                return new LinkRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
             }
         }
     }

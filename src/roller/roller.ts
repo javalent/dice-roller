@@ -59,17 +59,19 @@ export abstract class BasicRoller extends Events {
     constructor(
         public plugin: DiceRollerPlugin,
         public original: string,
-        public lexemes: Lexeme[]
+        public lexemes: Lexeme[],
+        public showDice = plugin.data.showDice
     ) {
         super();
-        const icon = this.containerEl.createDiv({
-            cls: "dice-roller-button"
-        });
-        setIcon(icon, ICON_DEFINITION);
+        if (this.showDice) {
+            const icon = this.containerEl.createDiv({
+                cls: "dice-roller-button"
+            });
+            setIcon(icon, ICON_DEFINITION);
+            icon.onclick = this.onClick.bind(this);
+        }
 
         this.containerEl.onclick = this.onClick.bind(this);
-
-        icon.onclick = this.onClick.bind(this);
     }
 
     async onClick(evt: MouseEvent) {
@@ -100,9 +102,10 @@ export abstract class GenericFileRoller<T> extends GenericRoller<T> {
         public plugin: DiceRollerPlugin,
         public original: string,
         public lexeme: Lexeme,
-        public source: string
+        public source: string,
+        showDice = plugin.data.showDice
     ) {
-        super(plugin, original, [lexeme]);
+        super(plugin, original, [lexeme], showDice);
 
         this.getPath();
         this.getFile();

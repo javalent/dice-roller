@@ -501,9 +501,10 @@ export class StackRoller extends GenericRoller<number> {
     constructor(
         public plugin: DiceRollerPlugin,
         public original: string,
-        public lexemes: Lexeme[]
+        public lexemes: Lexeme[],
+        showDice = plugin.data.showDice
     ) {
-        super(plugin, original, lexemes);
+        super(plugin, original, lexemes, showDice);
         this.loaded = true;
         this.trigger("loaded");
     }

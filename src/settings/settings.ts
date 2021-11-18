@@ -81,6 +81,16 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 });
             });
+        new Setting(containerEl)
+            .setName("Show Dice Button")
+            .setDesc("A dice button will appear next to results.")
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.showDice);
+                t.onChange(async (v) => {
+                    this.plugin.data.showDice = v;
+                    await this.plugin.saveSettings();
+                });
+            });
         const save = new Setting(containerEl)
             .setName("Globally Save Results")
             .setDesc(

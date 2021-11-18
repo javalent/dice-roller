@@ -25,9 +25,10 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
         public original: string,
         public lexeme: Lexeme,
         source: string,
-        private inline: boolean = true
+        private inline: boolean = true,
+        showDice = plugin.data.showDice
     ) {
-        super(plugin, original, lexeme, source);
+        super(plugin, original, lexeme, source, showDice);
         this.containerEl.addClasses(["has-embed", "markdown-embed"]);
         this.resultEl.addClass("internal-embed");
         this.resultEl.setAttrs({ src: source });
@@ -230,9 +231,10 @@ export class TagRoller extends GenericRoller<SectionRoller> {
         public plugin: DiceRollerPlugin,
         public original: string,
         public lexeme: Lexeme,
-        public source: string
+        public source: string,
+        showDice = plugin.data.showDice
     ) {
-        super(plugin, original, [lexeme]);
+        super(plugin, original, [lexeme], showDice);
 
         this.containerEl.addClasses(["has-embed", "markdown-embed"]);
 
@@ -385,9 +387,10 @@ export class LinkRoller extends GenericRoller<TFile> {
         public plugin: DiceRollerPlugin,
         public original: string,
         public lexeme: Lexeme,
-        public source: string
+        public source: string,
+        showDice = plugin.data.showDice
     ) {
-        super(plugin, original, [lexeme]);
+        super(plugin, original, [lexeme], showDice);
 
         const { roll = 1, tag } = lexeme.data.match(TAG_REGEX).groups;
 
