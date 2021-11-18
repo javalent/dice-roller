@@ -6,6 +6,8 @@ Inline dice rolling for Obsidian.md.
 
 Simply place a code block with your formula in your note (such as `` `dice: XdX` ``) and in preview mode it will be replaced with the result of the dice rolls. The result can then be re-rolled by clicking on it.
 
+> Don't want to see the dice button on results? You can turn it off in settings, or by appending `|nodice` to **any** dice roll!
+
 # Number Dice
 
 The parser supports addition, subtraction, multiplication, division, and exponents of an arbitrary number of dice or static numbers. Spaces are removed before the formula is parsed.
@@ -400,6 +402,7 @@ The Dice Roller may also be given a link to a list in a note, which it will read
 Usage:
 
 In a note (such as `Note.md`), create a list & optionally give it a block id:
+
 ```mardkwon
 -   a
 -   b
@@ -467,6 +470,18 @@ Add a "Copy Content" button to section results. This button will copy the return
 ## Display Formulas with Results
 
 Instead of displaying a tooltip, dice rollers will display the formula and result inline.
+
+## Display Lookup Table Roll
+
+Turn this off to only display the result of the lookup table, and not the value rolled.
+
+## Show Dice Button
+
+Turn this off to globally turn off the dice button in rendered results.
+
+## Open Dice View on Startup
+
+Dice view will automatically open on startup.
 
 ## Globally Save Results
 
