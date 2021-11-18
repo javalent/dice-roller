@@ -50,6 +50,7 @@ addIcon(
 export default class DiceView extends ItemView {
     noResultsEl: HTMLSpanElement;
     rollButton: ButtonComponent;
+    saveButton: ButtonComponent;
     static DICE() {
         return {
             d4: 0,
@@ -65,7 +66,9 @@ export default class DiceView extends ItemView {
     gridEl: HTMLDivElement;
     formulaEl: HTMLDivElement;
     dice: { [dice: string]: number } = DiceView.DICE();
-
+    get customFormulas() {
+        return this.plugin.data.customFormulas;
+    }
     custom = "";
     adv = false;
     dis = false;
@@ -201,6 +204,38 @@ export default class DiceView extends ItemView {
                 addComponent.setValue(`${this.add}`);
                 this.setFormula();
             });
+
+        if (this.customFormulas.length) {
+            const customs = this.gridEl.createDiv(
+                "dice-roller-results-container"
+            );
+            const headerEl = customs.createDiv("dice-roller-results-header");
+            headerEl.createEl("h4", { text: "Saved Formulas" });
+
+            for (let formula of this.customFormulas) {
+                const containerEl = customs.createDiv(
+                    "dice-custom-formula-container"
+                );
+                const formulaEl = containerEl.createDiv("dice-custom-formula");
+                new ExtraButtonComponent(formulaEl)
+                    .setIcon(ICON_DEFINITION)
+                    .setTooltip("Roll")
+                    .onClick(() => this.roll(formula));
+                formulaEl.createSpan({ text: formula });
+
+                new ExtraButtonComponent(containerEl)
+                    .setIcon("trash")
+                    .setTooltip("Remove")
+                    .onClick(() => {
+                        this.plugin.data.customFormulas =
+                            this.plugin.data.customFormulas.filter(
+                                (f) => f != formula
+                            );
+                        this.plugin.saveSettings();
+                        this.buildButtons();
+                    });
+            }
+        }
     }
     formulaDice: StackRoller;
     async roll(formula = this.formulaComponent.inputEl.value) {
@@ -258,12 +293,29 @@ export default class DiceView extends ItemView {
         ).setPlaceholder("Dice Formula");
 
         this.formulaComponent.onChange(debounce(async (v) => {}, 500, true));
-        this.rollButton = new ButtonComponent(this.formulaEl)
+
+        const buttons = this.formulaEl.createDiv("action-buttons");
+        this.saveButton = new ButtonComponent(buttons)
+            .setIcon("plus-with-circle")
+            .setCta()
+            .setTooltip("Save Formula")
+            .onClick(() => this.save());
+        this.saveButton.buttonEl.addClass("dice-roller-roll");
+
+        this.rollButton = new ButtonComponent(buttons)
             .setIcon(ICON_DEFINITION)
             .setCta()
             .setTooltip("Roll")
             .onClick(() => this.roll());
         this.rollButton.buttonEl.addClass("dice-roller-roll");
+    }
+    save() {
+        if (!this.formulaComponent.inputEl.value) return;
+        this.plugin.data.customFormulas.push(
+            this.formulaComponent.inputEl.value
+        );
+        this.buildButtons();
+        this.plugin.saveSettings();
     }
     addResult(roller: {
         result: number;

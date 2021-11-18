@@ -112,12 +112,14 @@ interface DiceRollerSettings {
     diceColor: string;
     textColor: string;
     showLeafOnStartup: boolean;
+    customFormulas: string[];
 }
 
 const DEFAULT_SETTINGS: DiceRollerSettings = {
     returnAllTags: true,
     rollLinksForTags: false,
     copyContentButton: true,
+    customFormulas: [],
     displayResultsInline: false,
     displayLookupRoll: true,
     formulas: {},
