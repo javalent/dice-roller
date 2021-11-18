@@ -37,7 +37,7 @@ export default class DiceRenderer extends Component {
 
     factory = new DiceFactory(this.WIDTH, this.HEIGHT, this.plugin);
     frame_rate = 1 / 60;
-    stack: any;
+    stack: StackRoller;
 
     get WIDTH() {
         return this.container.clientWidth / 2;
@@ -82,24 +82,6 @@ export default class DiceRenderer extends Component {
         );
         this.world.add(...[...this.current.values()].flat());
     }
-
-    /* setDiceOld(dice: DiceRoller[]) {
-        if (this.animating) {
-            this.unload();
-            this.load();
-        }
-        this.current = this.factory.getDice(dice, {
-            x: (Math.random() * 2 - 1) * this.WIDTH,
-            y: -(Math.random() * 2 - 1) * this.HEIGHT
-        });
-        if (!this.current) {
-            this.unload();
-            return;
-        }
-        this.scene.add(...this.current.map((d) => d.geometry));
-        this.world.add(...this.current);
-    } */
-
     onload() {
         this.container.empty();
         this.container.style.opacity = `1`;
@@ -276,7 +258,13 @@ export default class DiceRenderer extends Component {
         this.iterations = 0;
     }
     returnResult() {
-        for (const [roller, diceArray] of this.current) {
+        for (const roller of this.stack.dynamic) {
+            if (!this.current.has(roller)) {
+                continue;
+            }
+
+            const diceArray = this.current.get(roller);
+
             const percentile = diceArray.filter(
                 (d) => d instanceof D10Dice && d.isPercentile
             );
@@ -920,6 +908,22 @@ class DiceFactory extends Component {
                     );
                     break;
                 }
+                case 20: {
+                    dice.push(
+                        ...new Array(roller.rolls)
+                            .fill(0)
+                            .map(
+                                (r) =>
+                                    new D20Dice(
+                                        this.width,
+                                        this.height,
+                                        this.d20.clone(),
+                                        vector
+                                    )
+                            )
+                    );
+                    break;
+                }
                 case 100: {
                     dice.push(
                         ...new Array(roller.rolls)
@@ -944,156 +948,10 @@ class DiceFactory extends Component {
                     );
                     break;
                 }
-                case 20:
-                default: {
-                    dice.push(
-                        ...new Array(roller.rolls)
-                            .fill(0)
-                            .map(
-                                (r) =>
-                                    new D20Dice(
-                                        this.width,
-                                        this.height,
-                                        this.d20.clone(),
-                                        vector
-                                    )
-                            )
-                    );
-                    break;
-                }
             }
-            map.set(roller, dice);
+            if (dice.length) map.set(roller, dice);
         }
         return map;
-    }
-    getDiceOld(rollers: DiceRoller[], vector?: { x: number; y: number }) {
-        const dice: Dice[] = [];
-        for (const roller of rollers) {
-            switch (roller.faces.max) {
-                case 4: {
-                    dice.push(
-                        ...new Array(roller.rolls)
-                            .fill(0)
-                            .map(
-                                (r) =>
-                                    new D4Dice(
-                                        this.width,
-                                        this.height,
-                                        this.d4.clone(),
-                                        vector
-                                    )
-                            )
-                    );
-                    break;
-                }
-                case 6: {
-                    dice.push(
-                        ...new Array(roller.rolls)
-                            .fill(0)
-                            .map(
-                                (r) =>
-                                    new D6Dice(
-                                        this.width,
-                                        this.height,
-                                        this.d6.clone(),
-                                        vector
-                                    )
-                            )
-                    );
-                    break;
-                }
-                case 8: {
-                    dice.push(
-                        ...new Array(roller.rolls)
-                            .fill(0)
-                            .map(
-                                (r) =>
-                                    new D8Dice(
-                                        this.width,
-                                        this.height,
-                                        this.d8.clone(),
-                                        vector
-                                    )
-                            )
-                    );
-                    break;
-                }
-                case 10: {
-                    dice.push(
-                        ...new Array(roller.rolls)
-                            .fill(0)
-                            .map(
-                                (r) =>
-                                    new D10Dice(
-                                        this.width,
-                                        this.height,
-                                        this.d10.clone(),
-                                        vector
-                                    )
-                            )
-                    );
-                    break;
-                }
-                case 12: {
-                    dice.push(
-                        ...new Array(roller.rolls)
-                            .fill(0)
-                            .map(
-                                (r) =>
-                                    new D12Dice(
-                                        this.width,
-                                        this.height,
-                                        this.d12.clone(),
-                                        vector
-                                    )
-                            )
-                    );
-                    break;
-                }
-                case 20:
-                default: {
-                    dice.push(
-                        ...new Array(roller.rolls)
-                            .fill(0)
-                            .map(
-                                (r) =>
-                                    new D20Dice(
-                                        this.width,
-                                        this.height,
-                                        this.d20.clone(),
-                                        vector
-                                    )
-                            )
-                    );
-                    break;
-                }
-                case 100: {
-                    dice.push(
-                        ...new Array(roller.rolls)
-                            .fill(0)
-                            .map((r) => [
-                                new D10Dice(
-                                    this.width,
-                                    this.height,
-                                    this.d100.clone(),
-                                    vector,
-                                    true
-                                ),
-                                new D10Dice(
-                                    this.width,
-                                    this.height,
-                                    this.d10.clone(),
-                                    vector,
-                                    true
-                                )
-                            ])
-                            .flat()
-                    );
-                    break;
-                }
-            }
-        }
-        return dice;
     }
 }
 
