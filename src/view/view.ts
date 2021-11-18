@@ -12,7 +12,6 @@ import {
 import DiceRollerPlugin from "src/main";
 import { StackRoller } from "src/roller";
 import { COPY_DEFINITION, ICON_DEFINITION } from "src/utils/constants";
-import DiceRenderer from "./renderer";
 
 import "./view.css";
 
@@ -50,6 +49,7 @@ addIcon(
 
 export default class DiceView extends ItemView {
     noResultsEl: HTMLSpanElement;
+    rollButton: ButtonComponent;
     static DICE() {
         return {
             d4: 0,
@@ -203,6 +203,54 @@ export default class DiceView extends ItemView {
             });
     }
     formulaDice: StackRoller;
+    async roll(formula = this.formulaComponent.inputEl.value) {
+        if (!formula) {
+            return;
+        }
+        this.rollButton.setDisabled(true);
+        const roller = await this.plugin.getRoller(formula, "view");
+
+        if (!(roller instanceof StackRoller)) {
+            new Notice("The Dice View only supports dice rolls.");
+            return;
+        }
+        await roller.roll();
+        if (!roller.dice.length) {
+            new Notice("Invalid formula.");
+            return;
+        }
+
+        try {
+            if (this.plugin.data.renderer) {
+                this.addChild(this.renderer);
+                this.renderer.setDice(roller);
+
+                await this.renderer.start();
+
+                roller.recalculate();
+            }
+        } catch (e) {
+            new Notice("There was an error rendering the roll.");
+            console.error(e);
+        }
+
+        this.rollButton.setDisabled(false);
+
+        this.addResult({
+            result: roller.result,
+            original: roller.original,
+            resultText: roller.resultText
+        });
+
+        this.dice = DiceView.DICE();
+        this.add = null;
+        this.adv = false;
+        this.dis = false;
+
+        this.buildButtons();
+
+        this.setFormula();
+    }
     buildFormula() {
         this.formulaEl.empty();
         this.formulaComponent = new TextAreaComponent(
@@ -210,62 +258,12 @@ export default class DiceView extends ItemView {
         ).setPlaceholder("Dice Formula");
 
         this.formulaComponent.onChange(debounce(async (v) => {}, 500, true));
-        const roll = new ButtonComponent(this.formulaEl)
+        this.rollButton = new ButtonComponent(this.formulaEl)
             .setIcon(ICON_DEFINITION)
             .setCta()
             .setTooltip("Roll")
-            .onClick(async () => {
-                if (!this.formulaComponent.inputEl.value) {
-                    return;
-                }
-                roll.setDisabled(true);
-                const roller = await this.plugin.getRoller(
-                    this.formulaComponent.inputEl.value,
-                    "view"
-                );
-
-                if (!(roller instanceof StackRoller)) {
-                    new Notice("The Dice View only supports dice rolls.");
-                    return;
-                }
-                await roller.roll();
-                if (!roller.dice.length) {
-                    new Notice("Invalid formula.");
-                    return;
-                }
-
-                try {
-                    if (this.plugin.data.renderer) {
-                        this.addChild(this.renderer);
-                        this.renderer.setDice(roller);
-
-                        await this.renderer.start();
-
-                        roller.recalculate();
-                    }
-                } catch (e) {
-                    new Notice("There was an error rendering the roll.");
-                    console.error(e);
-                }
-
-                roll.setDisabled(false);
-
-                this.addResult({
-                    result: roller.result,
-                    original: roller.original,
-                    resultText: roller.resultText
-                });
-
-                this.dice = DiceView.DICE();
-                this.add = null;
-                this.adv = false;
-                this.dis = false;
-
-                this.buildButtons();
-
-                this.setFormula();
-            });
-        roll.buttonEl.addClass("dice-roller-roll");
+            .onClick(() => this.roll());
+        this.rollButton.buttonEl.addClass("dice-roller-roll");
     }
     addResult(roller: {
         result: number;
@@ -307,6 +305,12 @@ export default class DiceView extends ItemView {
                 await navigator.clipboard.writeText(`${roller.result}`);
             });
         copy.extraSettingsEl.addClass("dice-content-copy");
+
+        const reroll = new ExtraButtonComponent(context)
+            .setIcon(ICON_DEFINITION)
+            .setTooltip("Roll Again")
+            .onClick(() => this.roll(roller.original));
+        reroll.extraSettingsEl.addClass("dice-result-reroll");
 
         this.resultEl.prepend(result);
     }

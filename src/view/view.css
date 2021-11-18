@@ -123,6 +123,13 @@
     right: 0;
     padding: 0.25rem;
 }
+.dice-roller-view .dice-roller-results .view-result .dice-result-reroll {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 0.25rem;
+    margin: 0;
+}
 
 .dice-roller-view .dice-roller-results .view-result strong {
     font-size: x-large;
