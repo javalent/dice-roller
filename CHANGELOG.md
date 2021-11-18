@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.4.1](https://github.com/valentine195/obsidian-dice-roller/compare/7.4.0...7.4.1) (2021-11-18)
+
+
+### Bug Fixes
+
+* fixed escaped pipes ([75475e1](https://github.com/valentine195/obsidian-dice-roller/commit/75475e1cba62f7bb49f17d24bfc42d00788204f8))
+
 ## [7.4.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.3.0...7.4.0) (2021-11-18)
 
 
