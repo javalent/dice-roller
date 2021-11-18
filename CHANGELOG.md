@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.4.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.3.0...7.4.0) (2021-11-18)
+
+
+### Features
+
+* added `|nodice` parameter ([30547c6](https://github.com/valentine195/obsidian-dice-roller/commit/30547c6337be4374c215950d5d488c085e427f1a)), closes [#54](https://github.com/valentine195/obsidian-dice-roller/issues/54)
+* added reroll button to dice view results ([4427eac](https://github.com/valentine195/obsidian-dice-roller/commit/4427eac37bf961889b9fe261bb864f271f5dfb87))
+* added saved custom formulas into dice view (close [#47](https://github.com/valentine195/obsidian-dice-roller/issues/47)) ([6d78675](https://github.com/valentine195/obsidian-dice-roller/commit/6d786758c0941a26e7b35989023610b69f7662d9))
+* dice without graphics are now just rolled, no longer roll a d20 ([1ba8778](https://github.com/valentine195/obsidian-dice-roller/commit/1ba8778a92807be962bd78ea3084ab75cb7081d9))
+
+
+### Bug Fixes
+
+* unicode characters are decoded when returning a lookup result (close [#55](https://github.com/valentine195/obsidian-dice-roller/issues/55)) ([1be1bd4](https://github.com/valentine195/obsidian-dice-roller/commit/1be1bd484e2ab208232da1d196544b04d160dc4f))
+
 ## [7.3.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.2.2...7.3.0) (2021-11-17)
 
 
