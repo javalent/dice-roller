@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.4.2](https://github.com/valentine195/obsidian-dice-roller/compare/7.4.1...7.4.2) (2021-11-18)
+
+
+### Bug Fixes
+
+* removed extra space when there is no icon ([5c3be4a](https://github.com/valentine195/obsidian-dice-roller/commit/5c3be4a4e88b8534565d4794fb5b4ee35d98c70b))
+
 ### [7.4.1](https://github.com/valentine195/obsidian-dice-roller/compare/7.4.0...7.4.1) (2021-11-18)
 
 
