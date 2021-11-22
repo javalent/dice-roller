@@ -261,6 +261,7 @@ export default class DiceRollerPlugin extends Plugin {
         this.registerMarkdownPostProcessor(
             async (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
                 let nodeList = el.querySelectorAll("code");
+
                 if (!nodeList.length) return;
 
                 const path = ctx.sourcePath;
@@ -269,14 +270,18 @@ export default class DiceRollerPlugin extends Plugin {
                 const file = this.app.vault.getAbstractFileByPath(
                     ctx.sourcePath
                 );
-                if (!file || !(file instanceof TFile) || !info) return;
+
+                if (!file || !(file instanceof TFile)) return;
 
                 const toPersist: Record<number, BasicRoller> = {};
 
                 for (let index = 0; index < nodeList.length; index++) {
                     const node = nodeList.item(index);
 
-                    if (/^dice\-mod:\s*([\s\S]+)\s*?/.test(node.innerText)) {
+                    if (
+                        /^dice\-mod:\s*([\s\S]+)\s*?/.test(node.innerText) &&
+                        info
+                    ) {
                         try {
                             let [full, content] = node.innerText.match(
                                 /^dice\-mod:\s*([\s\S]+)\s*?/
@@ -321,17 +326,20 @@ export default class DiceRollerPlugin extends Plugin {
                                 file,
                                 fileContent.join("\n")
                             );
+                            continue;
                         } catch (e) {
                             console.error(e);
                         }
                     }
                     if (
-                        !/^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/.test(node.innerText)
+                        !/^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/.test(
+                            node.innerText
+                        )
                     )
                         continue;
                     try {
                         let [, content] = node.innerText.match(
-                            /^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/
+                            /^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/
                         );
 
                         //build result map;
@@ -884,6 +892,7 @@ export default class DiceRollerPlugin extends Plugin {
         if ("__THREE__" in window) {
             delete window.__THREE__;
         }
+        this.renderer.unload();
     }
 
     operators: any = {

@@ -1,9 +1,8 @@
-import { decode } from "he";
-import type { Pos } from "obsidian";
+import { MarkdownRenderer, Pos } from "obsidian";
 
-import { DICE_REGEX, TABLE_REGEX } from "src/utils/constants";
+import { TABLE_REGEX } from "src/utils/constants";
 import { StackRoller } from ".";
-import { BasicRoller, GenericFileRoller } from "./roller";
+import { GenericFileRoller } from "./roller";
 
 export class TableRoller extends GenericFileRoller<string> {
     content: string;
@@ -40,37 +39,13 @@ export class TableRoller extends GenericFileRoller<string> {
         if (this.plugin.data.displayResultsInline) {
             result.unshift(this.inlineText);
         }
-        const split = result.join("").split(/(\[\[(?:[\s\S]+?)\]\])/);
 
-        for (let str of split) {
-            if (/\[\[(?:[\s\S]+?)\]\]/.test(str)) {
-                //link;
-                const [, match] = str.match(/\[\[([\s\S]+?)\]\]/);
-                const internal = this.resultEl.createEl("a", {
-                    cls: "internal-link",
-                    text: match
-                });
-                internal.onmouseover = () => {
-                    this.plugin.app.workspace.trigger(
-                        "link-hover",
-                        this, //not sure
-                        internal, //targetEl
-                        match.replace("^", "#^").split("|").shift(), //linkText
-                        this.plugin.app.workspace.getActiveFile()?.path //source
-                    );
-                };
-                internal.onclick = async (ev: MouseEvent) => {
-                    ev.stopPropagation();
-                    await this.plugin.app.workspace.openLinkText(
-                        match.replace("^", "#^").split(/\|/).shift(),
-                        this.plugin.app.workspace.getActiveFile()?.path,
-                        ev.getModifierState("Control")
-                    );
-                };
-                continue;
-            }
-            this.resultEl.createSpan({ text: str });
-        }
+        await MarkdownRenderer.renderMarkdown(
+            result.join(""),
+            this.resultEl.createSpan("embedded-table-result"),
+            this.source,
+            null
+        );
     }
     async getResult() {
         if (this.isLookup) {
@@ -81,41 +56,7 @@ export class TableRoller extends GenericFileRoller<string> {
                     (result >= range[0] && range[1] >= result)
             );
             if (option) {
-                let iteration = 0;
-                let ret = option[1];
-                const results = [];
-
-                while (iteration < 5 && /dice:\s?[\s\S]+\s?/.test(ret)) {
-                    iteration++;
-
-                    for (let match of ret.matchAll(/(`dice:\s*([\s\S]+?)`)/g)) {
-                        let [, full, content] =
-                            match[0].match(/(`dice:\s*([\s\S]+?)`)\s?/) ?? [];
-                        if (!content) break;
-
-                        const roller = await this.plugin.getRoller(
-                            content,
-                            this.source
-                        );
-                        if (!roller) break;
-                        ret = await roller.roll();
-                        results.push({
-                            full,
-                            result: ret
-                        });
-                    }
-                }
-
-                let actual = option[1];
-                results.forEach(({ full, result }) => {
-                    actual = actual.replace(full, result);
-                });
-
-                if (!this.plugin.data.displayLookupRoll) {
-                    return `${decode(actual)}`;
-                }
-
-                return `${result} > ${decode(actual)}`;
+                return option[1];
             }
         }
         const options = [...this.options];
@@ -197,6 +138,7 @@ export class TableRoller extends GenericFileRoller<string> {
                     this.lookupRanges = table.rows.map((row) => {
                         const [range, option] = row
                             .split("|")
+                            .map((str) => str.replace("{ESCAPED_PIPE}", "|"))
                             .map((s) => s.trim());
 
                         let [, min, max] =
@@ -248,7 +190,7 @@ function extract(content: string) {
 
     const inner = lines.map((l) => (l.trim().match(MATCH) ?? [, l.trim()])[1]);
 
-    const headers = inner[0].split(SPLIT);
+    const headers = inner[0].replace("\\|", "{ESCAPED_PIPE}").split(SPLIT);
 
     const rows: string[] = [];
     const ret: [string, string[]][] = [];
@@ -262,6 +204,7 @@ function extract(content: string) {
     for (let line of lines.slice(2)) {
         const entries = line
             .trim()
+            .replace("\\|", "{ESCAPED_PIPE}")
             .split(SPLIT)
             .map((e) => e.trim())
             .filter((e) => e.length);

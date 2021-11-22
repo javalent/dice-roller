@@ -11,7 +11,7 @@
     display: inline-block;
 }
 .dice-roller span {
-    font-weight: bolder;
+    font-weight: 700;
 }
 .dice-roller > .dice-roller-button {
     display: inline-block;
@@ -88,6 +88,12 @@
     position: relative;
 }
 
+.dice-roller-result .embedded-table-result p {
+    margin: 0;
+    display: inline-block;
+}
+
+/** Settings */
 .dice-roller-settings .coffee {
     width: 60%;
     color: var(--text-faint);
@@ -97,8 +103,6 @@
 .dice-roller-settings .coffee img {
     height: 30px;
 }
-
-/** Settings */
 .dice-roller-setting-additional-container
     > .setting-item:not(.setting-item-heading) {
     border: 0px;
