@@ -555,8 +555,12 @@ export default class DiceRollerPlugin extends Plugin {
         await this.saveData(this.data);
     }
 
-    getRoller(content: string, source: string): BasicRoller {
-        let showDice = content.includes("|nodice") ? false : this.data.showDice;
+    getRoller(
+        content: string,
+        source: string,
+        icon = this.data.showDice
+    ): BasicRoller {
+        let showDice = content.includes("|nodice") ? false : icon;
 
         content = decode(content.replace("|nodice", "").replace("\\|", "|"));
 
