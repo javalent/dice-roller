@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.5.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.4.2...7.5.0) (2021-11-22)
+
+
+### Features
+
+* table rollers now render results as markdown, allowing nested dice rollers in tables ([de42c17](https://github.com/valentine195/obsidian-dice-roller/commit/de42c17d2a780cb86986571419d13d905487d66c))
+
+
+### Bug Fixes
+
+* fixed line weight css issue on view buttons ([d31ce9f](https://github.com/valentine195/obsidian-dice-roller/commit/d31ce9fdbc89cbc3d911ffe01d89e382552624bf))
+
 ### [7.4.2](https://github.com/valentine195/obsidian-dice-roller/compare/7.4.1...7.4.2) (2021-11-18)
 
 
