@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.5.1](https://github.com/valentine195/obsidian-dice-roller/compare/7.5.0...7.5.1) (2021-11-22)
+
+
+### Bug Fixes
+
+* added ability to override show dice setting in api ([5851750](https://github.com/valentine195/obsidian-dice-roller/commit/5851750d49d759341f569bf3481f300264a2cda3))
+
 ## [7.5.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.4.2...7.5.0) (2021-11-22)
 
 
