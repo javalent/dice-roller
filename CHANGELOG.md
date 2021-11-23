@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.8.1](https://github.com/valentine195/obsidian-dice-roller/compare/7.8.0...7.8.1) (2021-11-23)
+
+
+### Bug Fixes
+
+* fixed issue where dataview inline field lex was too greedy ([3589a3f](https://github.com/valentine195/obsidian-dice-roller/commit/3589a3fde1a7262c383421a5ce2a5969d141dea8))
+
 ## [7.8.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.7.0...7.8.0) (2021-11-23)
 
 
