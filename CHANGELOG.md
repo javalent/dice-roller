@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.7.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.6.0...7.7.0) (2021-11-23)
+
+
+### Features
+
+* added ability to not display formula using dice-mod ([5605aaa](https://github.com/valentine195/obsidian-dice-roller/commit/5605aaa0e37341541ef6eb60d6e595ce3d172531))
+
 ## [7.6.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.5.1...7.6.0) (2021-11-23)
 
 
