@@ -293,6 +293,14 @@ I _believe_ that this is a list of block types defined in Obsidian, but use this
 | `definition`         |
 | `footnoteDefinition` |
 
+# Line Dice
+
+The Dice Roller can be told to return a random line from any note using the following syntax:
+
+`` `dice: [[Note]]|line` ``
+
+> Note: The plugin will filter out zero-length lines, but depending on note content, you may still get "blank" lines.
+
 # Tag Dice
 
 The Dice Roller can also be told to return results from a tag if the [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugin is installed.

@@ -37,7 +37,8 @@ import {
     TableRoller,
     SectionRoller,
     TagRoller,
-    LinkRoller
+    LinkRoller,
+    LineRoller
 } from "./roller";
 
 import SettingTab from "./settings/settings";
@@ -616,6 +617,15 @@ export default class DiceRollerPlugin extends Plugin {
                     showDice
                 );
             }
+            case "line": {
+                return new LineRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
+            }
         }
     }
     getTypeFromLexemes(lexemes: Lexeme[]) {
@@ -630,6 +640,9 @@ export default class DiceRollerPlugin extends Plugin {
         }
         if (lexemes.some(({ type }) => type === "link")) {
             return "link";
+        }
+        if (lexemes.some(({ type }) => type === "line")) {
+            return "line";
         }
         return "dice";
     }
@@ -651,8 +664,13 @@ export default class DiceRollerPlugin extends Plugin {
             };
         });
         this.lexer.addRule(SECTION_REGEX, function (lexeme: string): Lexeme {
+            const { groups } = lexeme.match(SECTION_REGEX);
+            let type = "section";
+            if (groups.types === "line") {
+                type = "line";
+            }
             return {
-                type: "section",
+                type,
                 data: lexeme,
                 original: lexeme,
                 conditionals: null
