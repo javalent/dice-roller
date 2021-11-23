@@ -236,6 +236,15 @@ export class TagRoller extends GenericRoller<SectionRoller> {
     ) {
         super(plugin, original, [lexeme], showDice);
 
+        if (!this.plugin.canUseDataview) {
+            new Notice(
+                "A tag can only be rolled with the Dataview plugin enabled."
+            );
+            throw new Error(
+                "A tag can only be rolled with the Dataview plugin enabled."
+            );
+        }
+
         this.containerEl.addClasses(["has-embed", "markdown-embed"]);
 
         const {
@@ -263,10 +272,8 @@ export class TagRoller extends GenericRoller<SectionRoller> {
         return `|${this.types}`;
     }
     async getFiles() {
-        const files =
-            this.plugin.app.plugins.plugins.dataview.index.tags.invMap.get(
-                this.tag
-            );
+        await this.plugin.dataviewReady();
+        const files = this.plugin.dataview.index.tags.invMap.get(this.tag);
 
         if (files) files.delete(this.source);
         if (!files || !files.size) {

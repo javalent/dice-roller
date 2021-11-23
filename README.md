@@ -21,6 +21,23 @@ There is full order-of-operations support, so it can even nested into parenthese
 | `` `dice: 1d12 + 1d10 + 5` ``             |
 | `` `dice: 3d4+3d4-(3d4 * 1d4) - 2^1d7` `` |
 
+## Dataview Integration
+
+The plugin has basic support for Dataview inline fields in number dice.
+
+Please note that if you have multiple inline fields of the same name, the plugin will only use **one**, and it is not possible to control the one it uses - it will be the last field indexed by Dataview.
+
+Example:
+
+```md
+field:: 3
+field2:: 5
+```
+
+`` `dice: field` ``
+`` `dice: 1d6 + field` ``
+`` `dice: 1d6*field2 + field` ``
+
 ## Faces
 
 The faces can be supplied as either a raw number or as a `[min, max]` array.

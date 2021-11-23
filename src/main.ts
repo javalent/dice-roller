@@ -73,6 +73,24 @@ declare module "obsidian" {
                             invMap: Map<string, Set<string>>;
                             map: Map<string, Set<string>>;
                         };
+                        pages: Map<
+                            string,
+                            {
+                                fields: Map<string, number>;
+                            }
+                        >;
+                        events: {
+                            on(
+                                name: "dataview:metadata-change",
+                                callback: (
+                                    ...args: [op: "update", file: TFile]
+                                ) => any,
+                                ctx?: any
+                            ): EventRef;
+                        };
+                    };
+                    api: {
+                        page(path: string): Record<string, number>;
                     };
                 };
             };
@@ -88,6 +106,9 @@ declare module "obsidian" {
             name: "dice-roller:rendered-result",
             callback: (result: number) => void
         ): EventRef;
+    }
+    interface MetadataCache {
+        on(name: "dataview:api-ready", callback: () => void): EventRef;
     }
 }
 
@@ -149,6 +170,26 @@ export default class DiceRollerPlugin extends Plugin {
 
     fileMap: Map<TFile, BasicRoller[]> = new Map();
 
+    get canUseDataview() {
+        return "dataview" in this.app.plugins.plugins;
+    }
+    get dataview() {
+        return this.app.plugins.plugins.dataview;
+    }
+    async dataviewReady() {
+        return new Promise((resolve) => {
+            if (!this.canUseDataview) resolve(false);
+            if (this.dataview.api) {
+                resolve(true);
+            }
+            this.registerEvent(
+                this.app.metadataCache.on("dataview:api-ready", () => {
+                    resolve(true);
+                })
+            );
+        });
+    }
+
     get view() {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE);
         const leaf = leaves.length ? leaves[0] : null;
@@ -164,6 +205,52 @@ export default class DiceRollerPlugin extends Plugin {
             type: VIEW_TYPE
         });
         /* this.app.workspace.revealLeaf(this.view.leaf); */
+    }
+
+    inline: Map<string, number> = new Map();
+
+    async registerDataviewInlineFields() {
+        if (!this.canUseDataview) return;
+
+        await this.dataviewReady();
+
+        const pages = this.dataview.index.pages;
+
+        pages.forEach(({ fields }) => {
+            for (const [key, value] of fields) {
+                if (
+                    typeof value !== "number" ||
+                    Number.isNaN(value) ||
+                    value == undefined
+                )
+                    continue;
+                this.inline.set(key, value);
+            }
+        });
+
+        this.registerEvent(
+            this.dataview.index.events.on(
+                "dataview:metadata-change",
+                (type, file) => {
+                    if (type === "update") {
+                        const page = this.dataview.api.page(file.path);
+
+                        if (!page) return;
+
+                        for (let key in page) {
+                            let value = page[key];
+                            if (
+                                typeof value !== "number" ||
+                                Number.isNaN(value) ||
+                                value == undefined
+                            )
+                                continue;
+                            this.inline.set(key, value);
+                        }
+                    }
+                }
+            )
+        );
     }
 
     async onload() {
@@ -543,6 +630,10 @@ export default class DiceRollerPlugin extends Plugin {
             "/": factor,
             "^": exponent
         });
+
+        this.app.workspace.onLayoutReady(async () => {
+            await this.registerDataviewInlineFields();
+        });
     }
     public async parseDice(content: string, source: string) {
         const roller = this.getRoller(content, source);
@@ -706,31 +797,6 @@ export default class DiceRollerPlugin extends Plugin {
             };
         });
 
-        /* this.lexer.addRule(DICE_REGEX, function (lexeme: string): Lexeme {
-            const { dice, conditional } = lexeme.match(DICE_REGEX).groups;
-            let conditionals: Conditional[] = [];
-            if (conditional) {
-                let matches = conditional.matchAll(CONDITIONAL_REGEX);
-                if (matches) {
-                    for (let match of matches) {
-                        if (!match) continue;
-                        const { comparer, operator } = match.groups;
-                        conditionals.push({
-                            comparer: Number(comparer),
-                            operator
-                        });
-                    }
-                }
-            }
-
-            return {
-                type: "dice",
-                data: dice,
-                original: lexeme,
-                conditionals
-            }; // symbols
-        }); */
-
         this.lexer.addRule(OMITTED_REGEX, (lexeme: string): Lexeme => {
             const {
                 roll = this.data.defaultRoll,
@@ -884,7 +950,6 @@ export default class DiceRollerPlugin extends Plugin {
                 };
             }
         );
-
         this.lexer.addRule(
             /r(i|\d+)?(?:(!?=|=!|>=?|<=?)(-?\d+))*/,
             function (lexeme: string): Lexeme {
@@ -914,6 +979,17 @@ export default class DiceRollerPlugin extends Plugin {
                 };
             }
         );
+        const self = this;
+        this.lexer.addRule(/\w+/, function (lexeme: string): Lexeme {
+            if (self.inline.has(lexeme.trim())) {
+                return {
+                    type: "dice",
+                    data: `${self.inline.get(lexeme.trim())}`,
+                    original: lexeme,
+                    conditionals: []
+                };
+            }
+        });
     }
 
     onunload() {
