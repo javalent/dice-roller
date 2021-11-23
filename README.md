@@ -461,6 +461,12 @@ Example:
 
 `dice-mod: 3d100 + 12` => `3d100 + 12 -> [75, 20, 75] + 12 -> 182`
 
+## Displaying Formula
+
+By default, the plugin will display the formula along with the result.
+
+This can be turned off globally by turning off `Add Formula When Modifying` in settings, or by appending `|noform` to a `dice-mod` roll.
+
 # Settings
 
 ## Roll All Files for Tags

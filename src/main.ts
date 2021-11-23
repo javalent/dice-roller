@@ -97,8 +97,10 @@ interface DiceRollerSettings {
     copyContentButton: boolean;
     displayResultsInline: boolean;
     displayLookupRoll: boolean;
+    displayFormulaForMod: boolean;
     formulas: Record<string, string>;
     persistResults: boolean;
+
     showDice: boolean;
     results: {
         [path: string]: {
@@ -121,6 +123,7 @@ const DEFAULT_SETTINGS: DiceRollerSettings = {
     rollLinksForTags: false,
     copyContentButton: true,
     customFormulas: [],
+    displayFormulaForMod: true,
     displayResultsInline: false,
     displayLookupRoll: true,
     formulas: {},
@@ -293,6 +296,13 @@ export default class DiceRollerPlugin extends Plugin {
                                 );
                                 continue;
                             }
+
+                            const showFormula =
+                                !content.includes("|noform") ??
+                                this.data.displayFormulaForMod;
+
+                            content = content.replace("|noform", "");
+
                             //build result map;
                             const roller = this.getRoller(
                                 content,
@@ -309,12 +319,13 @@ export default class DiceRollerPlugin extends Plugin {
                                 info.lineEnd + 1
                             );
 
+                            const rep = showFormula
+                                ? `${roller.inlineText} **${roller.result}**`
+                                : `**${roller.result}**`;
+
                             splitContent = splitContent
                                 .join("\n")
-                                .replace(
-                                    `\`${full}\``,
-                                    `${roller.inlineText} **${roller.result}**`
-                                )
+                                .replace(`\`${full}\``, rep)
                                 .split("\n");
 
                             fileContent.splice(

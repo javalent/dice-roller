@@ -70,6 +70,24 @@ export default class SettingTab extends PluginSettingTab {
                 });
             });
         new Setting(containerEl)
+            .setName("Add Formula When Modifying")
+            .setDesc(
+                createFragment((e) => {
+                    e.createSpan({
+                        text: "Both the formula and the results will both be added to the node when using "
+                    });
+                    e.createEl("code", { text: "dice-mod" });
+                    e.createSpan({ text: "." });
+                })
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.displayFormulaForMod);
+                t.onChange(async (v) => {
+                    this.plugin.data.displayFormulaForMod = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+        new Setting(containerEl)
             .setName("Display Lookup Table Roll")
             .setDesc(
                 "Lookup table rolls will display the rolled number along with the result."
