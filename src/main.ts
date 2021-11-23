@@ -980,7 +980,7 @@ export default class DiceRollerPlugin extends Plugin {
             }
         );
         const self = this;
-        this.lexer.addRule(/\w+/, function (lexeme: string): Lexeme {
+        this.lexer.addRule(/[^\d]\w+/, function (lexeme: string): Lexeme {
             if (self.inline.has(lexeme.trim())) {
                 return {
                     type: "dice",
@@ -1018,7 +1018,9 @@ export default class DiceRollerPlugin extends Plugin {
         this.lexer.setInput(input);
         var tokens = [],
             token;
-        while ((token = this.tryLex())) tokens.push(token);
+        while ((token = this.tryLex())) {
+            tokens.push(token);
+        }
         return this.parser.parse(tokens);
     }
     tryLex() {
