@@ -827,6 +827,7 @@ export default class DiceRollerPlugin extends Plugin {
             }; // symbols
         });
         this.lexer.addRule(/\d+/, function (lexeme: string): Lexeme {
+            console.log("🚀 ~ file: main.ts ~ line 830 ~ lexeme", lexeme);
             return {
                 type: "dice",
                 data: lexeme,
@@ -980,7 +981,7 @@ export default class DiceRollerPlugin extends Plugin {
             }
         );
         const self = this;
-        this.lexer.addRule(/[^\d]\w+/, function (lexeme: string): Lexeme {
+        this.lexer.addRule(/[A-Za-z]+/, function (lexeme: string): Lexeme {
             if (self.inline.has(lexeme.trim())) {
                 return {
                     type: "dice",
