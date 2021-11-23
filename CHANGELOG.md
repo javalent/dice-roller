@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.6.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.5.1...7.6.0) (2021-11-23)
+
+
+### Features
+
+* added new `Line` roller (see the ReadMe for more info) ([4169790](https://github.com/valentine195/obsidian-dice-roller/commit/41697903f4e50ba882b3e870460f773046db4832))
+
 ### [7.5.1](https://github.com/valentine195/obsidian-dice-roller/compare/7.5.0...7.5.1) (2021-11-22)
 
 
