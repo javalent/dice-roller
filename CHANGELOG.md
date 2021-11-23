@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.8.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.7.0...7.8.0) (2021-11-23)
+
+
+### Features
+
+* Added basic Dataview inline field support ([f075fe9](https://github.com/valentine195/obsidian-dice-roller/commit/f075fe9c6e9f6254eba2a9ea3b90aba51057ff7e))
+
 ## [7.7.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.6.0...7.7.0) (2021-11-23)
 
 
