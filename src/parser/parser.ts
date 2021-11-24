@@ -20,10 +20,19 @@ export class Parser {
                     stack.unshift(token);
                     break;
                 case ")":
+                    if (
+                        input[index] &&
+                        input[index].type == "dice" &&
+                        /^d/.test(input[index].original)
+                    ) {
+                        input[index].parenedDice = true;
+                    }
                     while (stack.length) {
                         var token = stack.shift();
                         if (token.data === "(") break;
-                        else output.push(token);
+                        else {
+                            output.push(token);
+                        }
                     }
 
                     if (token.data !== "(")
@@ -50,7 +59,9 @@ export class Parser {
                         }
 
                         stack.unshift(token);
-                    } else output.push(token);
+                    } else {
+                        output.push(token);
+                    }
             }
         }
 

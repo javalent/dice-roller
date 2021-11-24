@@ -657,7 +657,13 @@ export default class DiceRollerPlugin extends Plugin {
 
         await this.saveData(this.data);
     }
+    get dataview_regex(): RegExp {
+        const fields = Array.from(this.inline.keys());
 
+        if (!fields.length) return null;
+
+        return new RegExp(`(${fields.join("|")})`, "g");
+    }
     getRoller(
         content: string,
         source: string,
@@ -666,9 +672,16 @@ export default class DiceRollerPlugin extends Plugin {
         let showDice = content.includes("|nodice") ? false : icon;
 
         content = decode(content.replace("|nodice", "").replace("\\|", "|"));
-
+        
         if (content in this.data.formulas) {
             content = this.data.formulas[content];
+        }
+        if (this.dataview_regex) {
+            const matches = content.match(this.dataview_regex) ?? [];
+
+            for (const match of matches) {
+                content = content.replace(match, `${this.inline.get(match)}`);
+            }
         }
         const lexemes = this.parse(content);
 
@@ -979,17 +992,20 @@ export default class DiceRollerPlugin extends Plugin {
                 };
             }
         );
-        const self = this;
-        this.lexer.addRule(/[A-Za-z]+/, function (lexeme: string): Lexeme {
-            if (self.inline.has(lexeme.trim())) {
-                return {
-                    type: "dice",
-                    data: `${self.inline.get(lexeme.trim())}`,
-                    original: lexeme,
-                    conditionals: []
-                };
+        /* const self = this;
+        this.lexer.addRule(
+            /[A-Za-z][A-Za-z0-9_]+/,
+            function (lexeme: string): Lexeme {
+                if (self.inline.has(lexeme.trim())) {
+                    return {
+                        type: "dice",
+                        data: `${self.inline.get(lexeme.trim())}`,
+                        original: lexeme,
+                        conditionals: []
+                    };
+                }
             }
-        });
+        ); */
     }
 
     onunload() {

@@ -24,7 +24,6 @@ export class DiceRoller {
     get text() {
         return `${this.result}`;
     }
-
     get result() {
         if (this.static) {
             return Number(this.dice);
@@ -328,7 +327,6 @@ export class DiceRoller {
                 ];
             })
         );
-
         for (let [type, modifier] of this.modifiers) {
             this.applyModifier(type, modifier);
         }
@@ -468,11 +466,21 @@ export class StackRoller extends GenericRoller<number> {
     stunted: string = "";
     private _tooltip: string;
     get resultText() {
-        let text = this.original;
+        let text: string[] = [];
+        let index = 0;
         this.dice.forEach((dice) => {
-            text = text.replace(dice.lexeme.original, dice.display);
+            const slice = this.original.slice(index);
+
+            text.push(
+                slice.slice(0, slice.indexOf(dice.lexeme.original)),
+                dice.display
+            );
+
+            index +=
+                slice.indexOf(dice.lexeme.original) +
+                dice.lexeme.original.length;
         });
-        return text;
+        return text.join("");
     }
     get tooltip() {
         if (this._tooltip) return this._tooltip;
@@ -644,6 +652,15 @@ export class StackRoller extends GenericRoller<number> {
                     break;
                 }
                 case "dice":
+                    if (
+                        dice.parenedDice &&
+                        /^d/.test(dice.original) &&
+                        this.stack.length
+                    ) {
+                        const previous = this.stack.pop();
+                        dice.data = `${previous.result}${dice.original}`;
+                        this.dice[index] = new DiceRoller(dice.data, dice);
+                    }
                     if (!this.dice[index]) {
                         this.dice[index] = new DiceRoller(dice.data, dice);
                     }

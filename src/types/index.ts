@@ -8,6 +8,7 @@ export interface Lexeme {
     type: string;
     data: string;
     conditionals: Conditional[];
+    parenedDice?: boolean;
 }
 
 export interface Conditional {
