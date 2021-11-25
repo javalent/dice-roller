@@ -461,10 +461,8 @@ export class LinkRoller extends GenericRoller<TFile> {
         };
     }
     async getFiles() {
-        const files =
-            this.plugin.app.plugins.plugins.dataview.index.tags.invMap.get(
-                this.tag
-            );
+        await this.plugin.dataviewReady();
+        const files = this.plugin.dataview.index.tags.invMap.get(this.tag);
         if (files) files.delete(this.source);
         if (!files || !files.size) {
             throw new Error(
