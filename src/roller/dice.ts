@@ -465,6 +465,7 @@ export class StackRoller extends GenericRoller<number> {
     result: number;
     stunted: string = "";
     private _tooltip: string;
+    shouldRender: boolean = false;
     get resultText() {
         let text: string[] = [];
         let index = 0;
@@ -498,7 +499,13 @@ export class StackRoller extends GenericRoller<number> {
         }
         this.resultEl.setText(result.join("") + this.stunted);
     }
-
+    async onClick(evt: MouseEvent) {
+        evt.stopPropagation();
+        evt.stopImmediatePropagation();
+        if (window.getSelection()?.isCollapsed) {
+            await this.roll();
+        }
+    }
     get dynamic() {
         return this.dice.filter((d) => !d.static);
     }
@@ -531,168 +538,178 @@ export class StackRoller extends GenericRoller<number> {
     async roll() {
         let index = 0;
         this.stunted = "";
-        for (const dice of this.lexemes) {
-            switch (dice.type) {
-                case "+":
-                case "-":
-                case "*":
-                case "/":
-                case "^":
-                case "math":
-                    let b = this.stack.pop(),
-                        a = this.stack.pop();
-                    if (!a) {
-                        if (dice.data === "-") {
-                            b = new DiceRoller(`-${b.dice}`, b.lexeme);
+        if (this.shouldRender) {
+            await this.plugin.renderRoll(this);
+        } else {
+            for (const dice of this.lexemes) {
+                switch (dice.type) {
+                    case "+":
+                    case "-":
+                    case "*":
+                    case "/":
+                    case "^":
+                    case "math":
+                        let b = this.stack.pop(),
+                            a = this.stack.pop();
+                        if (!a) {
+                            if (dice.data === "-") {
+                                b = new DiceRoller(`-${b.dice}`, b.lexeme);
+                            }
+                            this.stackCopy.push(dice.data);
+                            this.stack.push(b);
+                            continue;
                         }
+
+                        b.roll();
+                        if (b instanceof StuntRoller) {
+                            if (b.doubles) {
+                                this.stunted = ` - ${
+                                    b.results.get(0).value
+                                } Stunt Points`;
+                            }
+                        }
+
+                        a.roll();
+                        if (a instanceof StuntRoller) {
+                            if (a.doubles) {
+                                this.stunted = ` - ${
+                                    a.results.get(0).value
+                                } Stunt Points`;
+                            }
+                        }
+                        const result = this.operators[dice.data](
+                            a.result,
+                            b.result
+                        );
+
                         this.stackCopy.push(dice.data);
-                        this.stack.push(b);
-                        continue;
-                    }
+                        this.stack.push(new DiceRoller(`${result}`, dice));
+                        break;
+                    case "kh": {
+                        let diceInstance = this.dice[index - 1];
+                        let data = dice.data ? Number(dice.data) : 1;
 
-                    b.roll();
-                    if (b instanceof StuntRoller) {
-                        if (b.doubles) {
-                            this.stunted = ` - ${
-                                b.results.get(0).value
-                            } Stunt Points`;
+                        diceInstance.modifiers.set("kh", {
+                            data,
+                            conditionals: []
+                        });
+                        break;
+                    }
+                    case "dl": {
+                        let diceInstance = this.dice[index - 1];
+                        let data = dice.data ? Number(dice.data) : 1;
+
+                        data = diceInstance.results.size - data;
+
+                        diceInstance.modifiers.set("kh", {
+                            data,
+                            conditionals: []
+                        });
+                        break;
+                    }
+                    case "kl": {
+                        let diceInstance = this.dice[index - 1];
+                        let data = dice.data ? Number(dice.data) : 1;
+
+                        diceInstance.modifiers.set("kl", {
+                            data,
+                            conditionals: []
+                        });
+                        break;
+                    }
+                    case "dh": {
+                        let diceInstance = this.dice[index - 1];
+                        let data = dice.data ? Number(dice.data) : 1;
+
+                        data = diceInstance.results.size - data;
+
+                        diceInstance.modifiers.set("kl", {
+                            data,
+                            conditionals: []
+                        });
+                        break;
+                    }
+                    case "!": {
+                        let diceInstance = this.dice[index - 1];
+                        let data = Number(dice.data) || 1;
+
+                        diceInstance.modifiers.set("!", {
+                            data,
+                            conditionals: dice.conditionals
+                        });
+
+                        break;
+                    }
+                    case "!!": {
+                        let diceInstance = this.dice[index - 1];
+                        let data = Number(dice.data) || 1;
+
+                        diceInstance.modifiers.set("!!", {
+                            data,
+                            conditionals: dice.conditionals
+                        });
+
+                        break;
+                    }
+                    case "r": {
+                        let diceInstance = this.dice[index - 1];
+                        let data = Number(dice.data) || 1;
+
+                        diceInstance.modifiers.set("r", {
+                            data,
+                            conditionals: dice.conditionals
+                        });
+                        break;
+                    }
+                    case "dice":
+                        if (
+                            dice.parenedDice &&
+                            /^d/.test(dice.original) &&
+                            this.stack.length
+                        ) {
+                            const previous = this.stack.pop();
+                            dice.data = `${previous.result}${dice.original}`;
+                            this.dice[index] = new DiceRoller(dice.data, dice);
                         }
-                    }
-
-                    a.roll();
-                    if (a instanceof StuntRoller) {
-                        if (a.doubles) {
-                            this.stunted = ` - ${
-                                a.results.get(0).value
-                            } Stunt Points`;
+                        if (!this.dice[index]) {
+                            this.dice[index] = new DiceRoller(dice.data, dice);
                         }
-                    }
-                    const result = this.operators[dice.data](
-                        a.result,
-                        b.result
-                    );
 
-                    this.stackCopy.push(dice.data);
-                    this.stack.push(new DiceRoller(`${result}`, dice));
-                    break;
-                case "kh": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = dice.data ? Number(dice.data) : 1;
+                        this.stack.push(this.dice[index]);
+                        this.stackCopy.push(this.dice[index]);
+                        index++;
+                        break;
+                    case "stunt":
+                        if (!this.dice[index]) {
+                            this.dice[index] = new StuntRoller(
+                                dice.original,
+                                dice
+                            );
+                        }
 
-                    diceInstance.modifiers.set("kh", {
-                        data,
-                        conditionals: []
-                    });
-                    break;
+                        this.stack.push(this.dice[index]);
+                        this.stackCopy.push(this.dice[index]);
+                        index++;
                 }
-                case "dl": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = dice.data ? Number(dice.data) : 1;
-
-                    data = diceInstance.results.size - data;
-
-                    diceInstance.modifiers.set("kh", {
-                        data,
-                        conditionals: []
-                    });
-                    break;
-                }
-                case "kl": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = dice.data ? Number(dice.data) : 1;
-
-                    diceInstance.modifiers.set("kl", {
-                        data,
-                        conditionals: []
-                    });
-                    break;
-                }
-                case "dh": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = dice.data ? Number(dice.data) : 1;
-
-                    data = diceInstance.results.size - data;
-
-                    diceInstance.modifiers.set("kl", {
-                        data,
-                        conditionals: []
-                    });
-                    break;
-                }
-                case "!": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = Number(dice.data) || 1;
-
-                    diceInstance.modifiers.set("!", {
-                        data,
-                        conditionals: dice.conditionals
-                    });
-
-                    break;
-                }
-                case "!!": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = Number(dice.data) || 1;
-
-                    diceInstance.modifiers.set("!!", {
-                        data,
-                        conditionals: dice.conditionals
-                    });
-
-                    break;
-                }
-                case "r": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = Number(dice.data) || 1;
-
-                    diceInstance.modifiers.set("r", {
-                        data,
-                        conditionals: dice.conditionals
-                    });
-                    break;
-                }
-                case "dice":
-                    if (
-                        dice.parenedDice &&
-                        /^d/.test(dice.original) &&
-                        this.stack.length
-                    ) {
-                        const previous = this.stack.pop();
-                        dice.data = `${previous.result}${dice.original}`;
-                        this.dice[index] = new DiceRoller(dice.data, dice);
-                    }
-                    if (!this.dice[index]) {
-                        this.dice[index] = new DiceRoller(dice.data, dice);
-                    }
-
-                    this.stack.push(this.dice[index]);
-                    this.stackCopy.push(this.dice[index]);
-                    index++;
-                    break;
-                case "stunt":
-                    if (!this.dice[index]) {
-                        this.dice[index] = new StuntRoller(dice.original, dice);
-                    }
-
-                    this.stack.push(this.dice[index]);
-                    this.stackCopy.push(this.dice[index]);
-                    index++;
             }
-        }
 
-        const final = this.stack.pop();
-        final.roll();
-        if (final instanceof StuntRoller) {
-            if (final.doubles) {
-                this.stunted = ` - ${final.results.get(0).value} Stunt Points`;
+            const final = this.stack.pop();
+            final.roll();
+            if (final instanceof StuntRoller) {
+                if (final.doubles) {
+                    this.stunted = ` - ${
+                        final.results.get(0).value
+                    } Stunt Points`;
+                }
             }
+            this.result = final.result;
+            this._tooltip = null;
         }
-        this.result = final.result;
-        this._tooltip = null;
 
         this.render();
 
         this.trigger("new-result");
+
         return this.result;
     }
 

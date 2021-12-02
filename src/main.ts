@@ -253,6 +253,15 @@ export default class DiceRollerPlugin extends Plugin {
         );
     }
 
+    async renderRoll(roller: StackRoller) {
+        this.addChild(this.renderer);
+        this.renderer.setDice(roller);
+
+        await this.renderer.start();
+
+        roller.recalculate();
+    }
+
     async onload() {
         console.log("DiceRoller plugin loaded");
         this.data = Object.assign(DEFAULT_SETTINGS, await this.loadData());
@@ -287,12 +296,7 @@ export default class DiceRollerPlugin extends Plugin {
                     return;
                 }
                 try {
-                    this.addChild(this.renderer);
-                    this.renderer.setDice(roller);
-
-                    await this.renderer.start();
-
-                    roller.recalculate();
+                    this.renderRoll(roller);
                 } catch (e) {
                     new Notice("There was an error rendering the roll.");
                     console.error(e);
@@ -672,7 +676,7 @@ export default class DiceRollerPlugin extends Plugin {
         let showDice = content.includes("|nodice") ? false : icon;
 
         content = decode(content.replace("|nodice", "").replace("\\|", "|"));
-        
+
         if (content in this.data.formulas) {
             content = this.data.formulas[content];
         }
@@ -1018,6 +1022,7 @@ export default class DiceRollerPlugin extends Plugin {
             delete window.__THREE__;
         }
         this.renderer.unload();
+        this.app.workspace.trigger("dice-roller:unload");
     }
 
     operators: any = {
