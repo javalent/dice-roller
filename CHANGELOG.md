@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.8.5](https://github.com/valentine195/obsidian-dice-roller/compare/7.8.4...7.8.5) (2021-11-25)
+
+
+### Bug Fixes
+
+* fixed dataview inline tag greediness ([65bf26c](https://github.com/valentine195/obsidian-dice-roller/commit/65bf26c5f68d77e651399321d10102d56caf12a4))
+* wait for dataview to be ready for tag rolling ([f0e0594](https://github.com/valentine195/obsidian-dice-roller/commit/f0e0594e3ea3dc1a7d43fea001ffa134244457e4))
+
 ### [7.8.4](https://github.com/valentine195/obsidian-dice-roller/compare/7.8.3...7.8.4) (2021-11-24)
 
 

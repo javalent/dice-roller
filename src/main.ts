@@ -680,13 +680,13 @@ export default class DiceRollerPlugin extends Plugin {
         if (content in this.data.formulas) {
             content = this.data.formulas[content];
         }
-        if (this.dataview_regex) {
+        /* if (this.dataview_regex) {
             const matches = content.match(this.dataview_regex) ?? [];
 
             for (const match of matches) {
                 content = content.replace(match, `${this.inline.get(match)}`);
             }
-        }
+        } */
         const lexemes = this.parse(content);
 
         const type = this.getTypeFromLexemes(lexemes);
@@ -996,7 +996,7 @@ export default class DiceRollerPlugin extends Plugin {
                 };
             }
         );
-        /* const self = this;
+        const self = this;
         this.lexer.addRule(
             /[A-Za-z][A-Za-z0-9_]+/,
             function (lexeme: string): Lexeme {
@@ -1009,7 +1009,7 @@ export default class DiceRollerPlugin extends Plugin {
                     };
                 }
             }
-        ); */
+        );
     }
 
     onunload() {
