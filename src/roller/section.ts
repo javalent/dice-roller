@@ -2,6 +2,7 @@ import {
     ListItemCache,
     MarkdownRenderer,
     Notice,
+    Pos,
     SectionCache,
     setIcon,
     TFile
@@ -19,6 +20,7 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
     types: string[];
     content: string;
     copy: HTMLDivElement;
+    levels: string[];
 
     constructor(
         public plugin: DiceRollerPlugin,
@@ -146,6 +148,22 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
         this.rolls = (roll && !isNaN(Number(roll)) && Number(roll)) ?? 1;
         this.path = link.replace(/(\[|\])/g, "");
         this.types = types?.split(",");
+        this.levels = types
+            ?.split(",")
+            .map((type) =>
+                /heading\-\d+/.test(type) ? type.split("-").pop() : null
+            )
+            .filter((t) => t);
+        this.types = types
+            ?.split(",")
+            .map((type) =>
+                /heading\-\d+/.test(type) ? type.split("-").shift() : type
+            );
+        console.log(
+            "🚀 ~ file: section.ts ~ line 151 ~ this.levels",
+            this.levels,
+            this.types
+        );
     }
     async getOptions() {
         this.cache = this.plugin.app.metadataCache.getFileCache(this.file);
@@ -153,10 +171,33 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
             throw new Error("Could not read file cache.");
         }
         this.content = await this.plugin.app.vault.cachedRead(this.file);
-        this.options = this.cache.sections.filter(({ type }) =>
-            this.types
-                ? this.types.includes(type)
-                : !["yaml", "thematicBreak"].includes(type)
+        console.log(this.levels);
+        this.options = this.cache.sections.filter(({ type, position }) => {
+            if (!this.types) return !["yaml", "thematicBreak"].includes(type);
+            console.log(
+                type == "heading",
+                this.types.includes(type),
+                this.levels
+            );
+            if (
+                type == "heading" &&
+                this.types.includes(type) &&
+                this.levels.length
+            ) {
+                const headings = (this.cache.headings ?? []).filter(
+                    ({ level }) => this.levels.includes(`${level}`)
+                );
+                return headings.some(({ position: pos }) =>
+                    samePosition(pos, position)
+                );
+            }
+            return this.types.includes(type);
+        });
+        console.log(
+            "🚀 ~ file: section.ts ~ line 161 ~ this.cache",
+            this.cache,
+            this.types,
+            this.levels
         );
 
         if (this.types && this.types.includes("listItem")) {
@@ -679,3 +720,11 @@ export class LineRoller extends GenericFileRoller<string> {
         await this.render();
     }
 }
+
+const samePosition = (pos: Pos, pos2: Pos) => {
+    return (
+        pos.start.col == pos2.start.col &&
+        pos.start.line == pos2.start.line &&
+        pos.start.offset == pos2.start.offset
+    );
+};

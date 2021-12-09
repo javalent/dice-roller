@@ -4,8 +4,10 @@
     "description": "Inline dice rolling for Obsidian.md",
     "main": "main.js",
     "scripts": {
-        "dev": "set NODE_OPTIONS=--openssl-legacy-provider && webpack --config webpack.dev.js -w",
-        "build": "webpack",
+        "dev": "node esbuild.config.mjs",
+        "build": "node esbuild.config.mjs production",
+        "web:dev": "set NODE_OPTIONS=--openssl-legacy-provider && webpack --config webpack.dev.js -w",
+        "web:build": "webpack",
         "rollup:dev": "rollup --config rollup.config-dev.js -w",
         "rollup:build": "rollup --config rollup.config.js",
         "release": "standard-version"

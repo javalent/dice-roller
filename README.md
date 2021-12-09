@@ -275,7 +275,7 @@ Usage:
 | --------------------------------------------- | ------------------------------------------------------------------------------- |
 | `` `dice: [[Note]]\|paragraph` ``             | Return `paragraph` blocks                                                       |
 | `` `dice: #tag\|paragraph,heading,yaml` ``    | Return `paragraph`, `heading`, and `yaml` blocks                                |
-| `` `dice: #tag\|-\|paragraph,heading,yaml` `` | Return `paragraph`, `heading`, and `yaml` blocks from a **single, random note** |
+| `` `dice: #tag\|-\|paragraph,heading-3,yaml` `` | Return `paragraph`, level 3 `heading`s, and `yaml` blocks from a **single, random note** |
 
 I do not have any control over what Obsidian consider's each block (for instance, images may be returned as `paragraph`).
 
@@ -310,6 +310,11 @@ I _believe_ that this is a list of block types defined in Obsidian, but use this
 | `definition`         |
 | `footnoteDefinition` |
 
+### Headings
+
+Headings can be further filtered down by the heading size by appending the size to the end of the type:
+
+`` `dice: [[Note]]|heading-2` ``
 # Line Dice
 
 The Dice Roller can be told to return a random line from any note using the following syntax:
