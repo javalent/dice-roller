@@ -29,6 +29,8 @@
         "cannon-es": "^0.18.0",
         "copy-webpack-plugin": "^9.0.1",
         "css-loader": "^6.3.0",
+        "dotenv": "^10.0.0",
+        "esbuild": "^0.14.2",
         "he": "^1.2.0",
         "lex": "^1.7.9",
         "mini-css-extract-plugin": "^2.3.0",

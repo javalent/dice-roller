@@ -14,7 +14,6 @@ import { faDice } from "@fortawesome/free-solid-svg-icons";
 import { faCopy } from "@fortawesome/free-regular-svg-icons";
 import { icon } from "@fortawesome/fontawesome-svg-core";
 
-import "./assets/main.css";
 import { Parser } from "./parser/parser";
 import { Conditional, Lexeme } from "src/types";
 
@@ -527,6 +526,8 @@ export default class DiceRollerPlugin extends Plugin {
                     this.data.results[path][lineStart] = {};
                 }
 
+
+                //this needs to be asynchronous
                 if (Object.entries(toPersist).length) {
                     const view =
                         this.app.workspace.getActiveViewOfType(MarkdownView);

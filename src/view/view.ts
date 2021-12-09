@@ -13,8 +13,6 @@ import DiceRollerPlugin from "src/main";
 import { StackRoller } from "src/roller";
 import { COPY_DEFINITION, ICON_DEFINITION } from "src/utils/constants";
 
-import "./view.css";
-
 export const VIEW_TYPE = "DICE_ROLLER_VIEW";
 
 const D4 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"><defs><style>.cls-1{fill:none;stroke: currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:15px !important;}</style></defs><g id="Shapes"><path class="cls-1" d="M244.62,49.31,40.31,403.19a6.21,6.21,0,0,0,5.38,9.31H454.31a6.21,6.21,0,0,0,5.38-9.31L255.38,49.31A6.21,6.21,0,0,0,244.62,49.31Z"/></g><g fill="currentColor" id="Layer_1" data-name="Layer 1"><path d="M270.21,278.16h21.7v16.22h-21.7v36.31h-20V294.38H179V282.67l70-108.39h21.16Zm-68.64,0h48.66v-76.7l-2.36,4.3Z"/></g></svg>`;
