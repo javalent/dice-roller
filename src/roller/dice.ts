@@ -513,6 +513,10 @@ export class StackRoller extends GenericRoller<number> {
         return this.dice.filter((d) => d.static);
     }
 
+    get isStatic() {
+        return this.dice.every((d) => d.static);
+    }
+
     constructor(
         public plugin: DiceRollerPlugin,
         public original: string,

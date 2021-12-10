@@ -8,7 +8,7 @@ import {
     WorkspaceLeaf
 } from "obsidian";
 
-import type { FullIndex, DataviewApi } from "obsidian-dataview";
+import type { Plugins } from "../../obsidian-overload/index";
 
 //@ts-ignore
 import lexer from "lex";
@@ -64,11 +64,7 @@ String.prototype.matchAll =
 declare module "obsidian" {
     interface App {
         plugins: {
-            getPlugin(plugin: "obsidian-dice-roller"): DiceRollerPlugin;
-            getPlugin(plugin: "dataview"): {
-                index: FullIndex;
-                api: DataviewApi;
-            };
+            getPlugin<T extends keyof Plugins>(plugin: T): Plugins[T];
         };
     }
     interface Workspace {
