@@ -159,11 +159,6 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
             .map((type) =>
                 /heading\-\d+/.test(type) ? type.split("-").shift() : type
             );
-        console.log(
-            "🚀 ~ file: section.ts ~ line 151 ~ this.levels",
-            this.levels,
-            this.types
-        );
     }
     async getOptions() {
         this.cache = this.plugin.app.metadataCache.getFileCache(this.file);
@@ -171,14 +166,10 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
             throw new Error("Could not read file cache.");
         }
         this.content = await this.plugin.app.vault.cachedRead(this.file);
-        console.log(this.levels);
+
         this.options = this.cache.sections.filter(({ type, position }) => {
             if (!this.types) return !["yaml", "thematicBreak"].includes(type);
-            console.log(
-                type == "heading",
-                this.types.includes(type),
-                this.levels
-            );
+
             if (
                 type == "heading" &&
                 this.types.includes(type) &&
@@ -193,12 +184,6 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
             }
             return this.types.includes(type);
         });
-        console.log(
-            "🚀 ~ file: section.ts ~ line 161 ~ this.cache",
-            this.cache,
-            this.types,
-            this.levels
-        );
 
         if (this.types && this.types.includes("listItem")) {
             this.options.push(...this.cache.listItems);
