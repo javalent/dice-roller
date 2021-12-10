@@ -7,6 +7,9 @@ import {
     TFile,
     WorkspaceLeaf
 } from "obsidian";
+
+import type { FullIndex, DataviewApi } from "obsidian-dataview";
+
 //@ts-ignore
 import lexer from "lex";
 
@@ -61,37 +64,10 @@ String.prototype.matchAll =
 declare module "obsidian" {
     interface App {
         plugins: {
-            plugins: {
-                dataview: {
-                    index: {
-                        tags: {
-                            invMap: Map<string, Set<string>>;
-                            map: Map<string, Set<string>>;
-                        };
-                        etags: {
-                            invMap: Map<string, Set<string>>;
-                            map: Map<string, Set<string>>;
-                        };
-                        pages: Map<
-                            string,
-                            {
-                                fields: Map<string, number>;
-                            }
-                        >;
-                        events: {
-                            on(
-                                name: "dataview:metadata-change",
-                                callback: (
-                                    ...args: [op: "update", file: TFile]
-                                ) => any,
-                                ctx?: any
-                            ): EventRef;
-                        };
-                    };
-                    api: {
-                        page(path: string): Record<string, number>;
-                    };
-                };
+            getPlugin(plugin: "obsidian-dice-roller"): DiceRollerPlugin;
+            getPlugin(plugin: "dataview"): {
+                index: FullIndex;
+                api: DataviewApi;
             };
         };
     }
@@ -170,10 +146,10 @@ export default class DiceRollerPlugin extends Plugin {
     fileMap: Map<TFile, BasicRoller[]> = new Map();
 
     get canUseDataview() {
-        return "dataview" in this.app.plugins.plugins;
+        return this.app.plugins.getPlugin("dataview") != null;
     }
     get dataview() {
-        return this.app.plugins.plugins.dataview;
+        return this.app.plugins.getPlugin("dataview");
     }
     async dataviewReady() {
         return new Promise((resolve) => {
@@ -526,7 +502,6 @@ export default class DiceRollerPlugin extends Plugin {
                     this.data.results[path][lineStart] = {};
                 }
 
-
                 //this needs to be asynchronous
                 if (Object.entries(toPersist).length) {
                     const view =
@@ -715,7 +690,7 @@ export default class DiceRollerPlugin extends Plugin {
                 );
             }
             case "tag": {
-                if (!this.app.plugins.plugins.dataview) {
+                if (!this.canUseDataview) {
                     throw new Error(
                         "Tags are only supported with the Dataview plugin installed."
                     );
