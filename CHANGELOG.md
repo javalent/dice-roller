@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.10.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.9.0...7.10.0) (2021-12-10)
+
+
+### Features
+
+* added ability to roll heading types (closes [#60](https://github.com/valentine195/obsidian-dice-roller/issues/60)) ([7dd1bd3](https://github.com/valentine195/obsidian-dice-roller/commit/7dd1bd3add152888126315da85b9cb82aa7960e4))
+
+
+### Bug Fixes
+
+* update typings ([fcf3f1f](https://github.com/valentine195/obsidian-dice-roller/commit/fcf3f1f3caacd3643d88267076e171add42b9ce2))
+
 ## [7.9.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.8.6...7.9.0) (2021-12-09)
 
 
