@@ -19,6 +19,9 @@
     "author": "Jeremy Valentine",
     "license": "MIT",
     "devDependencies": {
+        "@codemirror/language": "^0.19.7",
+        "@codemirror/stream-parser": "https://github.com/lishid/stream-parser",
+        "@codemirror/view": "^0.19.34",
         "@fortawesome/fontawesome-svg-core": "^1.2.32",
         "@fortawesome/free-regular-svg-icons": "^5.15.4",
         "@fortawesome/free-solid-svg-icons": "^5.15.4",
@@ -39,7 +42,7 @@
         "luxon": "^2.1.1",
         "mini-css-extract-plugin": "^2.3.0",
         "monkey-around": "^2.2.0",
-        "obsidian": "^0.12.11",
+        "obsidian": "^0.13.9",
         "obsidian-dataview": "^0.4.21",
         "rollup": "^2.32.1",
         "rollup-plugin-css-only": "^3.1.0",
