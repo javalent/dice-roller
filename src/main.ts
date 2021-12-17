@@ -61,6 +61,7 @@ import {
 import { syntaxTree } from "@codemirror/language";
 import { tokenClassNodeProp } from "@codemirror/stream-parser";
 import { RangeSetBuilder } from "@codemirror/rangeset";
+import { EditorSelection, SelectionRange, StateField } from "@codemirror/state";
 
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -286,8 +287,12 @@ export default class DiceRollerPlugin extends Plugin {
         const plugin = this;
 
         class DiceWidget extends WidgetType {
-            constructor(public roller: StackRoller) {
+            constructor(
+                public roller: StackRoller,
+                public spec: { line: string; from: number; to: number }
+            ) {
                 super();
+                console.log("🚀 ~ file: main.ts ~ line 294 ~ spec", spec);
             }
             toDOM(view: EditorView): HTMLElement {
                 return this.roller.containerEl;
@@ -303,7 +308,18 @@ export default class DiceRollerPlugin extends Plugin {
                 console.log("destroy-widget");
             }
         }
+        const state = StateField.define<DecorationSet>({
+            create() {
+                return Decoration.none;
+            },
+            update(set, tr) {
+                console.log("🚀 ~ file: main.ts ~ line 312 ~ set, tr", set, tr);
+                set = set.map(tr.changes);
+                return set;
+            },
 
+            provide: (f) => EditorView.decorations.from(f)
+        });
         class LivePlugin {
             decorations: DecorationSet;
             constructor(view: EditorView) {
@@ -357,11 +373,20 @@ export default class DiceRollerPlugin extends Plugin {
                             );
 
                             let deco = Decoration.replace({
-                                widget: new DiceWidget(roller),
+                                widget: new DiceWidget(roller, {
+                                    line,
+                                    from,
+                                    to
+                                }),
                                 from,
-                                to
+                                to,
+                                line
                             });
                             roller.roll();
+                            console.log(
+                                "🚀 ~ file: main.ts ~ line 377 ~ roller",
+                                roller.result
+                            );
                             builder.add(from - 1, to + 1, deco);
                         }
                     });
