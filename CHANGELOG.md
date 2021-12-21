@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.10.2](https://github.com/valentine195/obsidian-dice-roller/compare/7.10.1...7.10.2) (2021-12-21)
+
+
+### Bug Fixes
+
+* rendering improvements ([12824a6](https://github.com/valentine195/obsidian-dice-roller/commit/12824a6517751cc4562745f6676cb8a3f3ebde7d))
+* significantly softened spotlight on renderer ([b2b149b](https://github.com/valentine195/obsidian-dice-roller/commit/b2b149bd9dcc2c5de3fa6b158082d0f4a0586384))
+
 ### [7.10.1](https://github.com/valentine195/obsidian-dice-roller/compare/7.10.0...7.10.1) (2021-12-10)
 
 
