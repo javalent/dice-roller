@@ -210,7 +210,7 @@ export default class DiceRenderer extends Component {
 
         if (this.light) this.scene.remove(this.light);
         if (this.ambientLight) this.scene.remove(this.ambientLight);
-        this.light = new THREE.SpotLight(this.colors.spotlight, 1);
+        this.light = new THREE.SpotLight(this.colors.spotlight, 0.25);
         this.light.position.set(-maxwidth / 2, maxwidth / 2, maxwidth * 3);
         this.light.target.position.set(0, 0, 0);
         this.light.distance = maxwidth * 5;
