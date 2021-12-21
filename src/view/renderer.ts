@@ -113,10 +113,11 @@ export default class DiceRenderer extends Component {
                 reject(e);
             });
             this.animating = true;
+            this.extraFrames = DiceRenderer.DEFAULT_EXTRA_FRAMES;
             this.render();
         });
     }
-
+    static DEFAULT_EXTRA_FRAMES = 30;
     enableShadows() {
         this.shadows = true;
         if (this.renderer) this.renderer.shadowMap.enabled = this.shadows;
@@ -300,26 +301,31 @@ export default class DiceRenderer extends Component {
         }
         this.event.trigger("throw-finished", this.stack);
     }
+    extraFrames = DiceRenderer.DEFAULT_EXTRA_FRAMES;
     render() {
         if (this.throwFinished()) {
-            try {
-                this.returnResult();
-                this.registerInterval(
-                    window.setTimeout(() => {
-                        this.container.style.opacity = `0`;
-                        this.registerInterval(
-                            window.setTimeout(() => {
-                                this.animating = false;
-                                this.unload();
-                            }, 1000)
-                        );
-                    }, 2000)
-                );
-            } catch (e) {
-                this.event.trigger("error", e);
-            }
+            if (this.extraFrames > 10) {
+                this.extraFrames--;
+            } else {
+                try {
+                    this.returnResult();
+                    this.registerInterval(
+                        window.setTimeout(() => {
+                            this.container.style.opacity = `0`;
+                            this.registerInterval(
+                                window.setTimeout(() => {
+                                    this.animating = false;
+                                    this.unload();
+                                }, 1000)
+                            );
+                        }, 2000)
+                    );
+                } catch (e) {
+                    this.event.trigger("error", e);
+                }
 
-            return;
+                return;
+            }
         }
         this.animation = requestAnimationFrame(() => this.render());
 
@@ -379,7 +385,7 @@ export default class DiceRenderer extends Component {
 
     throwFinished() {
         let res = true;
-        const threshold = 6;
+        const threshold = 4;
         if (this.iterations < 10 / this.frame_rate) {
             for (const diceArray of this.current.values()) {
                 /* const dice = this.current[i]; */
@@ -451,20 +457,29 @@ class World {
         this.world.addContactMaterial(
             new CANNON.ContactMaterial(this.deskMaterial, this.diceMaterial, {
                 friction: 0.01,
-                restitution: 0.5
+                restitution: 0.5,
+                contactEquationRelaxation: 3,
+                contactEquationStiffness: 1e8
             })
         );
         this.world.addContactMaterial(
             new CANNON.ContactMaterial(
                 this.barrierMaterial,
                 this.diceMaterial,
-                { friction: 0, restitution: 1.0 }
+                {
+                    friction: 0.01,
+                    restitution: 1,
+                    contactEquationRelaxation: 3,
+                    contactEquationStiffness: 1e8
+                }
             )
         );
         this.world.addContactMaterial(
             new CANNON.ContactMaterial(this.diceMaterial, this.diceMaterial, {
-                friction: 0,
-                restitution: 0.5
+                friction: 0.1,
+                restitution: 0.5,
+                contactEquationRelaxation: 3,
+                contactEquationStiffness: 1e8
             })
         );
         this.world.addBody(
@@ -540,16 +555,16 @@ const DEFAULT_VECTOR = {
     pos: {
         x: 0 + 100 * Math.random(),
         y: 0 + 100 * Math.random(),
-        z: 0 + 100
+        z: 0 + 250
     },
     velocity: {
-        x: 500 * Math.random() * 2 - 1,
-        y: 500 * Math.random() * 2 - 1,
+        x: 600 * (Math.random() * 2 + 1),
+        y: 750 * (Math.random() * 2 + 1),
         z: 0
     },
     angular: {
-        x: 100 * Math.random(),
-        y: 100 * Math.random(),
+        x: 200 * Math.random(),
+        y: 200 * Math.random(),
         z: 100 * Math.random()
     },
     axis: {
