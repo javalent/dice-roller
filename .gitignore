@@ -12,3 +12,5 @@ main.js
 *build.js
 rollup.config-dev.js
 webpack.dev.js
+
+.env
