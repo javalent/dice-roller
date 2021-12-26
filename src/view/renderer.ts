@@ -35,7 +35,7 @@ export default class DiceRenderer extends Component {
     desk: any;
     iterations: number = 0;
 
-    factory = new DiceFactory(this.WIDTH, this.HEIGHT, this.plugin);
+    factory: DiceFactory;
     frame_rate = 1 / 60;
     stack: StackRoller;
 
@@ -64,7 +64,6 @@ export default class DiceRenderer extends Component {
             alpha: true,
             antialias: true
         });
-        this.addChild(this.factory);
     }
 
     setDice(stack: StackRoller) {
@@ -83,6 +82,9 @@ export default class DiceRenderer extends Component {
         this.world.add(...[...this.current.values()].flat());
     }
     onload() {
+        this.factory = new DiceFactory(this.WIDTH, this.HEIGHT, this.plugin);
+        this.addChild(this.factory);
+
         this.container.empty();
         this.container.style.opacity = `1`;
         document.body.appendChild(this.container);
