@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.11.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.10.2...7.11.0) (2021-12-26)
+
+
+### Features
+
+* `dice-mod` is now allowed on all roller types ([543eb63](https://github.com/valentine195/obsidian-dice-roller/commit/543eb631fe98fe2f829259c60e7b7432c505e130))
+
+
+### Bug Fixes
+
+* random renderer plugin error ([ed28efc](https://github.com/valentine195/obsidian-dice-roller/commit/ed28efc0bf15569118843af0440fb99ec54231f7))
+
 ### [7.10.2](https://github.com/valentine195/obsidian-dice-roller/compare/7.10.1...7.10.2) (2021-12-21)
 
 
