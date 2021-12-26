@@ -352,16 +352,16 @@ export default class DiceRollerPlugin extends Plugin {
                             let [full, content] = node.innerText.match(
                                 /^dice\-mod:\s*([\s\S]+)\s*?/
                             );
-                            if (!DICE_REGEX.test(content)) {
+                            /* if (!DICE_REGEX.test(content)) {
                                 new Notice(
                                     "Replacing note content may only be done with Dice Rolls."
                                 );
                                 continue;
+                            } */
+                            let showFormula = this.data.displayFormulaForMod;
+                            if (content.includes("|noform")) {
+                                showFormula = false;
                             }
-
-                            const showFormula =
-                                !content.includes("|noform") ??
-                                this.data.displayFormulaForMod;
 
                             content = content.replace("|noform", "");
 
@@ -371,35 +371,43 @@ export default class DiceRollerPlugin extends Plugin {
                                 ctx.sourcePath
                             );
 
+                            roller.on("new-result", async () => {
+                                const fileContent = (
+                                    await this.app.vault.cachedRead(file)
+                                ).split("\n");
+                                let splitContent = fileContent.slice(
+                                    info.lineStart,
+                                    info.lineEnd + 1
+                                );
+                                const replacer = roller.replacer;
+                                if (!replacer) {
+                                    new Notice(
+                                        "Dice Roller: There was an issue modifying the file."
+                                    );
+                                    return;
+                                }
+                                const rep = showFormula
+                                    ? `${roller.inlineText} **${replacer}**`
+                                    : `**${replacer}**`;
+
+                                splitContent = splitContent
+                                    .join("\n")
+                                    .replace(`\`${full}\``, rep)
+                                    .split("\n");
+
+                                fileContent.splice(
+                                    info.lineStart,
+                                    info.lineEnd - info.lineStart + 1,
+                                    ...splitContent
+                                );
+
+                                await this.app.vault.modify(
+                                    file,
+                                    fileContent.join("\n")
+                                );
+                            });
                             await roller.roll();
 
-                            const fileContent = (
-                                await this.app.vault.cachedRead(file)
-                            ).split("\n");
-                            let splitContent = fileContent.slice(
-                                info.lineStart,
-                                info.lineEnd + 1
-                            );
-
-                            const rep = showFormula
-                                ? `${roller.inlineText} **${roller.result}**`
-                                : `**${roller.result}**`;
-
-                            splitContent = splitContent
-                                .join("\n")
-                                .replace(`\`${full}\``, rep)
-                                .split("\n");
-
-                            fileContent.splice(
-                                info.lineStart,
-                                info.lineEnd - info.lineStart + 1,
-                                ...splitContent
-                            );
-
-                            await this.app.vault.modify(
-                                file,
-                                fileContent.join("\n")
-                            );
                             continue;
                         } catch (e) {
                             console.error(e);

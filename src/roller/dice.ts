@@ -463,6 +463,9 @@ class StuntRoller extends DiceRoller {
 
 export class StackRoller extends GenericRoller<number> {
     result: number;
+    get replacer() {
+        return `${this.result}`;
+    }
     stunted: string = "";
     private _tooltip: string;
     shouldRender: boolean = false;

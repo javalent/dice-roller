@@ -1,4 +1,5 @@
 import {
+    BlockCache,
     ListItemCache,
     MarkdownRenderer,
     Notice,
@@ -14,8 +15,31 @@ import { GenericFileRoller, GenericRoller } from "./roller";
 
 type RollerCache = SectionCache | ListItemCache;
 
+function nanoid(num: number) {
+    let result = "";
+    const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
+    const charactersLength = characters.length;
+    for (let i = 0; i < num; i++) {
+        result += characters.charAt(
+            Math.floor(Math.random() * charactersLength)
+        );
+    }
+    return result;
+}
+
+export function blockid(len: number) {
+    return `dice-${nanoid(4)}`;
+}
+
 export class SectionRoller extends GenericFileRoller<RollerCache> {
     result: RollerCache;
+    get replacer() {
+        const blockID = this.getBlockId(this.result);
+        if (blockID) {
+            return `![[${this.path}#^${blockID}]]`;
+        }
+        return ``;
+    }
     results: RollerCache[];
     types: string[];
     content: string;
@@ -139,6 +163,27 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
 
         return res.join("\n\n");
     }
+    getBlockId(cache: RollerCache) {
+        const blocks = this.cache.blocks ?? {};
+        const block = Object.entries(blocks).find(
+            ([id, block]: [string, BlockCache]) => {
+                return samePosition(block.position, cache.position);
+            }
+        );
+        if (!block) {
+            const blockID = `${blockid(4)}`;
+            const content = `${this.content.slice(
+                0,
+                this.result.position.end.offset + 1
+            )}^${blockID}${this.content.slice(
+                this.result.position.end.offset
+            )}`;
+            this.watch = false;
+            this.plugin.app.vault.modify(this.file, content);
+            return blockID;
+        }
+        return block[0];
+    }
     getPath() {
         const { groups } = this.lexeme.data.match(SECTION_REGEX);
 
@@ -209,6 +254,7 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
                         .filter((r) => r);
                     this.render();
                     this.trigger("new-result");
+                    this.result = this.results[0];
                     resolve(this.results[0]);
                 });
             } else {
@@ -226,6 +272,7 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
                     .filter((r) => r);
                 this.render();
                 this.trigger("new-result");
+                this.result = this.results[0];
                 resolve(this.results[0]);
             }
         });
@@ -250,6 +297,10 @@ export class TagRoller extends GenericRoller<SectionRoller> {
     collapse: boolean;
     types: string;
     results: SectionRoller[];
+
+    get replacer() {
+        return this.result.replacer;
+    }
     random: number;
     chosen: any;
     loaded: boolean = false;
@@ -367,6 +418,7 @@ export class TagRoller extends GenericRoller<SectionRoller> {
                 this.results.forEach(async (section) => await section.roll());
                 this.render();
                 this.trigger("new-result");
+                this.result = this.results[0];
                 resolve(this.result);
             } else {
                 this.on("loaded", () => {
@@ -375,6 +427,7 @@ export class TagRoller extends GenericRoller<SectionRoller> {
                     );
                     this.render();
                     this.trigger("new-result");
+                    this.result = this.results[0];
                     resolve(this.result);
                 });
             }
@@ -432,6 +485,9 @@ export class LinkRoller extends GenericRoller<TFile> {
         this.getFiles();
     }
     result: TFile;
+    get replacer() {
+        return `[[${this.result.basename}]]`;
+    }
     get tooltip() {
         return `${this.original}\n${this.result.basename}`;
     }
@@ -527,6 +583,9 @@ export class LinkRoller extends GenericRoller<TFile> {
 }
 
 export class LineRoller extends GenericFileRoller<string> {
+    get replacer() {
+        return this.result;
+    }
     result: string;
     results: string[];
     types: string[];

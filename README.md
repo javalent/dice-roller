@@ -271,10 +271,10 @@ To return a specific block type, you may append `|<type>` to the end of any bloc
 
 Usage:
 
-| Example                                       | Result                                                                          |
-| --------------------------------------------- | ------------------------------------------------------------------------------- |
-| `` `dice: [[Note]]\|paragraph` ``             | Return `paragraph` blocks                                                       |
-| `` `dice: #tag\|paragraph,heading,yaml` ``    | Return `paragraph`, `heading`, and `yaml` blocks                                |
+| Example                                         | Result                                                                                   |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `` `dice: [[Note]]\|paragraph` ``               | Return `paragraph` blocks                                                                |
+| `` `dice: #tag\|paragraph,heading,yaml` ``      | Return `paragraph`, `heading`, and `yaml` blocks                                         |
 | `` `dice: #tag\|-\|paragraph,heading-3,yaml` `` | Return `paragraph`, level 3 `heading`s, and `yaml` blocks from a **single, random note** |
 
 I do not have any control over what Obsidian consider's each block (for instance, images may be returned as `paragraph`).
@@ -315,6 +315,7 @@ I _believe_ that this is a list of block types defined in Obsidian, but use this
 Headings can be further filtered down by the heading size by appending the size to the end of the type:
 
 `` `dice: [[Note]]|heading-2` ``
+
 # Line Dice
 
 The Dice Roller can be told to return a random line from any note using the following syntax:
@@ -473,8 +474,6 @@ Results can be saved for dice rolls as of version 6.1.0 using either the [Global
 
 It is possible to tell the plugin to replace the file contents of the note with the calculated dice roll using the `dice-mod: <formula>` syntax.
 
-**This syntax can only be used for Dice Rolls (_not section, table, tag, or link_)**.
-
 The plugin will replace the contents of the note with the syntax:
 
 `<formula> -> <full results> -> <combined results>`
@@ -488,6 +487,12 @@ Example:
 By default, the plugin will display the formula along with the result.
 
 This can be turned off globally by turning off `Add Formula When Modifying` in settings, or by appending `|noform` to a `dice-mod` roll.
+
+## Replacing Blocks
+
+If `dice-mod` is used on a section roller, the plugin will attempt to find a block id for the resulting section, so it can be embedded.
+
+If a block id does not exist for that section, the plugin will attempt to create one for the section. This will modify the file being rolled.
 
 # Settings
 

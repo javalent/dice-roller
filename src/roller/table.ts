@@ -31,6 +31,9 @@ export class TableRoller extends GenericFileRoller<string> {
             this.header ? " | " + this.header : ""
         }`;
     }
+    get replacer() {
+        return this.result;
+    }
     result: string;
     async build() {
         this.resultEl.empty();

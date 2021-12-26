@@ -1,4 +1,4 @@
-import { CachedMetadata, Events, setIcon, TFile } from "obsidian";
+import { CachedMetadata, EventRef, Events, setIcon, TFile } from "obsidian";
 import DiceRollerPlugin from "src/main";
 import { Lexeme } from "src/types";
 import { ICON_DEFINITION } from "src/utils/constants";
@@ -29,6 +29,7 @@ export abstract class BasicRoller extends Events {
     loaded: boolean = false;
     abstract roll(): Promise<any>;
     result: any;
+    abstract replacer: string;
     containerEl = createDiv({
         cls: "dice-roller",
         attr: {
@@ -126,9 +127,11 @@ export abstract class GenericFileRoller<T> extends GenericRoller<T> {
     }
     abstract load(): Promise<void>;
     abstract getOptions(): Promise<void>;
+    watch: boolean = true;
     registerFileWatcher() {
         this.plugin.registerEvent(
             this.plugin.app.vault.on("modify", async (file) => {
+                if (!this.watch) return;
                 if (this.save) return;
                 if (file !== this.file) return;
                 await this.getOptions();
