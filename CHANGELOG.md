@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.11.1](https://github.com/valentine195/obsidian-dice-roller/compare/7.11.0...7.11.1) (2022-01-06)
+
+
+### Bug Fixes
+
+* make d100 icon consistent with others (close [#66](https://github.com/valentine195/obsidian-dice-roller/issues/66)) ([4a0c987](https://github.com/valentine195/obsidian-dice-roller/commit/4a0c987426a9649a9f845a35a36a4c904197cec8))
+
 ## [7.11.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.10.2...7.11.0) (2021-12-26)
 
 
