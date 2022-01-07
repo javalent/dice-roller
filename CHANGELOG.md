@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.13.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.12.0...7.13.0) (2022-01-07)
+
+
+### Features
+
+* added fudge/fate dice graphics ([c5ca4d2](https://github.com/valentine195/obsidian-dice-roller/commit/c5ca4d2ce5954f15600ee8da4456691dd36bc250))
+
+
+### Bug Fixes
+
+* improve renderer factory performance ([def8005](https://github.com/valentine195/obsidian-dice-roller/commit/def8005c25e9ea655074eef76fb547a74dc126c4))
+
 ## [7.12.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.11.1...7.12.0) (2022-01-07)
 
 
