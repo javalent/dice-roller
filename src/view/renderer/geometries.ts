@@ -93,7 +93,9 @@ abstract class DiceShape {
         return this.geometry.geometry;
     }
     create() {
-        this.geometry = new THREE.Mesh(this.getGeometry(), this.getMaterials());
+        const geometry = this.getGeometry();
+        const materials = this.getMaterials();
+        this.geometry = new THREE.Mesh(geometry, materials);
         this.geometry.receiveShadow = true;
         this.geometry.castShadow = true;
 
@@ -235,7 +237,6 @@ abstract class DiceShape {
         const ab = new THREE.Vector3();
         let materialIndex;
         let faceFirstVertexIndex = 0;
-
         for (let i = 0; i < faces.length; ++i) {
             let ii = faces[i],
                 fl = ii.length - 1;
@@ -306,9 +307,8 @@ abstract class DiceShape {
     }
     getMaterials() {
         let materials: THREE.MeshPhongMaterial[] = [];
-        for (let i = 0; i < this.labels.length; ++i) {
-            let texture = null;
-            texture = this.createTextTexture(i);
+        for (let i = 0; i < this.labels.length; i++) {
+            let texture = this.createTextTexture(i);
 
             materials.push(
                 new THREE.MeshPhongMaterial(
@@ -366,7 +366,8 @@ abstract class DiceShape {
                 mass: this.mass,
                 shape: this.shape
             }),
-            geometry: this.geometry.clone()
+            geometry: this.geometry.clone(),
+            values: this.values
         };
     }
 }
@@ -645,6 +646,39 @@ class D6DiceShape extends DiceShape {
         this.create();
     }
 }
+class FudgeDiceShape extends DiceShape {
+    mass = 300;
+    tab = 0.1;
+    af = Math.PI / 4;
+    chamfer = 0.96;
+    vertices = [
+        [-1, -1, -1],
+        [1, -1, -1],
+        [1, 1, -1],
+        [-1, 1, -1],
+        [-1, -1, 1],
+        [1, -1, 1],
+        [1, 1, 1],
+        [-1, 1, 1]
+    ];
+    faces = [
+        [0, 3, 2, 1, 1],
+        [1, 2, 6, 5, 2],
+        [0, 1, 5, 4, 3],
+        [3, 7, 6, 2, 4],
+        [0, 4, 7, 3, 5],
+        [4, 5, 6, 7, 6]
+    ];
+    scaleFactor = 0.9;
+    sides = 6;
+    margin = 1.0;
+    labels = ["", "", "+", "-", " ", "+", "-", " "];
+    values = [null, 1, -1, 0, 1, -1, 0];
+    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
+        super(w, h, options);
+        this.create();
+    }
+}
 class D4DiceShape extends DiceShape {
     mass = 300;
     tab = -0.1;
@@ -731,5 +765,6 @@ export {
     D10DiceShape,
     D8DiceShape,
     D6DiceShape,
+    FudgeDiceShape,
     D4DiceShape
 };

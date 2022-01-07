@@ -20,7 +20,7 @@ export class DiceRoller {
     static: boolean = false;
     conditions: Conditional[] = [];
     multiplier: number;
-
+    fudge: boolean = false;
     get text() {
         return `${this.result}`;
     }
@@ -76,6 +76,7 @@ export class DiceRoller {
         if (max === "F") {
             max = 1;
             min = -1;
+            this.fudge = true;
         }
         if (Number(max) < Number(min)) {
             [max, min] = [min, max];
