@@ -202,7 +202,7 @@ Re-rolled dice will display as `Xr` in the tooltip.
 
 ### Custom Percent Dice
 
-#### Syntax: 1dX%
+#### Syntax: XdX%
 
 Customize the type of percent dice rolled. It will roll a dice for each face digit provided and combine them into a result.
 
