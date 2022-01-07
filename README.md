@@ -58,6 +58,8 @@ These defaults can be changed in settings.
 
 The parser supports percentile dice. `` `dice: Xd%` `` will roll X d100 dice.
 
+For a custom percent (such as those used for Traveller's `1d66`), you can use `XdX%` - see [the percent modifier](#custom-percent-dice).
+
 ## Fudge/Fate Dice
 
 Use `` `dice: XdF` `` to roll a fudge/fate dice. See [here](<https://en.wikipedia.org/wiki/Fudge_(role-playing_game_system)#Fudge_dice>) for more info on this type of dice.
@@ -197,6 +199,19 @@ Re-rolled dice will display as `Xr` in the tooltip.
 | `dice: 2d20r` | `[7r, 18] = 15` |
 | `dice: 2d4r3` | `[3, 3r] = 6`   |
 | `dice: 1d2ri` | `[2r] = 2`      |
+
+### Custom Percent Dice
+
+#### Syntax: 1dX%
+
+Customize the type of percent dice rolled. It will roll a dice for each face digit provided and combine them into a result.
+
+#### Examples
+
+| Formula         | Result                   |
+| --------------- | ------------------------ |
+| `dice: 1d66%`   | `[6, 3] = 6,3`           |
+| `dice: 1d7367%` | `[4, 2, 4, 1] = 4,2,4,1` |
 
 ## Conditions
 

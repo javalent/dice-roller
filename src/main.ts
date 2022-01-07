@@ -849,6 +849,15 @@ export default class DiceRollerPlugin extends Plugin {
                 conditionals: []
             }; // symbols
         });
+        this.lexer.addRule(/\d+[Dd]\d+%/, function (lexeme: string): Lexeme {
+            /** drop high */
+            return {
+                type: "%",
+                data: lexeme.replace(/^\D+/g, ""),
+                original: lexeme,
+                conditionals: null
+            };
+        });
 
         this.lexer.addRule(/kh?(?!:l)(\d*)/, function (lexeme: string): Lexeme {
             /** keep high */
@@ -887,6 +896,7 @@ export default class DiceRollerPlugin extends Plugin {
                 conditionals: null
             };
         });
+
         this.lexer.addRule(
             /!!(i|\d+)?(?:(!?=|=!|>=?|<=?)(-?\d+))*/,
             function (lexeme: string): Lexeme {

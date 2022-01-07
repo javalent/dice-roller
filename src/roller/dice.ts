@@ -425,10 +425,8 @@ export class DiceRoller {
 }
 
 class StuntRoller extends DiceRoller {
-    constructor(dice: string, public lexeme: Lexeme) {
+    constructor(public dice: string, public lexeme: Lexeme) {
         super(`3d6`, lexeme);
-
-        this.dice = dice;
     }
     get doubles() {
         return (
@@ -458,6 +456,42 @@ class StuntRoller extends DiceRoller {
             str.push(`${result[1].value}`);
         }
         return `[${str.join(", ")}]`;
+    }
+}
+
+export class PercentRoller extends DiceRoller {
+    stack: DiceRoller[][] = [];
+    constructor(public dice: string, public lexeme: Lexeme) {
+        super(dice, lexeme);
+        const faces = `${this.faces.max}`.split("");
+        for (let i = 0; i < this.rolls; i++) {
+            const stack = [];
+            for (const face of faces) {
+                const roller = new DiceRoller(`1d${face}`);
+                stack.push(roller);
+                roller.roll();
+            }
+            this.stack.push(stack);
+        }
+    }
+    get result() {
+        return this.stack
+            .map((stack) => Number(stack.map((dice) => dice.result).join("")))
+            .reduce((a, b) => a + b);
+    }
+    get display() {
+        return this.stack
+            .map((stack) => stack.map((v) => v.result).join(","))
+            .join("|");
+    }
+    roll() {
+        if (!this.stack || !this.stack.length) return super.roll();
+        this.stack.forEach((stack) => stack.map((dice) => dice.roll()));
+        return [
+            ...this.stack
+                .map((stack) => stack.map((dice) => dice.result))
+                .flat()
+        ];
     }
 }
 
@@ -668,7 +702,7 @@ export class StackRoller extends GenericRoller<number> {
                         });
                         break;
                     }
-                    case "dice":
+                    case "dice": {
                         if (
                             dice.parenedDice &&
                             /^d/.test(dice.original) &&
@@ -686,7 +720,8 @@ export class StackRoller extends GenericRoller<number> {
                         this.stackCopy.push(this.dice[index]);
                         index++;
                         break;
-                    case "stunt":
+                    }
+                    case "stunt": {
                         if (!this.dice[index]) {
                             this.dice[index] = new StuntRoller(
                                 dice.original,
@@ -697,6 +732,22 @@ export class StackRoller extends GenericRoller<number> {
                         this.stack.push(this.dice[index]);
                         this.stackCopy.push(this.dice[index]);
                         index++;
+                        break;
+                    }
+
+                    case "%": {
+                        if (!this.dice[index]) {
+                            this.dice[index] = new PercentRoller(
+                                dice.original,
+                                dice
+                            );
+                        }
+
+                        this.stack.push(this.dice[index]);
+                        this.stackCopy.push(this.dice[index]);
+                        index++;
+                        break;
+                    }
                 }
             }
 
