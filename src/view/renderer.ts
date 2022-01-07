@@ -10,7 +10,8 @@ import {
     D20DiceShape,
     D4DiceShape,
     D6DiceShape,
-    D8DiceShape
+    D8DiceShape,
+    FudgeDiceShape
 } from "./renderer/geometries";
 import DiceRollerPlugin from "src/main";
 
@@ -35,7 +36,6 @@ export default class DiceRenderer extends Component {
     desk: any;
     iterations: number = 0;
 
-    factory: DiceFactory;
     frame_rate = 1 / 60;
     stack: StackRoller;
 
@@ -81,8 +81,8 @@ export default class DiceRenderer extends Component {
         );
         this.world.add(...[...this.current.values()].flat());
     }
+    factory = new DiceFactory(this.WIDTH, this.HEIGHT, this.plugin);
     onload() {
-        this.factory = new DiceFactory(this.WIDTH, this.HEIGHT, this.plugin);
         this.addChild(this.factory);
 
         this.container.empty();
@@ -601,7 +601,11 @@ abstract class Dice {
     constructor(
         public w: number,
         public h: number,
-        public data: { geometry: THREE.Mesh; body: CANNON.Body }
+        public data: {
+            geometry: THREE.Mesh;
+            body: CANNON.Body;
+            values?: number[];
+        }
     ) {
         this.geometry = data.geometry;
         this.body = data.body;
@@ -693,7 +697,7 @@ abstract class Dice {
         }
         let matindex = closest_face.materialIndex - 1;
         if (this.sides == 10 && matindex == 0) matindex = 10;
-        return matindex;
+        return this.data.values?.[matindex] ?? matindex;
     }
 
     shiftUpperValue(to: number) {
@@ -802,8 +806,9 @@ class DiceFactory extends Component {
     d12 = new D12DiceShape(this.width, this.height, this.colors);
     d10 = new D10DiceShape(this.width, this.height, this.colors);
     d8 = new D8DiceShape(this.width, this.height, this.colors);
-    d6 = new D6DiceShape(this.width, this.height, this.colors);
+    d6 = new D6DiceShape(this.width, this.height, this.colors); 
     d4 = new D4DiceShape(this.width, this.height, this.colors);
+    fudge = new FudgeDiceShape(this.width, this.height, this.colors);
     constructor(
         public width: number,
         public height: number,
@@ -820,6 +825,7 @@ class DiceFactory extends Component {
         this.d8 = new D8DiceShape(this.width, this.height, this.colors);
         this.d6 = new D6DiceShape(this.width, this.height, this.colors);
         this.d4 = new D4DiceShape(this.width, this.height, this.colors);
+        this.fudge = new FudgeDiceShape(this.width, this.height, this.colors);
     }
     onunload() {
         this.dispose();
@@ -861,6 +867,7 @@ class DiceFactory extends Component {
                     );
                     break;
                 }
+                case 1:
                 case 6: {
                     dice.push(
                         ...new Array(roller.rolls)
@@ -870,7 +877,9 @@ class DiceFactory extends Component {
                                     new D6Dice(
                                         this.width,
                                         this.height,
-                                        this.d6.clone(),
+                                        roller.fudge
+                                            ? this.fudge.clone()
+                                            : this.d6.clone(),
                                         vector
                                     )
                             )
@@ -1047,7 +1056,11 @@ class D6Dice extends Dice {
     constructor(
         public w: number,
         public h: number,
-        public data: { geometry: THREE.Mesh; body: CANNON.Body },
+        public data: {
+            geometry: THREE.Mesh;
+            body: CANNON.Body;
+            values?: number[];
+        },
         vector?: { x: number; y: number }
     ) {
         super(w, h, data);
