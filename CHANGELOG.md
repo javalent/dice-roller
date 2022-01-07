@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.12.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.11.1...7.12.0) (2022-01-07)
+
+
+### Features
+
+* added custom percent dice ([7bc5469](https://github.com/valentine195/obsidian-dice-roller/commit/7bc5469b22aa465719474b88de5af8a3ad29c1ac))
+
 ### [7.11.1](https://github.com/valentine195/obsidian-dice-roller/compare/7.11.0...7.11.1) (2022-01-06)
 
 
