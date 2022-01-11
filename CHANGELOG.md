@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [7.13.1](https://github.com/valentine195/obsidian-dice-roller/compare/7.13.0...7.13.1) (2022-01-11)
+
+
+### Bug Fixes
+
+* remove styling from `|noform` option (close [#68](https://github.com/valentine195/obsidian-dice-roller/issues/68)) ([561554e](https://github.com/valentine195/obsidian-dice-roller/commit/561554e9dfa53df9f041fb46c03b102f0f94431e))
+
 ## [7.13.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.12.0...7.13.0) (2022-01-07)
 
 
