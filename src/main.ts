@@ -356,12 +356,6 @@ export default class DiceRollerPlugin extends Plugin {
                             let [full, content] = node.innerText.match(
                                 /^dice\-mod:\s*([\s\S]+)\s*?/
                             );
-                            /* if (!DICE_REGEX.test(content)) {
-                                new Notice(
-                                    "Replacing note content may only be done with Dice Rolls."
-                                );
-                                continue;
-                            } */
                             let showFormula = this.data.displayFormulaForMod;
                             if (content.includes("|noform")) {
                                 showFormula = false;
@@ -430,25 +424,23 @@ export default class DiceRollerPlugin extends Plugin {
 
                         //build result map;
                         const roller = this.getRoller(content, ctx.sourcePath);
-
+                        const savedResult =
+                            this.data.results?.[path]?.[lineStart]?.[index] ??
+                            null;
+                        if (
+                            (this.data.persistResults &&
+                                !/dice\-/.test(node.innerText)) ||
+                            /dice\+/.test(node.innerText)
+                        ) {
+                            this.persistingFiles.add(ctx.sourcePath);
+                            toPersist[index] = roller;
+                            roller.save = true;
+                        }
                         const load = async () => {
                             await roller.roll();
 
-                            if (
-                                (this.data.persistResults &&
-                                    !/dice\-/.test(node.innerText)) ||
-                                /dice\+/.test(node.innerText)
-                            ) {
-                                this.persistingFiles.add(ctx.sourcePath);
-                                toPersist[index] = roller;
-                                roller.save = true;
-                                const result =
-                                    this.data.results?.[path]?.[lineStart]?.[
-                                        index
-                                    ] ?? null;
-                                if (result) {
-                                    await roller.applyResult(result);
-                                }
+                            if (roller.save && savedResult) {
+                                await roller.applyResult(savedResult);
                             }
 
                             node.replaceWith(roller.containerEl);
