@@ -13,7 +13,7 @@ export class TableRoller extends GenericFileRoller<string> {
     lookupRoller: StackRoller;
     lookupRanges: [range: [min: number, max: number], option: string][];
     getPath() {
-        const { groups } = this.lexeme.data.match(TABLE_REGEX);
+        const { groups } = this.lexeme.value.match(TABLE_REGEX);
 
         const { roll = 1, link, block, header } = groups;
         if (!link || !block) throw new Error("Could not parse link.");

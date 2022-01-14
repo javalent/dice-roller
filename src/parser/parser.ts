@@ -1,21 +1,22 @@
 import { Lexeme } from "src/types";
+import { LexicalToken } from "./lexer";
 
 export class Parser {
     table: any;
     constructor(table: any) {
         this.table = table;
     }
-    parse(input: Lexeme[]) {
-        var length = input.length,
+    parse(input: LexicalToken[]) {
+        const length = input.length,
             table = this.table,
             output = [],
-            stack = [],
-            index = 0;
+            stack = [];
+        let index = 0;
 
         while (index < length) {
-            var token = input[index++];
+            let token = input[index++];
 
-            switch (token.data) {
+            switch (token.value) {
                 case "(":
                     stack.unshift(token);
                     break;
@@ -23,31 +24,32 @@ export class Parser {
                     if (
                         input[index] &&
                         input[index].type == "dice" &&
-                        /^d/.test(input[index].original)
+                        /^d/.test(input[index].value)
                     ) {
                         input[index].parenedDice = true;
                     }
                     while (stack.length) {
-                        var token = stack.shift();
-                        if (token.data === "(") break;
+                        token = stack.shift();
+                        if (token.value === "(") break;
                         else {
                             output.push(token);
                         }
                     }
 
-                    if (token.data !== "(")
+                    if (token.value !== "(")
                         throw new Error("Mismatched parentheses.");
                     break;
                 default:
-                    if (table.hasOwnProperty(token.data)) {
+                    if (table.hasOwnProperty(token.value)) {
                         while (stack.length) {
-                            var punctuator = stack[0];
+                            const punctuator = stack[0];
 
-                            if (punctuator.data === "(") break;
+                            if (punctuator.value === "(") break;
 
-                            var operator = table[token.data],
+                            const operator = table[token.value],
                                 precedence = operator.precedence,
-                                antecedence = table[punctuator.data].precedence;
+                                antecedence =
+                                    table[punctuator.value].precedence;
 
                             if (
                                 precedence > antecedence ||
@@ -66,8 +68,8 @@ export class Parser {
         }
 
         while (stack.length) {
-            var token = stack.shift();
-            if (token.data !== "(") output.push(token);
+            const token = stack.shift();
+            if (token.value !== "(") output.push(token);
             else throw new Error("Mismatched parentheses.");
         }
 

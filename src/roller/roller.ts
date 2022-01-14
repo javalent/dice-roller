@@ -1,5 +1,6 @@
 import { CachedMetadata, EventRef, Events, setIcon, TFile } from "obsidian";
 import DiceRollerPlugin from "src/main";
+import { LexicalToken } from "src/parser/lexer";
 import { Lexeme } from "src/types";
 import { ICON_DEFINITION } from "src/utils/constants";
 
@@ -60,7 +61,7 @@ export abstract class BasicRoller extends Events {
     constructor(
         public plugin: DiceRollerPlugin,
         public original: string,
-        public lexemes: Lexeme[],
+        public lexemes: LexicalToken[],
         public showDice = plugin.data.showDice
     ) {
         super();
@@ -104,7 +105,7 @@ export abstract class GenericFileRoller<T> extends GenericRoller<T> {
     constructor(
         public plugin: DiceRollerPlugin,
         public original: string,
-        public lexeme: Lexeme,
+        public lexeme: LexicalToken,
         public source: string,
         showDice = plugin.data.showDice
     ) {

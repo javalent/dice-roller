@@ -9,6 +9,7 @@ import {
     TFile
 } from "obsidian";
 import DiceRollerPlugin from "src/main";
+import { LexicalToken } from "src/parser/lexer";
 import { Lexeme } from "src/types";
 import { COPY_DEFINITION, SECTION_REGEX, TAG_REGEX } from "src/utils/constants";
 import { GenericFileRoller, GenericRoller } from "./roller";
@@ -49,7 +50,7 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
     constructor(
         public plugin: DiceRollerPlugin,
         public original: string,
-        public lexeme: Lexeme,
+        public lexeme: LexicalToken,
         source: string,
         private inline: boolean = true,
         showDice = plugin.data.showDice
@@ -185,7 +186,7 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
         return block[0];
     }
     getPath() {
-        const { groups } = this.lexeme.data.match(SECTION_REGEX);
+        const { groups } = this.lexeme.value.match(SECTION_REGEX);
 
         const { roll = 1, link, types } = groups;
         if (!link) throw new Error("Could not parse link.");
@@ -307,7 +308,7 @@ export class TagRoller extends GenericRoller<SectionRoller> {
     constructor(
         public plugin: DiceRollerPlugin,
         public original: string,
-        public lexeme: Lexeme,
+        public lexeme: LexicalToken,
         public source: string,
         showDice = plugin.data.showDice
     ) {
@@ -329,7 +330,7 @@ export class TagRoller extends GenericRoller<SectionRoller> {
             tag,
             collapse,
             types
-        } = lexeme.data.match(TAG_REGEX).groups;
+        } = lexeme.value.match(TAG_REGEX).groups;
 
         this.collapse =
             collapse === "-"
@@ -369,9 +370,8 @@ export class TagRoller extends GenericRoller<SectionRoller> {
                 this.plugin,
                 link,
                 {
-                    data: link,
-                    original: link,
-                    conditionals: null,
+                    ...this.lexeme,
+                    value: link,
                     type: "section"
                 },
                 this.source,
@@ -472,13 +472,13 @@ export class LinkRoller extends GenericRoller<TFile> {
     constructor(
         public plugin: DiceRollerPlugin,
         public original: string,
-        public lexeme: Lexeme,
+        public lexeme: LexicalToken,
         public source: string,
         showDice = plugin.data.showDice
     ) {
         super(plugin, original, [lexeme], showDice);
 
-        const { roll = 1, tag } = lexeme.data.match(TAG_REGEX).groups;
+        const { roll = 1, tag } = lexeme.value.match(TAG_REGEX).groups;
 
         this.tag = `#${tag}`;
         this.rolls = (roll && !isNaN(Number(roll)) && Number(roll)) ?? 1;
@@ -595,7 +595,7 @@ export class LineRoller extends GenericFileRoller<string> {
     constructor(
         public plugin: DiceRollerPlugin,
         public original: string,
-        public lexeme: Lexeme,
+        public lexeme: LexicalToken,
         source: string,
         private inline: boolean = true,
         showDice = plugin.data.showDice
@@ -688,7 +688,7 @@ export class LineRoller extends GenericFileRoller<string> {
         await this.getOptions();
     }
     getPath() {
-        const { groups } = this.lexeme.data.match(SECTION_REGEX);
+        const { groups } = this.lexeme.value.match(SECTION_REGEX);
 
         const { roll = 1, link, types } = groups;
         if (!link) throw new Error("Could not parse link.");
