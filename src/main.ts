@@ -80,6 +80,10 @@ declare module "obsidian" {
     }
     interface MetadataCache {
         on(name: "dataview:api-ready", callback: () => void): EventRef;
+        on(
+            name: "dataview:metadata-change",
+            callback: (type: "update", file: TFile) => void
+        ): EventRef;
     }
 }
 
@@ -200,7 +204,7 @@ export default class DiceRollerPlugin extends Plugin {
         });
 
         this.registerEvent(
-            this.dataview.index.events.on(
+            this.app.metadataCache.on(
                 "dataview:metadata-change",
                 (type, file) => {
                     if (type === "update") {
