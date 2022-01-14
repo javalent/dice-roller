@@ -43,7 +43,7 @@ export class TableRoller extends GenericFileRoller<string> {
             result.unshift(this.inlineText);
         }
 
-        await MarkdownRenderer.renderMarkdown(
+        MarkdownRenderer.renderMarkdown(
             result.join(""),
             this.resultEl.createSpan("embedded-table-result"),
             this.source,

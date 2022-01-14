@@ -392,7 +392,7 @@ export default class DiceRollerPlugin extends Plugin {
                                 }
                                 const rep = showFormula
                                     ? `${roller.inlineText} **${replacer}**`
-                                    : `**${replacer}**`;
+                                    : `${replacer}`;
 
                                 splitContent = splitContent
                                     .join("\n")
