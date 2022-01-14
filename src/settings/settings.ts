@@ -10,8 +10,6 @@ import type DiceRoller from "../main";
 import { DEFAULT_SETTINGS } from "../main";
 
 export default class SettingTab extends PluginSettingTab {
-    additionalContainer: HTMLDivElement;
-
     constructor(app: App, public plugin: DiceRoller) {
         super(app, plugin);
         this.plugin = plugin;
@@ -25,40 +23,30 @@ export default class SettingTab extends PluginSettingTab {
 
         containerEl.createEl("h2", { text: "Dice Roller Settings" });
 
-        new Setting(containerEl)
-            .setName("Roll All Files for Tags")
-            .setDesc("Return a result for each file when rolling tags.")
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.returnAllTags);
-                t.onChange(async (v) => {
-                    this.plugin.data.returnAllTags = v;
-                    await this.plugin.saveSettings();
-                });
-            });
-        new Setting(containerEl)
-            .setName("Always Return Links for Tags")
-            .setDesc(
-                "Enables random link rolling with the link parameter. Override by specifying a section type."
-            )
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.rollLinksForTags);
-                t.onChange(async (v) => {
-                    this.plugin.data.rollLinksForTags = v;
-                    await this.plugin.saveSettings();
-                });
-            });
-        new Setting(containerEl)
-            .setName("Add Copy Button to Section Results")
-            .setDesc(
-                "Randomly rolled sections will have a copy-content button to easy add result to clipboard."
-            )
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.copyContentButton);
-                t.onChange(async (v) => {
-                    this.plugin.data.copyContentButton = v;
-                    await this.plugin.saveSettings();
-                });
-            });
+        this.buildGenerics(containerEl.createDiv());
+        this.buildDisplay(containerEl.createDiv());
+        this.buildTables(containerEl.createDiv());
+        this.buildSections(containerEl.createDiv());
+        this.buildTags(containerEl.createDiv());
+        this.buildView(containerEl.createDiv());
+        this.buildRender(containerEl.createDiv());
+
+        this.buildFormulaSettings(
+            containerEl.createDiv("dice-roller-setting-additional-container")
+        );
+
+        const div = containerEl.createDiv("coffee");
+        div.createEl("a", {
+            href: "https://www.buymeacoffee.com/valentine195"
+        }).createEl("img", {
+            attr: {
+                src: "https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=valentine195&button_colour=e3e7ef&font_colour=262626&font_family=Inter&outline_colour=262626&coffee_colour=ff0000"
+            }
+        });
+    }
+    buildDisplay(containerEl: HTMLDivElement) {
+        containerEl.empty();
+        new Setting(containerEl).setHeading().setName("Dice Display");
         new Setting(containerEl)
             .setName("Display Formula With Results")
             .setDesc(
@@ -72,11 +60,21 @@ export default class SettingTab extends PluginSettingTab {
                 });
             });
         new Setting(containerEl)
-            .setName("Add Formula When Modifying")
+            .setName("Display Dice Button With Results")
+            .setDesc("A dice button will appear next to results.")
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.showDice);
+                t.onChange(async (v) => {
+                    this.plugin.data.showDice = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+        new Setting(containerEl)
+            .setName("Add Formula When Using Modify Dice")
             .setDesc(
                 createFragment((e) => {
                     e.createSpan({
-                        text: "Both the formula and the results will both be added to the node when using "
+                        text: "Both the formula and the results will both be added to the note when using "
                     });
                     e.createEl("code", { text: "dice-mod" });
                     e.createSpan({ text: "." });
@@ -89,29 +87,23 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 });
             });
+    }
+    buildGenerics(containerEl: HTMLDivElement) {
+        containerEl.empty();
         new Setting(containerEl)
-            .setName("Display Lookup Table Roll")
-            .setDesc(
-                "Lookup table rolls will display the rolled number along with the result."
-            )
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.displayLookupRoll);
-                t.onChange(async (v) => {
-                    this.plugin.data.displayLookupRoll = v;
-                    await this.plugin.saveSettings();
-                });
-            });
-        new Setting(containerEl)
-            .setName("Show Dice Button")
-            .setDesc("A dice button will appear next to results.")
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.showDice);
-                t.onChange(async (v) => {
-                    this.plugin.data.showDice = v;
-                    await this.plugin.saveSettings();
-                });
-            });
+            .setName("Default Face")
+            .setDesc("Use this as the number of faces when it is omitted.")
+            .addText((t) => {
+                t.setValue(`${this.plugin.data.defaultFace}`);
+                t.inputEl.onblur = async () => {
+                    if (isNaN(Number(t.inputEl.value))) {
+                        new Notice("The default face must be a number.");
+                    }
 
+                    this.plugin.data.defaultFace = Number(t.inputEl.value);
+                    await this.plugin.saveSettings();
+                };
+            });
         new Setting(containerEl)
             .setName("Globally Save Results")
             .setDesc(
@@ -132,19 +124,10 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 });
             });
-
-        new Setting(containerEl)
-            .setName("Open Dice View on Startup")
-            .setDesc(
-                "The dice view can always be opened using the command from the command palette."
-            )
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.showLeafOnStartup);
-                t.onChange(async (v) => {
-                    this.plugin.data.showLeafOnStartup = v;
-                    await this.plugin.saveSettings();
-                });
-            });
+    }
+    buildRender(containerEl: HTMLDivElement) {
+        containerEl.empty();
+        new Setting(containerEl).setHeading().setName("Graphical Dice");
         new Setting(containerEl)
             .setName("Display graphics for Dice View Rolls")
             .setDesc("Dice rolls from dice view will be displayed on screen.")
@@ -183,7 +166,7 @@ export default class SettingTab extends PluginSettingTab {
                         this.plugin.data.renderTime =
                             DEFAULT_SETTINGS.renderTime;
                         await this.plugin.saveSettings();
-                        this.display();
+                        this.buildRender(containerEl);
                     });
             });
 
@@ -235,40 +218,87 @@ export default class SettingTab extends PluginSettingTab {
                 };
             }
         );
+    }
+    buildView(containerEl: HTMLDivElement) {
+        containerEl.empty();
+        new Setting(containerEl).setHeading().setName("Dice View");
+        new Setting(containerEl)
+            .setName("Open Dice View on Startup")
+            .setDesc(
+                "The dice view can always be opened using the command from the command palette."
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.showLeafOnStartup);
+                t.onChange(async (v) => {
+                    this.plugin.data.showLeafOnStartup = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+    }
+    buildTables(containerEl: HTMLDivElement) {
+        containerEl.empty();
+        new Setting(containerEl).setHeading().setName("Table Rollers");
 
         new Setting(containerEl)
-            .setName("Default Face")
-            .setDesc("Use this as the number of faces when it is omitted.")
-            .addText((t) => {
-                t.setValue(`${this.plugin.data.defaultFace}`);
-                t.inputEl.onblur = async () => {
-                    if (isNaN(Number(t.inputEl.value))) {
-                        new Notice("The default face must be a number.");
-                    }
-
-                    this.plugin.data.defaultFace = Number(t.inputEl.value);
+            .setName("Display Lookup Table Roll")
+            .setDesc(
+                "Lookup table rolls will display the rolled number along with the result."
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.displayLookupRoll);
+                t.onChange(async (v) => {
+                    this.plugin.data.displayLookupRoll = v;
                     await this.plugin.saveSettings();
-                };
+                });
             });
-
-        this.additionalContainer = containerEl.createDiv(
-            "dice-roller-setting-additional-container"
-        );
-
-        this.buildFormulaSettings();
-
-        const div = containerEl.createDiv("coffee");
-        div.createEl("a", {
-            href: "https://www.buymeacoffee.com/valentine195"
-        }).createEl("img", {
-            attr: {
-                src: "https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=valentine195&button_colour=e3e7ef&font_colour=262626&font_family=Inter&outline_colour=262626&coffee_colour=ff0000"
-            }
-        });
     }
-    buildFormulaSettings() {
-        this.additionalContainer.empty();
-        const addNew = this.additionalContainer.createDiv();
+    buildSections(containerEl: HTMLDivElement) {
+        containerEl.empty();
+        new Setting(containerEl).setHeading().setName("Section Rollers");
+        new Setting(containerEl)
+            .setName("Add Copy Button to Section Results")
+            .setDesc(
+                "Randomly rolled sections will have a copy-content button to easy add result to clipboard."
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.copyContentButton);
+                t.onChange(async (v) => {
+                    this.plugin.data.copyContentButton = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+    }
+    buildTags(containerEl: HTMLDivElement) {
+        containerEl.empty();
+        new Setting(containerEl).setHeading().setName("Tag Rollers");
+
+        new Setting(containerEl)
+            .setName("Roll All Files for Tags")
+            .setDesc("Return a result for each file when rolling tags.")
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.returnAllTags);
+                t.onChange(async (v) => {
+                    this.plugin.data.returnAllTags = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+        new Setting(containerEl)
+            .setName("Always Return Links for Tags")
+            .setDesc(
+                "Enables random link rolling with the link parameter. Override by specifying a section type."
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.rollLinksForTags);
+                t.onChange(async (v) => {
+                    this.plugin.data.rollLinksForTags = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+    }
+    buildFormulaSettings(containerEl: HTMLDivElement) {
+        containerEl.empty();
+        new Setting(containerEl).setHeading().setName("Saved Formulas");
+        const addNew = containerEl.createDiv();
         new Setting(addNew)
             .setName("Add Formula")
             .setDesc("Add a new formula shortcut.")
@@ -282,7 +312,7 @@ export default class SettingTab extends PluginSettingTab {
                         if (formula) {
                             this.plugin.data.formulas[formula.alias] =
                                 formula.formula;
-                            this.buildFormulaSettings();
+                            this.buildFormulaSettings(containerEl);
                             await this.plugin.saveSettings();
                         }
                     });
@@ -290,7 +320,7 @@ export default class SettingTab extends PluginSettingTab {
                 return b;
             });
 
-        const additional = this.additionalContainer.createDiv("additional");
+        const additional = containerEl.createDiv("additional");
 
         const formulas = this.plugin.data.formulas;
 
@@ -312,7 +342,7 @@ export default class SettingTab extends PluginSettingTab {
                                 delete this.plugin.data.formulas[alias];
                                 this.plugin.data.formulas[edited.alias] =
                                     edited.formula;
-                                this.buildFormulaSettings();
+                                this.buildFormulaSettings(containerEl);
                                 await this.plugin.saveSettings();
                             }
                         })
@@ -324,7 +354,7 @@ export default class SettingTab extends PluginSettingTab {
                         .onClick(async () => {
                             delete this.plugin.data.formulas[alias];
                             await this.plugin.saveSettings();
-                            this.buildFormulaSettings();
+                            this.buildFormulaSettings(containerEl);
                         })
                 );
         }
