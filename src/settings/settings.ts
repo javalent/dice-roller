@@ -44,6 +44,43 @@ export default class SettingTab extends PluginSettingTab {
             }
         });
     }
+    buildGenerics(containerEl: HTMLDivElement) {
+        containerEl.empty();
+        new Setting(containerEl)
+            .setName("Default Face")
+            .setDesc("Use this as the number of faces when it is omitted.")
+            .addText((t) => {
+                t.setValue(`${this.plugin.data.defaultFace}`);
+                t.inputEl.onblur = async () => {
+                    if (isNaN(Number(t.inputEl.value))) {
+                        new Notice("The default face must be a number.");
+                    }
+
+                    this.plugin.data.defaultFace = Number(t.inputEl.value);
+                    await this.plugin.saveSettings();
+                };
+            });
+        new Setting(containerEl)
+            .setName("Globally Save Results")
+            .setDesc(
+                createFragment((e) => {
+                    e.createSpan({
+                        text: "Dice results will be saved by default. This can be overridden using "
+                    });
+                    e.createEl("code", { text: `dice-: formula` });
+                    e.createEl("p", {
+                        text: "Please note that the plugin will attempt to save the result but may not be able to."
+                    });
+                })
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.persistResults);
+                t.onChange(async (v) => {
+                    this.plugin.data.persistResults = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+    }
     buildDisplay(containerEl: HTMLDivElement) {
         containerEl.empty();
         new Setting(containerEl).setHeading().setName("Dice Display");
@@ -88,39 +125,78 @@ export default class SettingTab extends PluginSettingTab {
                 });
             });
     }
-    buildGenerics(containerEl: HTMLDivElement) {
+    buildTables(containerEl: HTMLDivElement) {
         containerEl.empty();
-        new Setting(containerEl)
-            .setName("Default Face")
-            .setDesc("Use this as the number of faces when it is omitted.")
-            .addText((t) => {
-                t.setValue(`${this.plugin.data.defaultFace}`);
-                t.inputEl.onblur = async () => {
-                    if (isNaN(Number(t.inputEl.value))) {
-                        new Notice("The default face must be a number.");
-                    }
+        new Setting(containerEl).setHeading().setName("Table Rollers");
 
-                    this.plugin.data.defaultFace = Number(t.inputEl.value);
-                    await this.plugin.saveSettings();
-                };
-            });
         new Setting(containerEl)
-            .setName("Globally Save Results")
+            .setName("Display Lookup Table Roll")
             .setDesc(
-                createFragment((e) => {
-                    e.createSpan({
-                        text: "Dice results will be saved by default. This can be overridden using "
-                    });
-                    e.createEl("code", { text: `dice-: formula` });
-                    e.createEl("p", {
-                        text: "Please note that the plugin will attempt to save the result but may not be able to."
-                    });
-                })
+                "Lookup table rolls will display the rolled number along with the result."
             )
             .addToggle((t) => {
-                t.setValue(this.plugin.data.persistResults);
+                t.setValue(this.plugin.data.displayLookupRoll);
                 t.onChange(async (v) => {
-                    this.plugin.data.persistResults = v;
+                    this.plugin.data.displayLookupRoll = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+    }
+    buildSections(containerEl: HTMLDivElement) {
+        containerEl.empty();
+        new Setting(containerEl).setHeading().setName("Section Rollers");
+        new Setting(containerEl)
+            .setName("Add Copy Button to Section Results")
+            .setDesc(
+                "Randomly rolled sections will have a copy-content button to easy add result to clipboard."
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.copyContentButton);
+                t.onChange(async (v) => {
+                    this.plugin.data.copyContentButton = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+    }
+    buildTags(containerEl: HTMLDivElement) {
+        containerEl.empty();
+        new Setting(containerEl).setHeading().setName("Tag Rollers");
+
+        new Setting(containerEl)
+            .setName("Roll All Files for Tags")
+            .setDesc("Return a result for each file when rolling tags.")
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.returnAllTags);
+                t.onChange(async (v) => {
+                    this.plugin.data.returnAllTags = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+        new Setting(containerEl)
+            .setName("Always Return Links for Tags")
+            .setDesc(
+                "Enables random link rolling with the link parameter. Override by specifying a section type."
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.rollLinksForTags);
+                t.onChange(async (v) => {
+                    this.plugin.data.rollLinksForTags = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+    }
+    buildView(containerEl: HTMLDivElement) {
+        containerEl.empty();
+        new Setting(containerEl).setHeading().setName("Dice View");
+        new Setting(containerEl)
+            .setName("Open Dice View on Startup")
+            .setDesc(
+                "The dice view can always be opened using the command from the command palette."
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.showLeafOnStartup);
+                t.onChange(async (v) => {
+                    this.plugin.data.showLeafOnStartup = v;
                     await this.plugin.saveSettings();
                 });
             });
@@ -219,82 +295,7 @@ export default class SettingTab extends PluginSettingTab {
             }
         );
     }
-    buildView(containerEl: HTMLDivElement) {
-        containerEl.empty();
-        new Setting(containerEl).setHeading().setName("Dice View");
-        new Setting(containerEl)
-            .setName("Open Dice View on Startup")
-            .setDesc(
-                "The dice view can always be opened using the command from the command palette."
-            )
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.showLeafOnStartup);
-                t.onChange(async (v) => {
-                    this.plugin.data.showLeafOnStartup = v;
-                    await this.plugin.saveSettings();
-                });
-            });
-    }
-    buildTables(containerEl: HTMLDivElement) {
-        containerEl.empty();
-        new Setting(containerEl).setHeading().setName("Table Rollers");
 
-        new Setting(containerEl)
-            .setName("Display Lookup Table Roll")
-            .setDesc(
-                "Lookup table rolls will display the rolled number along with the result."
-            )
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.displayLookupRoll);
-                t.onChange(async (v) => {
-                    this.plugin.data.displayLookupRoll = v;
-                    await this.plugin.saveSettings();
-                });
-            });
-    }
-    buildSections(containerEl: HTMLDivElement) {
-        containerEl.empty();
-        new Setting(containerEl).setHeading().setName("Section Rollers");
-        new Setting(containerEl)
-            .setName("Add Copy Button to Section Results")
-            .setDesc(
-                "Randomly rolled sections will have a copy-content button to easy add result to clipboard."
-            )
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.copyContentButton);
-                t.onChange(async (v) => {
-                    this.plugin.data.copyContentButton = v;
-                    await this.plugin.saveSettings();
-                });
-            });
-    }
-    buildTags(containerEl: HTMLDivElement) {
-        containerEl.empty();
-        new Setting(containerEl).setHeading().setName("Tag Rollers");
-
-        new Setting(containerEl)
-            .setName("Roll All Files for Tags")
-            .setDesc("Return a result for each file when rolling tags.")
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.returnAllTags);
-                t.onChange(async (v) => {
-                    this.plugin.data.returnAllTags = v;
-                    await this.plugin.saveSettings();
-                });
-            });
-        new Setting(containerEl)
-            .setName("Always Return Links for Tags")
-            .setDesc(
-                "Enables random link rolling with the link parameter. Override by specifying a section type."
-            )
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.rollLinksForTags);
-                t.onChange(async (v) => {
-                    this.plugin.data.rollLinksForTags = v;
-                    await this.plugin.saveSettings();
-                });
-            });
-    }
     buildFormulaSettings(containerEl: HTMLDivElement) {
         containerEl.empty();
         new Setting(containerEl).setHeading().setName("Saved Formulas");
@@ -365,7 +366,6 @@ export default class SettingTab extends PluginSettingTab {
             });
         }
     }
-
     async buildFormulaForm(
         el: HTMLElement,
         temp: DiceFormula = {
