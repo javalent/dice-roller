@@ -304,6 +304,15 @@ export default class DiceRenderer extends Component {
         this.event.trigger("throw-finished", this.stack);
     }
     extraFrames = DiceRenderer.DEFAULT_EXTRA_FRAMES;
+    unrender(plugin = this) {
+        plugin.container.style.opacity = `0`;
+        plugin.registerInterval(
+            window.setTimeout(() => {
+                plugin.animating = false;
+                plugin.unload();
+            }, 1000)
+        );
+    }
     render() {
         if (this.throwFinished()) {
             if (this.extraFrames > 10) {
@@ -311,17 +320,24 @@ export default class DiceRenderer extends Component {
             } else {
                 try {
                     this.returnResult();
-                    this.registerInterval(
-                        window.setTimeout(() => {
-                            this.container.style.opacity = `0`;
-                            this.registerInterval(
-                                window.setTimeout(() => {
-                                    this.animating = false;
-                                    this.unload();
-                                }, 1000)
+                    if (!this.plugin.data.renderTime) {
+                        const plugin = this;
+                        function unrender() {
+                            plugin.unrender(plugin);
+                            document.body.removeEventListener(
+                                "click",
+                                unrender
                             );
-                        }, 2000)
-                    );
+                        }
+                        this.registerDomEvent(document.body, "click", unrender);
+                    } else {
+                        this.registerInterval(
+                            window.setTimeout(
+                                () => this.unrender(),
+                                this.plugin.data.renderTime
+                            )
+                        );
+                    }
                 } catch (e) {
                     this.event.trigger("error", e);
                 }
@@ -806,7 +822,7 @@ class DiceFactory extends Component {
     d12 = new D12DiceShape(this.width, this.height, this.colors);
     d10 = new D10DiceShape(this.width, this.height, this.colors);
     d8 = new D8DiceShape(this.width, this.height, this.colors);
-    d6 = new D6DiceShape(this.width, this.height, this.colors); 
+    d6 = new D6DiceShape(this.width, this.height, this.colors);
     d4 = new D4DiceShape(this.width, this.height, this.colors);
     fudge = new FudgeDiceShape(this.width, this.height, this.colors);
     constructor(

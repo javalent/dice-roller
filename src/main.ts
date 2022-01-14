@@ -108,13 +108,14 @@ interface DiceRollerSettings {
     defaultRoll: number;
     defaultFace: number;
     renderer: boolean;
+    renderTime: number;
     diceColor: string;
     textColor: string;
     showLeafOnStartup: boolean;
     customFormulas: string[];
 }
 
-const DEFAULT_SETTINGS: DiceRollerSettings = {
+export const DEFAULT_SETTINGS: DiceRollerSettings = {
     returnAllTags: true,
     rollLinksForTags: false,
     copyContentButton: true,
@@ -128,6 +129,7 @@ const DEFAULT_SETTINGS: DiceRollerSettings = {
     defaultRoll: 1,
     defaultFace: 100,
     renderer: false,
+    renderTime: 2000,
     diceColor: "#202020",
     textColor: "#ffffff",
     showLeafOnStartup: true,
@@ -239,7 +241,7 @@ export default class DiceRollerPlugin extends Plugin {
 
     async onload() {
         console.log("DiceRoller plugin loaded");
-        this.data = Object.assign(DEFAULT_SETTINGS, await this.loadData());
+        this.data = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 
         this.renderer = new DiceRenderer(this);
 

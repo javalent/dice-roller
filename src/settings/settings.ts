@@ -3,9 +3,11 @@ import {
     ButtonComponent,
     Notice,
     PluginSettingTab,
-    Setting
+    Setting,
+    TextComponent
 } from "obsidian";
 import type DiceRoller from "../main";
+import { DEFAULT_SETTINGS } from "../main";
 
 export default class SettingTab extends PluginSettingTab {
     additionalContainer: HTMLDivElement;
@@ -109,10 +111,19 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 });
             });
-        const save = new Setting(containerEl)
+
+        new Setting(containerEl)
             .setName("Globally Save Results")
             .setDesc(
-                "Dice results will be saved by default. This can be overridden using "
+                createFragment((e) => {
+                    e.createSpan({
+                        text: "Dice results will be saved by default. This can be overridden using "
+                    });
+                    e.createEl("code", { text: `dice-: formula` });
+                    e.createEl("p", {
+                        text: "Please note that the plugin will attempt to save the result but may not be able to."
+                    });
+                })
             )
             .addToggle((t) => {
                 t.setValue(this.plugin.data.persistResults);
@@ -121,6 +132,7 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 });
             });
+
         new Setting(containerEl)
             .setName("Open Dice View on Startup")
             .setDesc(
@@ -143,6 +155,38 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 });
             });
+        new Setting(containerEl)
+            .setName("Display Time for Dice Graphics")
+            .setDesc(
+                "Rendered dice will stay on screen for this number of milliseconds. Leave blank to require a click to clear dice."
+            )
+            .addText((t) => {
+                t.inputEl.setAttr("type", "number");
+                t.inputEl.onblur = (ev) => {
+                    if (Number(t.getValue()) < 0) {
+                        new Notice("Render time cannot be less than 0.");
+                        t.setValue(`0`);
+                    }
+                };
+
+                t.setValue(`${this.plugin.data.renderTime}`);
+                t.onChange(async (v) => {
+                    if ((v && Number(v) < 0) || isNaN(Number(v))) return;
+                    this.plugin.data.renderTime = Number(v);
+                    await this.plugin.saveSettings();
+                });
+            })
+            .addExtraButton((b) => {
+                b.setIcon("reset")
+                    .setTooltip("Reset to Default")
+                    .onClick(async () => {
+                        this.plugin.data.renderTime =
+                            DEFAULT_SETTINGS.renderTime;
+                        await this.plugin.saveSettings();
+                        this.display();
+                    });
+            });
+
         const diceColor = new Setting(containerEl)
             .setName("Dice Base Color")
             .setDesc("Rendered dice will be this color.");
@@ -206,10 +250,7 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 };
             });
-        save.descEl.createEl("code", { text: `dice-: formula` });
-        save.descEl.createEl("p", {
-            text: "Please note that the plugin will attempt to save the result but may not be able to."
-        });
+
         this.additionalContainer = containerEl.createDiv(
             "dice-roller-setting-additional-container"
         );
