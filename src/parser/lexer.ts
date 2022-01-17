@@ -67,11 +67,18 @@ export default class Lexer {
                     return `${roll}d${faces}`;
                 }
             },
-            { match: /\d+/u }
+            { match: /\d+/u },
+            {
+                match: /[A-Za-z][A-Za-z0-9_]+/u,
+                value: (match) => {
+                    if (this.plugin.inline.has(match)) {
+                        return `${this.plugin.inline.get(match)}`;
+                    }
+                    return match;
+                }
+            }
         ],
-        math: MATH_REGEX,
-
-        inline: /[A-Za-z][A-Za-z0-9_]+/u
+        math: MATH_REGEX
     });
     parser: Parser;
     clampInfinite(match: string) {

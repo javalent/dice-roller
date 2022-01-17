@@ -532,13 +532,13 @@ export class StackRoller extends GenericRoller<number> {
         this.dice.forEach((dice) => {
             const slice = this.original.slice(index);
             text.push(
-                slice.slice(0, slice.indexOf(dice.lexeme.value)),
+                slice.slice(0, slice.indexOf(dice.lexeme.text)),
                 dice.display
             );
 
             index +=
-                slice.indexOf(dice.lexeme.value) +
-                dice.lexeme.value.length +
+                slice.indexOf(dice.lexeme.text) +
+                dice.lexeme.text.length +
                 dice.modifierText.length;
         });
         return text.join("");
