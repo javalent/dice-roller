@@ -105,7 +105,7 @@ export default class DiceRenderer extends Component {
         this.initWorld();
     }
 
-    async start(): Promise<Array<[number, number[]]>> {
+    async start(): Promise<StackRoller> {
         return new Promise(async (resolve, reject) => {
             if (!this.current.size) reject();
             this.event.on("throw-finished", (result) => {

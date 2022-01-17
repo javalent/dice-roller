@@ -332,6 +332,11 @@ export class DiceRoller {
             })
         );
     }
+    applyModifiers() {
+        for (let [type, modifier] of this.modifiers) {
+            this.applyModifier(type, modifier);
+        }
+    }
     roll() {
         const roll = this._roll();
         this.results = new Map(
@@ -347,9 +352,7 @@ export class DiceRoller {
                 ];
             })
         );
-        for (let [type, modifier] of this.modifiers) {
-            this.applyModifier(type, modifier);
-        }
+        this.applyModifiers();
         if (this.conditions?.length) this.applyConditions();
 
         return roll;
@@ -823,6 +826,7 @@ export class StackRoller extends GenericRoller<number> {
         }
 
         if (stack.length && stack[0] instanceof DiceRoller) {
+            stack[0].applyModifiers();
             result += stack[0].result;
         }
 
