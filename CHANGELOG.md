@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.0.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.13.2...8.0.0) (2022-01-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* Lexical parser rewritten to be more extensible and faster
+
+### Features
+
+* Adds graphic display time setting (leave blank to require click) (close [#64](https://github.com/valentine195/obsidian-dice-roller/issues/64)) ([d95f3fa](https://github.com/valentine195/obsidian-dice-roller/commit/d95f3fabdbef6dff4553edfadba3c176607986aa))
+* Lexical parser rewritten to be more extensible and faster ([fb25476](https://github.com/valentine195/obsidian-dice-roller/commit/fb25476b2580a23fe81fa35217a574b6064e63b8))
+
+
+### Bug Fixes
+
+* fixed issue with saving results (close [#65](https://github.com/valentine195/obsidian-dice-roller/issues/65), close [#56](https://github.com/valentine195/obsidian-dice-roller/issues/56)) ([6b885df](https://github.com/valentine195/obsidian-dice-roller/commit/6b885df2f00160f136624310cd9daf904c4035c1))
+* removes modifiers from tooltip result ([73f9a71](https://github.com/valentine195/obsidian-dice-roller/commit/73f9a714377904bfe44a05ed42633f5ab1897112))
+
 ### [7.13.2](https://github.com/valentine195/obsidian-dice-roller/compare/7.13.1...7.13.2) (2022-01-14)
 
 
