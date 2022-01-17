@@ -13,7 +13,8 @@
         "release": "standard-version"
     },
     "standard-version": {
-        "t": ""
+        "t": "",
+        "releaseCommitMessageFormat": "Dice Roller Release: v{{currentTag}}"
     },
     "keywords": [],
     "author": "Jeremy Valentine",
