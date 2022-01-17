@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.1.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.0.0...8.1.0) (2022-01-17)
+
+
+### Features
+
+* adds reroll support to dice graphics ([5abbfa3](https://github.com/valentine195/obsidian-dice-roller/commit/5abbfa38b9009167c40054362e09fac582e24512))
+
+
+### Bug Fixes
+
+* fix advantage and disadvantage when rolling graphical dice (close [#69](https://github.com/valentine195/obsidian-dice-roller/issues/69)) ([9beeb41](https://github.com/valentine195/obsidian-dice-roller/commit/9beeb41e336f51a72770252ec40c9cd45d513120))
+* fix issue with dataview inline fields in new lexical parser ([9ad0f6f](https://github.com/valentine195/obsidian-dice-roller/commit/9ad0f6f3fa96b578c0983897cf7052c5d032c233))
+
 ## [8.0.0](https://github.com/valentine195/obsidian-dice-roller/compare/7.13.2...8.0.0) (2022-01-17)
 
 
