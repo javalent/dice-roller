@@ -8,6 +8,7 @@ import { BaseRoller, GenericRoller, Roller } from "./roller";
 interface Modifier {
     conditionals: Conditional[];
     data: number;
+    value: string;
 }
 
 export class DiceRoller {
@@ -44,6 +45,21 @@ export class DiceRoller {
                     `${display}${[...modifiers].join("")}`
             )
             .join(", ")}]`;
+    }
+    get modifierText() {
+        if (!this.modifiers.size) return "";
+        const conditionals = [...this.conditions]
+            .map(({ value }) => value)
+            .join("");
+        const modifiers = [...this.modifiers]
+            .map(([_, { conditionals, value }]) => {
+                const conditional = conditionals.map(
+                    (conditional) => conditional.value
+                );
+                return `${value}${conditional.join("")}`;
+            })
+            .join("");
+        return `${conditionals}${modifiers}`;
     }
     constructor(
         dice: string,
@@ -154,7 +170,8 @@ export class DiceRoller {
         if (!conditionals.length) {
             conditionals.push({
                 operator: "=",
-                comparer: this.faces.min
+                comparer: this.faces.min,
+                value: ""
             });
         }
 
@@ -201,7 +218,8 @@ export class DiceRoller {
         if (!conditionals.length) {
             conditionals.push({
                 operator: "=",
-                comparer: this.faces.max
+                comparer: this.faces.max,
+                value: ""
             });
         }
 
@@ -245,7 +263,8 @@ export class DiceRoller {
         if (!conditionals.length) {
             conditionals.push({
                 operator: "=",
-                comparer: this.faces.max
+                comparer: this.faces.max,
+                value: ""
             });
         }
 
@@ -509,14 +528,15 @@ export class StackRoller extends GenericRoller<number> {
         let index = 0;
         this.dice.forEach((dice) => {
             const slice = this.original.slice(index);
-
             text.push(
                 slice.slice(0, slice.indexOf(dice.lexeme.value)),
                 dice.display
             );
 
             index +=
-                slice.indexOf(dice.lexeme.value) + dice.lexeme.value.length;
+                slice.indexOf(dice.lexeme.value) +
+                dice.lexeme.value.length +
+                dice.modifierText.length;
         });
         return text.join("");
     }
@@ -632,7 +652,8 @@ export class StackRoller extends GenericRoller<number> {
 
                         diceInstance.modifiers.set("kh", {
                             data,
-                            conditionals: []
+                            conditionals: [],
+                            value: dice.text
                         });
                         break;
                     }
@@ -644,7 +665,8 @@ export class StackRoller extends GenericRoller<number> {
 
                         diceInstance.modifiers.set("kh", {
                             data,
-                            conditionals: []
+                            conditionals: [],
+                            value: dice.text
                         });
                         break;
                     }
@@ -654,7 +676,8 @@ export class StackRoller extends GenericRoller<number> {
 
                         diceInstance.modifiers.set("kl", {
                             data,
-                            conditionals: []
+                            conditionals: [],
+                            value: dice.text
                         });
                         break;
                     }
@@ -666,7 +689,8 @@ export class StackRoller extends GenericRoller<number> {
 
                         diceInstance.modifiers.set("kl", {
                             data,
-                            conditionals: []
+                            conditionals: [],
+                            value: dice.text
                         });
                         break;
                     }
@@ -676,7 +700,8 @@ export class StackRoller extends GenericRoller<number> {
 
                         diceInstance.modifiers.set("!", {
                             data,
-                            conditionals: dice.conditions ?? []
+                            conditionals: dice.conditions ?? [],
+                            value: dice.text
                         });
 
                         break;
@@ -685,13 +710,10 @@ export class StackRoller extends GenericRoller<number> {
                         let diceInstance = this.dice[index - 1];
                         let data = Number(dice.value) || 1;
 
-                        console.log(
-                            "🚀 ~ file: dice.ts ~ line 691 ~ dice.conditions",
-                            dice.conditions
-                        );
                         diceInstance.modifiers.set("!!", {
                             data,
-                            conditionals: dice.conditions ?? []
+                            conditionals: dice.conditions ?? [],
+                            value: dice.text
                         });
 
                         break;
@@ -702,7 +724,8 @@ export class StackRoller extends GenericRoller<number> {
 
                         diceInstance.modifiers.set("r", {
                             data,
-                            conditionals: dice.conditions ?? []
+                            conditionals: dice.conditions ?? [],
+                            value: dice.text
                         });
                         break;
                     }

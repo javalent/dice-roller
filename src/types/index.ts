@@ -14,6 +14,7 @@ export interface Lexeme {
 export interface Conditional {
     operator: string;
     comparer: number;
+    value: string;
 }
 
 export type ResultMapInterface<T> = Map<number, ResultInterface<T>>;

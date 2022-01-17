@@ -40,6 +40,18 @@ export default class Lexer {
         ],
         dh: { match: /dh\d*/u, value: this.clampInfinite },
         dl: [{ match: /dl\d*/u, value: this.clampInfinite }],
+        "!!": {
+            match: /!!(?:i|\d+)?/u,
+            value: this.clampInfinite
+        },
+        "!": {
+            match: /!(?:i|\d+)?/u,
+            value: this.clampInfinite
+        },
+        r: {
+            match: /r(?:i|\d+)?/u,
+            value: this.clampInfinite
+        },
         stunt: /1[Dd]S/u,
         "%": /\d+[Dd]\d+%/u,
         dice: [
@@ -58,18 +70,7 @@ export default class Lexer {
             { match: /\d+/u }
         ],
         math: MATH_REGEX,
-        "!!": {
-            match: /!!(?:i|\d+)?/u,
-            value: this.clampInfinite
-        },
-        "!": {
-            match: /!(?:i|\d+)?/u,
-            value: this.clampInfinite
-        },
-        r: {
-            match: /r(?:i|\d+)?/u,
-            value: this.clampInfinite
-        },
+
         inline: /[A-Za-z][A-Za-z0-9_]+/u
     });
     parser: Parser;
@@ -119,7 +120,8 @@ export default class Lexer {
                     ) ?? [];
                 previous.conditions.push({
                     operator,
-                    comparer: Number(comparer)
+                    comparer: Number(comparer),
+                    value: token.value
                 });
             } else {
                 clone.push(token);
