@@ -14,8 +14,6 @@ import { faDice } from "@fortawesome/free-solid-svg-icons";
 import { faCopy } from "@fortawesome/free-regular-svg-icons";
 import { icon } from "@fortawesome/fontawesome-svg-core";
 
-import { Parser } from "./parser/parser";
-
 import { around } from "monkey-around";
 import { decode } from "he";
 
