@@ -81,7 +81,7 @@ If a modifier has a parameter, it will default to 1 if not provided.
 | Min/Max           | `Xd[Y, Z]`     | Roll a dice with minimum Y, maximum Z.                                                             |
 | Keep Highest      | `k{n}`/`kh{n}` | Keep highest `{n}` dice.                                                                           |
 | Keep Lowest       | `kl{n}`        | Keep lowest `{n}` dice.                                                                            |
-| Drop Lowest       | `d{n}`/`dl{n}` | Drop lowest `{n}` dice.                                                                            |
+| Drop Lowest       | `dl{n}`        | Drop lowest `{n}` dice.                                                                            |
 | Drop Highest      | `dh{n}`        | Drop highest `{n}` dice.                                                                           |
 | Explode           | `!{n}`, `!i`   | Explode dice `{n}` times. If `i` is provided, will explode "infinitely" (capped at 100).           |
 | Explode & Combine | `!!{n}`, `!!i` | Same as explode, but exploded dice are summed in the display instead of being shown individually.  |
@@ -128,16 +128,16 @@ Keeps lowest `{n}` rolls. `{n}` is optional, and will default to 1. Dropped dice
 
 ### Drop Lowest
 
-#### Syntax: XdXd{n} / XdXdl{n}
+#### Syntax: XdXdl{n}
 
 Drops lowest `{n}` rolls. `{n}` is optional, and will default to 1. Dropped dice will display as `Nd`.
 
 #### Example
 
-| Formula                          | Result                 |
-| -------------------------------- | ---------------------- |
-| `dice: 2d20d` / `dice: 2d20dl`   | `[7d, 18] = 18`        |
-| `dice: 4d20d2` / `dice: 4d20dl2` | `[4d, 12, 15, 3d = 27` |
+| Formula         | Result                 |
+| --------------- | ---------------------- |
+| `dice: 2d20dl`  | `[7d, 18] = 18`        |
+| `dice: 4d20dl2` | `[4d, 12, 15, 3d = 27` |
 
 ### Drop Highest
 
@@ -242,16 +242,14 @@ changes the die rolls that the modifier is applied to.
 
 Supported Conditions:
 
-| Condition            | Effect                                                           |
-| -------------------- | ---------------------------------------------------------------- |
-| `={n}`               | Only rolls that are equal to `{n}` are modified.                 |
-| `!={n}`\* or `=!{n}` | Only rolls that are not equal to `{n}` are modified.             |
-| `>{n}`               | Only rolls that are greater than `{n}` are modified.             |
-| `<{n}`               | Only rolls that are less than `{n}` are modified.                |
-| `>={n}`              | Only rolls that are greater than or equal to `{n}` are modified. |
-| `<={n}`              | Only rolls that are less than or equal to `{n}` are modified.    |
-
-\*Not supported as the first conditional on a parameterless [Explode](#explode) due to a collision with [Explode and Combine](#explode--combine). If necessary, use `=!{n}`.
+| Condition | Effect                                                           |
+| --------- | ---------------------------------------------------------------- |
+| `={n}`    | Only rolls that are equal to `{n}` are modified.                 |
+| `=!{n}`   | Only rolls that are not equal to `{n}` are modified.             |
+| `>{n}`    | Only rolls that are greater than `{n}` are modified.             |
+| `<{n}`    | Only rolls that are less than `{n}` are modified.                |
+| `>={n}`   | Only rolls that are greater than or equal to `{n}` are modified. |
+| `<={n}`   | Only rolls that are less than or equal to `{n}` are modified.    |
 
 These conditions are fully chainable.
 
@@ -260,7 +258,7 @@ These conditions are fully chainable.
 | Formula          | Description                               | Result                                   |
 | ---------------- | ----------------------------------------- | ---------------------------------------- |
 | `dice: 1d4!=3`   | Explode rolls equal to 3                  | `[4, 2, 3!, 2] = 11`                     |
-| `dice: 1d4!i!=3` | Explode rolls not equal to 3 infinitely   | `[4!, 2!, 3, 2!, 3, 2!, 1!, 4!, 3] = 24` |
+| `dice: 1d4!i=!3` | Explode rolls not equal to 3 infinitely   | `[4!, 2!, 3, 2!, 3, 2!, 1!, 4!, 3] = 24` |
 | `dice: 1d4r<3`   | Re-roll rolls less than 3                 | `[4, 1, 2, 4] -> [4, 4r, 3r, 4] = 15`    |
 | `dice: 1d4r<2>3` | Re-roll rolls less than 2, greater than 3 | `[4, 1, 2, 4] -> [3r, 2r, 2, 2r] = 9`    |
 
