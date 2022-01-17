@@ -407,7 +407,7 @@ export class DiceRoller {
         }
     }
 
-    private checkCondition(
+    checkCondition(
         value: number,
         conditions: Conditional[]
     ): boolean | number {

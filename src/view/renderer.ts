@@ -260,45 +260,51 @@ export default class DiceRenderer extends Component {
         this.world = new World(this.WIDTH, this.HEIGHT);
         this.iterations = 0;
     }
+    getResultsForRoller(roller: DiceRoller) {
+        const diceArray = this.current.get(roller);
+
+        const percentile = diceArray.filter(
+            (d) => d instanceof D10Dice && d.isPercentile
+        );
+        const chunked: Array<[Dice, Dice]> = [];
+        for (let i = 0; i < percentile.length; i += 2) {
+            chunked.push(percentile.slice(i, i + 2) as [Dice, Dice]);
+        }
+
+        let results = [
+            ...diceArray
+                .filter((d) => !(d instanceof D10Dice && d.isPercentile))
+                .map((dice) => {
+                    return dice.getUpsideValue();
+                })
+                .filter((r) => r),
+            ...chunked
+                .map(([tensDice, onesDice]) => {
+                    let tens = tensDice.getUpsideValue();
+                    if (!onesDice) return tens;
+                    let ones = onesDice.getUpsideValue();
+
+                    if (tens === 10 && ones == 10) {
+                        return 100;
+                    } else {
+                        if (ones == 10) ones = 0;
+                        if (tens == 10) tens = 0;
+                        return tens * 10 + ones;
+                    }
+                })
+                .filter((r) => r)
+        ];
+        return results;
+    }
     returnResult() {
         for (const roller of this.stack.dynamic) {
             if (!this.current.has(roller)) {
                 continue;
             }
 
-            const diceArray = this.current.get(roller);
+            let results = this.getResultsForRoller(roller);
+            if (!results) continue;
 
-            const percentile = diceArray.filter(
-                (d) => d instanceof D10Dice && d.isPercentile
-            );
-            const chunked: Array<[Dice, Dice]> = [];
-            for (let i = 0; i < percentile.length; i += 2) {
-                chunked.push(percentile.slice(i, i + 2) as [Dice, Dice]);
-            }
-
-            let results = [
-                ...diceArray
-                    .filter((d) => !(d instanceof D10Dice && d.isPercentile))
-                    .map((dice) => {
-                        return dice.getUpsideValue();
-                    })
-                    .filter((r) => r),
-                ...chunked
-                    .map(([tensDice, onesDice]) => {
-                        let tens = tensDice.getUpsideValue();
-                        if (!onesDice) return tens;
-                        let ones = onesDice.getUpsideValue();
-
-                        if (tens === 10 && ones == 10) {
-                            return 100;
-                        } else {
-                            if (ones == 10) ones = 0;
-                            if (tens == 10) tens = 0;
-                            return tens * 10 + ones;
-                        }
-                    })
-                    .filter((r) => r)
-            ];
             roller.setResults(results);
         }
         this.event.trigger("throw-finished", this.stack);
@@ -319,6 +325,100 @@ export default class DiceRenderer extends Component {
                 this.extraFrames--;
             } else {
                 try {
+                    for (const [roller, dice] of this.current) {
+                        if (!roller.modifiers.size) continue;
+
+                        let results = this.getResultsForRoller(roller);
+                        if (!results) continue;
+
+                        /* if (
+                            roller.modifiers.has("!") ||
+                            roller.modifiers.has("!!")
+                        ) {
+                            //check explode
+                            const explode = dice.filter((d) => {
+                                if (!roller.conditions.length) {
+                                    roller.conditions.push({
+                                        operator: "=",
+                                        comparer: roller.faces.max,
+                                        value: ""
+                                    });
+                                }
+                                return (
+                                    roller.checkCondition(
+                                        d.result,
+                                        roller.conditions
+                                    ) && !d.exploded
+                                );
+                            });
+                            if (
+                                explode.length &&
+                                explode.length < roller.modifiers.get("!")!.data
+                            ) {
+                                explode.forEach((dice) => {
+                                    dice.exploded = true;
+                                    const vector = dice.body.position;
+                                    const newDice =
+                                        this.factory.getDiceForRoller(
+                                            roller,
+                                            vector
+                                        );
+                                    this.current.set(roller, [
+                                        ...this.current.get(roller)!,
+                                        ...newDice
+                                    ]);
+                                    this.world.add(...newDice);
+                                    this.scene.add(
+                                        ...newDice.map((d) => d.geometry)
+                                    );
+                                });
+                                this.animation = requestAnimationFrame(() =>
+                                    this.render()
+                                );
+                                return;
+                            }
+                        } */
+
+                        if (roller.modifiers.has("r")) {
+                            //check reroll
+                            const reroll = dice.filter((d) => {
+                                if (!roller.conditions.length) {
+                                    roller.conditions.push({
+                                        operator: "=",
+                                        comparer: roller.faces.min,
+                                        value: ""
+                                    });
+                                }
+                                return (
+                                    roller.checkCondition(
+                                        d.result,
+                                        roller.conditions
+                                    ) &&
+                                    d.rerolled < roller.modifiers.get("r")!.data
+                                );
+                            });
+                            if (reroll.length) {
+                                reroll.forEach((dice) => {
+                                    dice.rerolled++;
+                                    const vector = {
+                                        x: (Math.random() * 2 - 1) * this.WIDTH,
+                                        y:
+                                            -(Math.random() * 2 - 1) *
+                                            this.HEIGHT
+                                    };
+                                    dice.vector = dice.generateVector(vector);
+                                    dice.create();
+                                    dice.set();
+                                    dice.stopped = false;
+                                });
+                                this.animation = requestAnimationFrame(() =>
+                                    this.render()
+                                );
+                                return;
+                            }
+                        }
+                    }
+
                     this.returnResult();
                     if (!this.plugin.data.renderTime) {
                         const plugin = this;
@@ -681,6 +781,11 @@ abstract class Dice {
     get buffer() {
         return this.geometry.geometry;
     }
+    get result() {
+        return this.getUpsideValue();
+    }
+    exploded = false;
+    rerolled = 0;
     getUpsideValue() {
         let vector = new THREE.Vector3(0, 0, this.sides == 4 ? -1 : 1);
         let closest_face,
@@ -715,7 +820,6 @@ abstract class Dice {
         if (this.sides == 10 && matindex == 0) matindex = 10;
         return this.data.values?.[matindex] ?? matindex;
     }
-
     shiftUpperValue(to: number) {
         let geometry = this.geometry.geometry.clone();
 
@@ -735,7 +839,6 @@ abstract class Dice {
 
         this.geometry.geometry = geometry;
     }
-
     resetBody() {
         this.body.vlambda = new CANNON.Vec3();
         //this..body.collisionResponse = true;
@@ -861,136 +964,140 @@ class DiceFactory extends Component {
         this.disposeChildren(this.d6.geometry.children);
         this.disposeChildren(this.d4.geometry.children);
     }
-    getDice(stack: StackRoller, vector: { x: number; y: number }) {
-        const map: Map<DiceRoller, Dice[]> = new Map();
-
-        for (const roller of stack.dynamic) {
-            const dice = [];
-            switch (roller.faces.max) {
-                case 4: {
-                    dice.push(
-                        ...new Array(roller.rolls)
-                            .fill(0)
-                            .map(
-                                (r) =>
-                                    new D4Dice(
-                                        this.width,
-                                        this.height,
-                                        this.d4.clone(),
-                                        vector
-                                    )
-                            )
-                    );
-                    break;
-                }
-                case 1:
-                case 6: {
-                    dice.push(
-                        ...new Array(roller.rolls)
-                            .fill(0)
-                            .map(
-                                (r) =>
-                                    new D6Dice(
-                                        this.width,
-                                        this.height,
-                                        roller.fudge
-                                            ? this.fudge.clone()
-                                            : this.d6.clone(),
-                                        vector
-                                    )
-                            )
-                    );
-                    break;
-                }
-                case 8: {
-                    dice.push(
-                        ...new Array(roller.rolls)
-                            .fill(0)
-                            .map(
-                                (r) =>
-                                    new D8Dice(
-                                        this.width,
-                                        this.height,
-                                        this.d8.clone(),
-                                        vector
-                                    )
-                            )
-                    );
-                    break;
-                }
-                case 10: {
-                    dice.push(
-                        ...new Array(roller.rolls)
-                            .fill(0)
-                            .map(
-                                (r) =>
-                                    new D10Dice(
-                                        this.width,
-                                        this.height,
-                                        this.d10.clone(),
-                                        vector
-                                    )
-                            )
-                    );
-                    break;
-                }
-                case 12: {
-                    dice.push(
-                        ...new Array(roller.rolls)
-                            .fill(0)
-                            .map(
-                                (r) =>
-                                    new D12Dice(
-                                        this.width,
-                                        this.height,
-                                        this.d12.clone(),
-                                        vector
-                                    )
-                            )
-                    );
-                    break;
-                }
-                case 20: {
-                    dice.push(
-                        ...new Array(roller.rolls)
-                            .fill(0)
-                            .map(
-                                (r) =>
-                                    new D20Dice(
-                                        this.width,
-                                        this.height,
-                                        this.d20.clone(),
-                                        vector
-                                    )
-                            )
-                    );
-                    break;
-                }
-                case 100: {
-                    dice.push(
-                        ...new Array(roller.rolls)
-                            .fill(0)
-                            .map((r) => [
-                                new D10Dice(
+    getDiceForRoller(roller: DiceRoller, vector: { x: number; y: number }) {
+        const dice = [];
+        switch (roller.faces.max) {
+            case 4: {
+                dice.push(
+                    ...new Array(roller.rolls)
+                        .fill(0)
+                        .map(
+                            (r) =>
+                                new D4Dice(
                                     this.width,
                                     this.height,
-                                    this.d100.clone(),
-                                    vector,
-                                    true
-                                ),
+                                    this.d4.clone(),
+                                    vector
+                                )
+                        )
+                );
+                break;
+            }
+            case 1:
+            case 6: {
+                dice.push(
+                    ...new Array(roller.rolls)
+                        .fill(0)
+                        .map(
+                            (r) =>
+                                new D6Dice(
+                                    this.width,
+                                    this.height,
+                                    roller.fudge
+                                        ? this.fudge.clone()
+                                        : this.d6.clone(),
+                                    vector
+                                )
+                        )
+                );
+                break;
+            }
+            case 8: {
+                dice.push(
+                    ...new Array(roller.rolls)
+                        .fill(0)
+                        .map(
+                            (r) =>
+                                new D8Dice(
+                                    this.width,
+                                    this.height,
+                                    this.d8.clone(),
+                                    vector
+                                )
+                        )
+                );
+                break;
+            }
+            case 10: {
+                dice.push(
+                    ...new Array(roller.rolls)
+                        .fill(0)
+                        .map(
+                            (r) =>
                                 new D10Dice(
                                     this.width,
                                     this.height,
                                     this.d10.clone(),
-                                    vector,
-                                    true
+                                    vector
                                 )
-                            ])
-                            .flat()
-                    );
-                    break;
-                }
+                        )
+                );
+                break;
             }
+            case 12: {
+                dice.push(
+                    ...new Array(roller.rolls)
+                        .fill(0)
+                        .map(
+                            (r) =>
+                                new D12Dice(
+                                    this.width,
+                                    this.height,
+                                    this.d12.clone(),
+                                    vector
+                                )
+                        )
+                );
+                break;
+            }
+            case 20: {
+                dice.push(
+                    ...new Array(roller.rolls)
+                        .fill(0)
+                        .map(
+                            (r) =>
+                                new D20Dice(
+                                    this.width,
+                                    this.height,
+                                    this.d20.clone(),
+                                    vector
+                                )
+                        )
+                );
+                break;
+            }
+            case 100: {
+                dice.push(
+                    ...new Array(roller.rolls)
+                        .fill(0)
+                        .map((r) => [
+                            new D10Dice(
+                                this.width,
+                                this.height,
+                                this.d100.clone(),
+                                vector,
+                                true
+                            ),
+                            new D10Dice(
+                                this.width,
+                                this.height,
+                                this.d10.clone(),
+                                vector,
+                                true
+                            )
+                        ])
+                        .flat()
+                );
+                break;
+            }
+        }
+        return dice;
+    }
+    getDice(stack: StackRoller, vector: { x: number; y: number }) {
+        const map: Map<DiceRoller, Dice[]> = new Map();
+
+        for (const roller of stack.dynamic) {
+            const dice = this.getDiceForRoller(roller, vector);
             if (dice.length) map.set(roller, dice);
         }
         return map;
