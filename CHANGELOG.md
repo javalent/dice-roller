@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.2.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.1.0...8.2.0) (2022-01-20)
+
+
+### Features
+
+* supports markdown links in section and table rollers ([43abc5b](https://github.com/valentine195/obsidian-dice-roller/commit/43abc5bb4e416ea2345e3a0752097c27a6c45edb))
+
+
+### Bug Fixes
+
+* improves styling on embedded dice rollers ([d16a4a8](https://github.com/valentine195/obsidian-dice-roller/commit/d16a4a84c287a5efd37bf35316d88b630e2b76d9))
+
 ## [8.1.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.0.0...8.1.0) (2022-01-17)
 
 
