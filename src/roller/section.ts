@@ -192,7 +192,7 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
         if (!link) throw new Error("Could not parse link.");
 
         this.rolls = (roll && !isNaN(Number(roll)) && Number(roll)) ?? 1;
-        this.path = link.replace(/(\[|\])/g, "");
+        this.path = decodeURIComponent(link.replace(/(\[|\]|\(|\))/g, ""));
         this.types = types?.split(",");
         this.levels = types
             ?.split(",")

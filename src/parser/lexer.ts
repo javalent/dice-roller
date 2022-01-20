@@ -9,9 +9,15 @@ export const TAG_REGEX =
     /(?:\d+[Dd])?#(?:[\p{Letter}\p{Emoji_Presentation}\w/-]+)(?:\|(?:[+-]))?(?:\|(?:[^+-]+))?/u;
 export const LINK_REGEX =
     /(?:\d+[Dd])?#(?:[\p{Letter}\p{Emoji_Presentation}\w/-]+)(?:\|(?:[+-]))?\|link/u;
-export const TABLE_REGEX = /(?:\d+[Dd])?\[\[(?:.+?)#?\^(?:.+?)\]\]\|?(?:.+)?/u;
-export const SECTION_REGEX = /(?:\d+[Dd])?\[\[(?:.+)\]\]\|?(?:.+)?/u;
-export const LINE_REGEX = /(?:\d+[Dd])?\[\[(?:.+)\]\]\|line/u;
+
+const INTERNAL_LINK = /(?:\[.*\]\(|\[\[)(?:.+)(?:\)|\]\])/;
+
+export const TABLE_REGEX =
+    /(?:\d+[Dd])?(?:\[.*\]\(|\[\[)(?:.+?)#?\^(?:.+?)(?:\)|\]\])\|?(?:.+)?/u;
+export const SECTION_REGEX =
+    /(?:\d+[Dd])?(?:\[.*\]\(|\[\[)(?:.+)(?:\)|\]\])\|?(?:.+)?/u;
+export const LINE_REGEX =
+    /(?:\d+[Dd])?(?:\[.*\]\(|\[\[)(?:.+)(?:\)|\]\])\|line/u;
 export const MATH_REGEX = /[\(\^\+\-\*\/\)]/u;
 export const OMITTED_REGEX =
     /(?:\d+)?[Dd](?:\[?(?:-?\d+\s?,)?\s?(?:-?\d+|%|F)\]?)?/u;

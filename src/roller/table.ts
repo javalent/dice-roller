@@ -19,7 +19,7 @@ export class TableRoller extends GenericFileRoller<string> {
         if (!link || !block) throw new Error("Could not parse link.");
 
         this.rolls = (roll && !isNaN(Number(roll)) && Number(roll)) ?? 1;
-        this.path = link.replace(/(\[|\])/g, "");
+        this.path = decodeURIComponent(link.replace(/(\[|\]|\(|\))/g, ""));
         this.block = block
             .replace(/(\^|#)/g, "")
             .trim()
