@@ -20,7 +20,7 @@ export const LINE_REGEX =
     /(?:\d+[Dd])?(?:\[.*\]\(|\[\[)(?:.+)(?:\)|\]\])\|line/u;
 export const MATH_REGEX = /[\(\^\+\-\*\/\)]/u;
 export const OMITTED_REGEX =
-    /(?:\d+)?[Dd](?:\[?(?:-?\d+\s?,)?\s?(?:-?\d+|%|F)\]?)?/u;
+    /(?:\d+|\b)[Dd](?:\[?(?:-?\d+[ \t]?,)?[ \t]?(?:-?\d+|%|F)\]?|\b)/u;
 
 export const CONDITIONAL_REGEX = /(?:=|=!|<|>|<=|>=|=<|=>|-=|=-)\d+/u;
 
@@ -68,14 +68,14 @@ export default class Lexer {
                         roll = this.plugin.data.defaultRoll,
                         faces = this.plugin.data.defaultFace
                     } = match.match(
-                        /(?<roll>\d+)?[Dd](?<faces>\[?(?:-?\d+\s?,)?\s?(?:-?\d+|%|F)\]?)?/
+                        /(?<roll>\d+)?[Dd](?<faces>\[?(?:-?\d+[ \t]?,)?[ \t]?(?:-?\d+|%|F)\]?)?/
                     ).groups;
                     return `${roll}d${faces}`;
                 }
             },
             { match: /\d+/u },
             {
-                match: /[A-Za-z][A-Za-z0-9_]+/u,
+                match: /\b[A-Za-z][A-Za-z0-9_]+\b/u,
                 value: (match) => {
                     if (this.plugin.inline.has(match)) {
                         return `${this.plugin.inline.get(match)}`;
