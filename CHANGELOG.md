@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.2.1](https://github.com/valentine195/obsidian-dice-roller/compare/8.2.0...8.2.1) (2022-01-24)
+
+
+### Bug Fixes
+
+* fixes regex collision with dataview variables (close [#72](https://github.com/valentine195/obsidian-dice-roller/issues/72)) ([59541f8](https://github.com/valentine195/obsidian-dice-roller/commit/59541f86ec58b6aba6b9282228ca71d6539071cd))
+
 ## [8.2.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.1.0...8.2.0) (2022-01-20)
 
 
