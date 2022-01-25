@@ -20,6 +20,7 @@ esbuild
         banner: {
             js: banner
         },
+        loader: { ".ttf": "base64" },
         entryPoints: ["src/main.ts", "src/styles.css"],
         bundle: true,
         external: ["obsidian", "electron", ...builtins],

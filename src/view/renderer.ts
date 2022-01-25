@@ -3,17 +3,32 @@ import * as THREE from "three";
 import * as CANNON from "cannon-es";
 
 import { DiceRoller, StackRoller } from "src/roller";
-import {
-    D100DiceShape,
-    D10DiceShape,
-    D12DiceShape,
-    D20DiceShape,
-    D4DiceShape,
-    D6DiceShape,
-    D8DiceShape,
-    FudgeDiceShape
+import DiceGeometry, {
+    D100DiceGeometry,
+    D10DiceGeometry,
+    D12DiceGeometry,
+    D20DiceGeometry,
+    D4DiceGeometry,
+    D6DiceGeometry,
+    D8DiceGeometry,
+    FudgeDiceGeometry,
+    GenesysAbilityDiceGeometry,
+    GenesysBoostDiceGeometry,
+    GenesysChallengeDiceGeometry,
+    GenesysDifficultyDiceGeometry,
+    GenesysProficiencyDiceGeometry,
+    GenesysSetbackDiceGeometry
 } from "./renderer/geometries";
 import DiceRollerPlugin from "src/main";
+import {
+    Dice,
+    D10Dice,
+    D4Dice,
+    D6Dice,
+    D8Dice,
+    D12Dice,
+    D20Dice
+} from "./renderer/shapes";
 
 export default class DiceRenderer extends Component {
     event = new Events();
@@ -669,282 +684,25 @@ class World {
     }
 }
 
-const DEFAULT_VECTOR = {
-    pos: {
-        x: 0 + 100 * Math.random(),
-        y: 0 + 100 * Math.random(),
-        z: 0 + 250
-    },
-    velocity: {
-        x: 600 * (Math.random() * 2 + 1),
-        y: 750 * (Math.random() * 2 + 1),
-        z: 0
-    },
-    angular: {
-        x: 200 * Math.random(),
-        y: 200 * Math.random(),
-        z: 100 * Math.random()
-    },
-    axis: {
-        x: Math.random(),
-        y: Math.random(),
-        z: Math.random(),
-        w: Math.random()
-    }
-};
-
-interface DiceVector {
-    pos: { x: number; y: number; z: number };
-    velocity: { x: number; y: number; z: number };
-    angular: { x: number; y: number; z: number };
-    axis: { x: number; y: number; z: number; w: number };
-}
-
-abstract class Dice {
-    scale = 50;
-    abstract sides: number;
-    abstract inertia: number;
-    body: CANNON.Body;
-    geometry: THREE.Mesh<
-        THREE.BufferGeometry,
-        THREE.Material | THREE.Material[]
-    >;
-
-    stopped: boolean | number = false;
-    iteration: number = 0;
-
-    vector = { ...DEFAULT_VECTOR };
-    constructor(
-        public w: number,
-        public h: number,
-        public data: {
-            geometry: THREE.Mesh;
-            body: CANNON.Body;
-            values?: number[];
-        }
-    ) {
-        this.geometry = data.geometry;
-        this.body = data.body;
-    }
-    generateVector(v: { x: number; y: number }): DiceVector {
-        const dist = Math.sqrt(v.x * v.x + v.y * v.y);
-        const boost = (Math.random() + 3) * dist;
-        const vector = { x: v.x / dist, y: v.y / dist };
-        const vec = this.makeRandomVector(vector);
-        const pos = {
-            x: this.w * (vec.x > 0 ? -1 : 1) * 0.9,
-            y: this.h * (vec.y > 0 ? -1 : 1) * 0.9,
-            z: Math.random() * 200 + 200
-        };
-        const projector = Math.abs(vec.x / vec.y);
-        if (projector > 1.0) pos.y /= projector;
-        else pos.x *= projector;
-        const velvec = this.makeRandomVector(vector);
-        const velocity = {
-            x: velvec.x * boost,
-            y: velvec.y * boost,
-            z: -10
-        };
-
-        const angular = {
-            x: -(Math.random() * vec.y * 5 + this.inertia * vec.y),
-            y: Math.random() * vec.x * 5 + this.inertia * vec.x,
-            z: 0
-        };
-        const axis = {
-            x: Math.random(),
-            y: Math.random(),
-            z: Math.random(),
-            w: Math.random()
-        };
-        return {
-            pos,
-            velocity,
-            angular,
-            axis
-        };
-    }
-    makeRandomVector(vector: { x: number; y: number }) {
-        const random_angle = (Math.random() * Math.PI) / 5 - Math.PI / 5 / 2;
-        const vec = {
-            x:
-                vector.x * Math.cos(random_angle) -
-                vector.y * Math.sin(random_angle),
-            y:
-                vector.x * Math.sin(random_angle) +
-                vector.y * Math.cos(random_angle)
-        };
-        if (vec.x == 0) vec.x = 0.01;
-        if (vec.y == 0) vec.y = 0.01;
-        return vec;
-    }
-    get buffer() {
-        return this.geometry.geometry;
-    }
-    get result() {
-        return this.getUpsideValue();
-    }
-    exploded = false;
-    rerolled = 0;
-    getUpsideValue() {
-        let vector = new THREE.Vector3(0, 0, this.sides == 4 ? -1 : 1);
-        let closest_face,
-            closest_angle = Math.PI * 2;
-        const normals = this.buffer.getAttribute("normal").array;
-        for (let i = 0, l = this.buffer.groups.length; i < l; ++i) {
-            const face = this.buffer.groups[i];
-            if (face.materialIndex == 0) continue;
-            let startVertex = i * 9;
-            const normal = new THREE.Vector3(
-                normals[startVertex],
-                normals[startVertex + 1],
-                normals[startVertex + 2]
-            );
-            const angle = normal
-                .clone()
-                .applyQuaternion(
-                    new THREE.Quaternion(
-                        this.body.quaternion.x,
-                        this.body.quaternion.y,
-                        this.body.quaternion.z,
-                        this.body.quaternion.w
-                    )
-                )
-                .angleTo(vector);
-            if (angle < closest_angle) {
-                closest_angle = angle;
-                closest_face = face;
-            }
-        }
-        let matindex = closest_face.materialIndex - 1;
-        if (this.sides == 10 && matindex == 0) matindex = 10;
-        return this.data.values?.[matindex] ?? matindex;
-    }
-    shiftUpperValue(to: number) {
-        let geometry = this.geometry.geometry.clone();
-
-        let from = this.getUpsideValue();
-        for (let i = 0, l = geometry.groups.length; i < l; ++i) {
-            let materialIndex = geometry.groups[i].materialIndex;
-            if (materialIndex === 0) continue;
-
-            materialIndex += to - from - 1;
-            while (materialIndex > this.sides) materialIndex -= this.sides;
-            while (materialIndex < 1) materialIndex += this.sides;
-
-            geometry.groups[i].materialIndex = materialIndex + 1;
-        }
-
-        this.updateMaterialsForValue(to - from);
-
-        this.geometry.geometry = geometry;
-    }
-    resetBody() {
-        this.body.vlambda = new CANNON.Vec3();
-        //this..body.collisionResponse = true;
-        this.body.position = new CANNON.Vec3();
-        this.body.previousPosition = new CANNON.Vec3();
-        this.body.initPosition = new CANNON.Vec3();
-        this.body.velocity = new CANNON.Vec3();
-        this.body.initVelocity = new CANNON.Vec3();
-        this.body.force = new CANNON.Vec3();
-        //this.body.sleepState = 0;
-        //this.body.timeLastSleepy = 0;
-        //this.body._wakeUpAfterNarrowphase = false;
-        this.body.torque = new CANNON.Vec3();
-        this.body.quaternion = new CANNON.Quaternion();
-        this.body.initQuaternion = new CANNON.Quaternion();
-        this.body.angularVelocity = new CANNON.Vec3();
-        this.body.initAngularVelocity = new CANNON.Vec3();
-        this.body.interpolatedPosition = new CANNON.Vec3();
-        this.body.interpolatedQuaternion = new CANNON.Quaternion();
-        this.body.inertia = new CANNON.Vec3();
-        this.body.invInertia = new CANNON.Vec3();
-        this.body.invInertiaWorld = new CANNON.Mat3();
-        //this.body.invMassSolve = 0;
-        this.body.invInertiaSolve = new CANNON.Vec3();
-        this.body.invInertiaWorldSolve = new CANNON.Mat3();
-        //this.body.aabb = new CANNON.AABB();
-        //this.body.aabbNeedsUpdate = true;
-        this.body.wlambda = new CANNON.Vec3();
-
-        this.body.updateMassProperties();
-    }
-    updateMaterialsForValue(value: number) {}
-    set() {
-        this.geometry.position.set(
-            this.body.position.x,
-            this.body.position.y,
-            this.body.position.z
-        );
-        this.geometry.quaternion.set(
-            this.body.quaternion.x,
-            this.body.quaternion.y,
-            this.body.quaternion.z,
-            this.body.quaternion.w
-        );
-    }
-    create() {
-        this.body.position.set(
-            this.vector.pos.x,
-            this.vector.pos.y,
-            this.vector.pos.z
-        );
-        this.body.quaternion.setFromAxisAngle(
-            new CANNON.Vec3(
-                this.vector.axis.x,
-                this.vector.axis.y,
-                this.vector.axis.z
-            ),
-            this.vector.axis.w * Math.PI * 2
-        );
-        this.body.angularVelocity.set(
-            this.vector.angular.x,
-            this.vector.angular.y,
-            this.vector.angular.z
-        );
-        this.body.velocity.set(
-            this.vector.velocity.x,
-            this.vector.velocity.y,
-            this.vector.velocity.z
-        );
-        this.body.linearDamping = 0.1;
-        this.body.angularDamping = 0.1;
-    }
-}
-
 class DiceFactory extends Component {
+    dice: Record<string, DiceGeometry> = {};
     get colors() {
         return {
             diceColor: this.plugin.data.diceColor,
             textColor: this.plugin.data.textColor
         };
     }
-    d100 = new D100DiceShape(this.width, this.height, this.colors);
-    d20 = new D20DiceShape(this.width, this.height, this.colors);
-    d12 = new D12DiceShape(this.width, this.height, this.colors);
-    d10 = new D10DiceShape(this.width, this.height, this.colors);
-    d8 = new D8DiceShape(this.width, this.height, this.colors);
-    d6 = new D6DiceShape(this.width, this.height, this.colors);
-    d4 = new D4DiceShape(this.width, this.height, this.colors);
-    fudge = new FudgeDiceShape(this.width, this.height, this.colors);
     constructor(
         public width: number,
         public height: number,
         public plugin: DiceRollerPlugin
     ) {
         super();
+        this.buildDice();
     }
     updateColors() {
         this.dispose();
-        this.d100 = new D100DiceShape(this.width, this.height, this.colors);
-        this.d20 = new D20DiceShape(this.width, this.height, this.colors);
-        this.d12 = new D12DiceShape(this.width, this.height, this.colors);
-        this.d10 = new D10DiceShape(this.width, this.height, this.colors);
-        this.d8 = new D8DiceShape(this.width, this.height, this.colors);
-        this.d6 = new D6DiceShape(this.width, this.height, this.colors);
-        this.d4 = new D4DiceShape(this.width, this.height, this.colors);
-        this.fudge = new FudgeDiceShape(this.width, this.height, this.colors);
+        this.buildDice();
     }
     onunload() {
         this.dispose();
@@ -956,13 +714,8 @@ class DiceFactory extends Component {
         });
     }
     dispose() {
-        this.disposeChildren(this.d100.geometry.children);
-        this.disposeChildren(this.d20.geometry.children);
-        this.disposeChildren(this.d12.geometry.children);
-        this.disposeChildren(this.d10.geometry.children);
-        this.disposeChildren(this.d8.geometry.children);
-        this.disposeChildren(this.d6.geometry.children);
-        this.disposeChildren(this.d4.geometry.children);
+        for (const dice of Object.values(this.dice))
+            this.disposeChildren(dice.geometry.children);
     }
     getDiceForRoller(roller: DiceRoller, vector: { x: number; y: number }) {
         const dice = [];
@@ -976,7 +729,7 @@ class DiceFactory extends Component {
                                 new D4Dice(
                                     this.width,
                                     this.height,
-                                    this.d4.clone(),
+                                    this.clone("d4"),
                                     vector
                                 )
                         )
@@ -993,13 +746,91 @@ class DiceFactory extends Component {
                                 new D6Dice(
                                     this.width,
                                     this.height,
+                                    this.clone("ability"),
+                                    vector
+                                )
+                        )
+                );
+                dice.push(
+                    ...new Array(roller.rolls)
+                        .fill(0)
+                        .map(
+                            (r) =>
+                                new D6Dice(
+                                    this.width,
+                                    this.height,
+                                    this.clone("boost"),
+                                    vector
+                                )
+                        )
+                );
+                dice.push(
+                    ...new Array(roller.rolls)
+                        .fill(0)
+                        .map(
+                            (r) =>
+                                new D6Dice(
+                                    this.width,
+                                    this.height,
+                                    this.clone("setback"),
+                                    vector
+                                )
+                        )
+                );
+                dice.push(
+                    ...new Array(roller.rolls)
+                        .fill(0)
+                        .map(
+                            (r) =>
+                                new D6Dice(
+                                    this.width,
+                                    this.height,
+                                    this.clone("challenge"),
+                                    vector
+                                )
+                        )
+                );
+                dice.push(
+                    ...new Array(roller.rolls)
+                        .fill(0)
+                        .map(
+                            (r) =>
+                                new D6Dice(
+                                    this.width,
+                                    this.height,
+                                    this.clone("difficulty"),
+                                    vector
+                                )
+                        )
+                );
+                dice.push(
+                    ...new Array(roller.rolls)
+                        .fill(0)
+                        .map(
+                            (r) =>
+                                new D6Dice(
+                                    this.width,
+                                    this.height,
+                                    this.clone("proficiency"),
+                                    vector
+                                )
+                        )
+                );
+                /* dice.push(
+                    ...new Array(roller.rolls)
+                        .fill(0)
+                        .map(
+                            (r) =>
+                                new D6Dice(
+                                    this.width,
+                                    this.height,
                                     roller.fudge
                                         ? this.fudge.clone()
                                         : this.d6.clone(),
                                     vector
                                 )
                         )
-                );
+                ) */
                 break;
             }
             case 8: {
@@ -1011,7 +842,7 @@ class DiceFactory extends Component {
                                 new D8Dice(
                                     this.width,
                                     this.height,
-                                    this.d8.clone(),
+                                    this.clone("d8"),
                                     vector
                                 )
                         )
@@ -1027,7 +858,7 @@ class DiceFactory extends Component {
                                 new D10Dice(
                                     this.width,
                                     this.height,
-                                    this.d10.clone(),
+                                    this.clone("d10"),
                                     vector
                                 )
                         )
@@ -1043,7 +874,7 @@ class DiceFactory extends Component {
                                 new D12Dice(
                                     this.width,
                                     this.height,
-                                    this.d12.clone(),
+                                    this.clone("d12"),
                                     vector
                                 )
                         )
@@ -1059,7 +890,7 @@ class DiceFactory extends Component {
                                 new D20Dice(
                                     this.width,
                                     this.height,
-                                    this.d20.clone(),
+                                    this.clone("d20"),
                                     vector
                                 )
                         )
@@ -1074,14 +905,14 @@ class DiceFactory extends Component {
                             new D10Dice(
                                 this.width,
                                 this.height,
-                                this.d100.clone(),
+                                this.clone("d100"),
                                 vector,
                                 true
                             ),
                             new D10Dice(
                                 this.width,
                                 this.height,
-                                this.d10.clone(),
+                                this.clone("d10"),
                                 vector,
                                 true
                             )
@@ -1102,110 +933,82 @@ class DiceFactory extends Component {
         }
         return map;
     }
-}
-
-class D20Dice extends Dice {
-    sides = 20;
-    inertia = 6;
-    constructor(
-        public w: number,
-        public h: number,
-        public data: { geometry: THREE.Mesh; body: CANNON.Body },
-        vector?: { x: number; y: number }
-    ) {
-        super(w, h, data);
-        if (vector) {
-            this.vector = this.generateVector(vector);
+    clone(dice: string) {
+        if (!(dice in this.dice)) {
+            throw new Error("That dice type does not exist!");
         }
-        this.create();
+        return this.dice[dice].clone();
     }
-}
-
-class D12Dice extends Dice {
-    sides = 12;
-    inertia = 8;
-    constructor(
-        public w: number,
-        public h: number,
-        public data: { geometry: THREE.Mesh; body: CANNON.Body },
-        vector?: { x: number; y: number }
-    ) {
-        super(w, h, data);
-        if (vector) {
-            this.vector = this.generateVector(vector);
-        }
-        this.create();
-    }
-}
-
-class D10Dice extends Dice {
-    sides = 10;
-    inertia = 9;
-    constructor(
-        public w: number,
-        public h: number,
-        public data: { geometry: THREE.Mesh; body: CANNON.Body },
-        vector?: { x: number; y: number },
-        public isPercentile: boolean = false
-    ) {
-        super(w, h, data);
-        if (vector) {
-            this.vector = this.generateVector(vector);
-        }
-        this.create();
-    }
-}
-
-class D8Dice extends Dice {
-    sides = 8;
-    inertia = 10;
-    constructor(
-        public w: number,
-        public h: number,
-        public data: { geometry: THREE.Mesh; body: CANNON.Body },
-        vector?: { x: number; y: number }
-    ) {
-        super(w, h, data);
-        if (vector) {
-            this.vector = this.generateVector(vector);
-        }
-        this.create();
-    }
-}
-
-class D6Dice extends Dice {
-    sides = 6;
-    inertia = 13;
-    constructor(
-        public w: number,
-        public h: number,
-        public data: {
-            geometry: THREE.Mesh;
-            body: CANNON.Body;
-            values?: number[];
-        },
-        vector?: { x: number; y: number }
-    ) {
-        super(w, h, data);
-        if (vector) {
-            this.vector = this.generateVector(vector);
-        }
-        this.create();
-    }
-}
-class D4Dice extends Dice {
-    sides = 4;
-    inertia = 5;
-    constructor(
-        public w: number,
-        public h: number,
-        public data: { geometry: THREE.Mesh; body: CANNON.Body },
-        vector?: { x: number; y: number }
-    ) {
-        super(w, h, data);
-        if (vector) {
-            this.vector = this.generateVector(vector);
-        }
-        this.create();
+    private buildDice() {
+        this.dice.d100 = new D100DiceGeometry(
+            this.width,
+            this.height,
+            this.colors
+        ).create();
+        this.dice.d20 = new D20DiceGeometry(
+            this.width,
+            this.height,
+            this.colors
+        ).create();
+        this.dice.d12 = new D12DiceGeometry(
+            this.width,
+            this.height,
+            this.colors
+        ).create();
+        this.dice.d10 = new D10DiceGeometry(
+            this.width,
+            this.height,
+            this.colors
+        ).create();
+        this.dice.d8 = new D8DiceGeometry(
+            this.width,
+            this.height,
+            this.colors
+        ).create();
+        this.dice.d6 = new D6DiceGeometry(
+            this.width,
+            this.height,
+            this.colors
+        ).create();
+        this.dice.d4 = new D4DiceGeometry(
+            this.width,
+            this.height,
+            this.colors
+        ).create();
+        this.dice.fudge = new FudgeDiceGeometry(
+            this.width,
+            this.height,
+            this.colors
+        ).create();
+        this.dice.boost = new GenesysBoostDiceGeometry(
+            this.width,
+            this.height,
+            this.colors
+        ).create();
+        this.dice.ability = new GenesysAbilityDiceGeometry(
+            this.width,
+            this.height,
+            this.colors
+        ).create();
+        this.dice.difficulty = new GenesysDifficultyDiceGeometry(
+            this.width,
+            this.height,
+            this.colors
+        ).create();
+        this.dice.challenge = new GenesysChallengeDiceGeometry(
+            this.width,
+            this.height,
+            this.colors
+        ).create();
+        this.dice.proficiency = new GenesysProficiencyDiceGeometry(
+            this.width,
+            this.height,
+            this.colors
+        ).create();
+        this.dice.setback = new GenesysSetbackDiceGeometry(
+            this.width,
+            this.height,
+            this.colors
+        ).create();
     }
 }

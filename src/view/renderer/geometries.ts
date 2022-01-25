@@ -11,7 +11,7 @@ const DEFAULT_DICE_OPTIONS = {
     diceColor: "#202020",
     textColor: "#ffffff"
 };
-abstract class DiceShape {
+export default abstract class DiceGeometry {
     body: CANNON.Body;
     chamferGeometry: { vectors: THREE.Vector3[]; faces: any[][] };
     geometry: THREE.Mesh;
@@ -57,6 +57,7 @@ abstract class DiceShape {
     abstract values: number[];
     abstract vertices: number[][];
     shapeData: { vertices: any[]; faces: any[] };
+    fontFace: string = "Arial";
     constructor(
         public w: number,
         public h: number,
@@ -92,7 +93,13 @@ abstract class DiceShape {
     get buffer() {
         return this.geometry.geometry;
     }
+    textureSize: number;
     create() {
+        this.textureSize =
+            this.calculateTextureSize(
+                this.scale / 2 + this.scale * this.margin
+            ) * 2;
+
         const geometry = this.getGeometry();
         const materials = this.getMaterials();
         this.geometry = new THREE.Mesh(geometry, materials);
@@ -108,6 +115,7 @@ abstract class DiceShape {
         this.body.velocity.y = 500 * Math.random() * 2 - 1;
         this.body.angularVelocity.x = 100 * Math.random();
         this.body.angularVelocity.y = 100 * Math.random();
+        return this;
     }
     getGeometry() {
         let vectors = new Array(this.vertices.length);
@@ -327,19 +335,53 @@ abstract class DiceShape {
     createTextTexture(index: number) {
         let text = this.labels[index];
         if (text == undefined) return null;
-        const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d");
-        const ts =
-            this.calculateTextureSize(
-                this.scale / 2 + this.scale * this.margin
-            ) * 2;
-        canvas.width = canvas.height = ts;
 
-        let fontsize = ts / (1 + 2 * this.margin);
+        const canvas = createEl("canvas");
+        canvas.width = canvas.height = this.textureSize;
+        let textstarty = canvas.height / 2;
+        let textstartx = canvas.width / 2;
+        let { context, fontsize } = this.getContext(canvas);
+
+        let lineHeight = context.measureText("M").width * 1.4;
+        let textlines = text.split("\n");
+
+        if (textlines.length > 1) {
+            fontsize = fontsize / textlines.length;
+            context.font = `${fontsize}pt '${this.fontFace}'`;
+            lineHeight = context.measureText("M").width * 1.2;
+            textstarty -= (lineHeight * textlines.length) / 2;
+        }
+
+        for (let i = 0, l = textlines.length; i < l; i++) {
+            let textline = textlines[i].trim();
+
+            context.fillText(textlines[i], textstartx, textstarty);
+
+            if (textline == "6" || textline == "9") {
+                context.fillText("  .", textstartx, textstarty);
+            }
+            textstarty += lineHeight * 1.5;
+        }
+
+        /*         context.fillText(text, canvas.width / 2, canvas.height / 2);
+        if (this.sides > 6 && (text == "6" || text == "9")) {
+            context.fillText("  .", canvas.width / 2, canvas.height / 2);
+        } */
+        const texture = new THREE.Texture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    getContext(canvas: HTMLCanvasElement) {
+        const context = canvas.getContext("2d", { alpha: true });
+        /* context.globalAlpha = 0; */
+
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        let fontsize = canvas.width / (1 + 2 * this.margin);
         if (this.sides == 100) {
             fontsize *= 0.75;
         }
-        context.font = fontsize + "pt Arial";
+        context.font = `${fontsize}pt '${this.fontFace}'`;
 
         context.fillStyle = this.diceColor;
         context.fillRect(0, 0, canvas.width, canvas.height);
@@ -351,16 +393,10 @@ abstract class DiceShape {
             context.translate(-canvas.width / 2, -canvas.height / 2);
         }
         context.fillStyle = this.textColor;
-        context.fillText(text, canvas.width / 2, canvas.height / 2);
-        if (this.sides > 6 && (text == "6" || text == "9")) {
-            context.fillText("  .", canvas.width / 2, canvas.height / 2);
-        }
-        var texture = new THREE.Texture(canvas);
-        texture.needsUpdate = true;
-        return texture;
+        return { context, fontsize };
     }
-
     clone() {
+        console.log(this.geometry);
         return {
             body: new CANNON.Body({
                 mass: this.mass,
@@ -372,7 +408,7 @@ abstract class DiceShape {
     }
 }
 
-class D20DiceShape extends DiceShape {
+class D20DiceGeometry extends DiceGeometry {
     sides = 20;
     tab = -0.2;
     af = -Math.PI / 4 / 2;
@@ -424,12 +460,10 @@ class D20DiceShape extends DiceShape {
             [-t, 0, -1],
             [-t, 0, 1]
         ];
-
-        this.create();
     }
 }
 
-class D12DiceShape extends DiceShape {
+class D12DiceGeometry extends DiceGeometry {
     mass = 350;
     sides = 12;
     tab = 0.2;
@@ -480,11 +514,10 @@ class D12DiceShape extends DiceShape {
             [-1, -1, 1],
             [-1, -1, -1]
         ];
-        this.create();
     }
 }
 
-class D10DiceShape extends DiceShape {
+class D10DiceGeometry extends DiceGeometry {
     mass = 350;
     sides = 10;
     tab = 0;
@@ -527,11 +560,9 @@ class D10DiceShape extends DiceShape {
         }
         this.vertices.push([0, 0, -1]);
         this.vertices.push([0, 0, 1]);
-
-        this.create();
     }
 }
-class D100DiceShape extends DiceShape {
+class D100DiceGeometry extends DiceGeometry {
     labels = ["", "00", "10", "20", "30", "40", "50", "60", "70", "80", "90"];
     sides = 100;
     mass = 350;
@@ -575,12 +606,10 @@ class D100DiceShape extends DiceShape {
         }
         this.vertices.push([0, 0, -1]);
         this.vertices.push([0, 0, 1]);
-
-        this.create();
     }
 }
 
-class D8DiceShape extends DiceShape {
+class D8DiceGeometry extends DiceGeometry {
     mass = 340;
     sides = 8;
     tab = 0;
@@ -607,13 +636,9 @@ class D8DiceShape extends DiceShape {
     scaleFactor = 1;
     values = [...Array(8).keys()];
     margin = 1.2;
-    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
-        super(w, h, options);
-        this.create();
-    }
 }
 
-class D6DiceShape extends DiceShape {
+class D6DiceGeometry extends DiceGeometry {
     mass = 300;
     tab = 0.1;
     af = Math.PI / 4;
@@ -640,13 +665,8 @@ class D6DiceShape extends DiceShape {
     sides = 6;
     margin = 1.0;
     values = [...Array(6).keys()];
-
-    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
-        super(w, h, options);
-        this.create();
-    }
 }
-class FudgeDiceShape extends DiceShape {
+class FudgeDiceGeometry extends DiceGeometry {
     mass = 300;
     tab = 0.1;
     af = Math.PI / 4;
@@ -674,12 +694,8 @@ class FudgeDiceShape extends DiceShape {
     margin = 1.0;
     labels = ["", "", "+", "-", " ", "+", "-", " "];
     values = [null, 1, -1, 0, 1, -1, 0];
-    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
-        super(w, h, options);
-        this.create();
-    }
 }
-class D4DiceShape extends DiceShape {
+class D4DiceGeometry extends DiceGeometry {
     mass = 300;
     tab = -0.1;
     af = (Math.PI * 7) / 6;
@@ -707,10 +723,7 @@ class D4DiceShape extends DiceShape {
     ];
     faceTexts = this.d4FaceTexts[0];
     values = [...Array(4).keys()];
-    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
-        super(w, h, options);
-        this.create();
-    }
+
     getMaterials() {
         let materials: THREE.MeshPhongMaterial[] = [];
         for (let i = 0; i < this.d4FaceTexts[0].length; ++i) {
@@ -731,7 +744,7 @@ class D4DiceShape extends DiceShape {
         let ts =
             this.calculateTextureSize(this.radius / 2 + this.radius * 2) * 2;
         canvas.width = canvas.height = ts;
-        ctx.font = ts / 5 + "pt Arial";
+        ctx.font = `${ts / 5}pt '${this.fontFace}'`;
         ctx.fillStyle = this.diceColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.textAlign = "center";
@@ -758,13 +771,197 @@ class D4DiceShape extends DiceShape {
     }
 }
 
+abstract class GenesysDice extends DiceGeometry {
+    fontFace: string = "DICE_ROLLER_GENESYS_FONT";
+
+    create() {
+        if (!document.fonts.check(`12px '${this.fontFace}'`)) {
+            const font = new FontFace(
+                this.fontFace,
+                `url(data:font/ttf;base64,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)`
+            );
+            //@ts-ignore
+            document.fonts.add(font);
+            console.log(document.fonts.check(`12px '${this.fontFace}'`));
+        }
+        return super.create();
+    }
+}
+
+abstract class GenesysD12DiceGeometry extends GenesysDice {
+    mass = 350;
+    sides = 12;
+    tab = 0.2;
+    af = -Math.PI / 4 / 2;
+    chamfer = 0.968;
+    vertices: number[][] = [];
+    faces = [
+        [2, 14, 4, 12, 0, 1],
+        [15, 9, 11, 19, 3, 2],
+        [16, 10, 17, 7, 6, 3],
+        [6, 7, 19, 11, 18, 4],
+        [6, 18, 2, 0, 16, 5],
+        [18, 11, 9, 14, 2, 6],
+        [1, 17, 10, 8, 13, 7],
+        [1, 13, 5, 15, 3, 8],
+        [13, 8, 12, 4, 5, 9],
+        [5, 4, 14, 9, 15, 10],
+        [0, 12, 8, 10, 16, 11],
+        [3, 19, 7, 17, 1, 12]
+    ];
+    scaleFactor = 0.9;
+    values = [...Array(12).keys()];
+    margin = 1;
+    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
+        super(w, h, options);
+
+        let p = (1 + Math.sqrt(5)) / 2;
+        let q = 1 / p;
+        this.vertices = [
+            [0, q, p],
+            [0, q, -p],
+            [0, -q, p],
+            [0, -q, -p],
+            [p, 0, q],
+            [p, 0, -q],
+            [-p, 0, q],
+            [-p, 0, -q],
+            [q, p, 0],
+            [q, -p, 0],
+            [-q, p, 0],
+            [-q, -p, 0],
+            [1, 1, 1],
+            [1, 1, -1],
+            [1, -1, 1],
+            [1, -1, -1],
+            [-1, 1, 1],
+            [-1, 1, -1],
+            [-1, -1, 1],
+            [-1, -1, -1]
+        ];
+    }
+}
+
+export class GenesysProficiencyDiceGeometry extends GenesysD12DiceGeometry {
+    labels = [
+        "",
+        "",
+        "a\na",
+        "a",
+        "a\na",
+        "x",
+        "s",
+        "s\na",
+        "s",
+        "s\na",
+        "s\ns",
+        "s\na",
+        "s\ns",
+        ""
+    ];
+}
+
+export class GenesysChallengeDiceGeometry extends GenesysD12DiceGeometry {
+    labels = [
+        "",
+        "",
+        "t\nt",
+        "t",
+        "t\nt",
+        "t",
+        "t\nf",
+        "f",
+        "t\nf",
+        "f",
+        "f\nf",
+        "y",
+        "f\nf",
+        ""
+    ];
+}
+
+abstract class GenesysD8DiceGeometry extends GenesysDice {
+    mass = 340;
+    sides = 8;
+    tab = 0;
+    af = -Math.PI / 4 / 2;
+    chamfer = 0.965;
+    vertices = [
+        [1, 0, 0],
+        [-1, 0, 0],
+        [0, 1, 0],
+        [0, -1, 0],
+        [0, 0, 1],
+        [0, 0, -1]
+    ];
+    faces = [
+        [0, 2, 4, 1],
+        [0, 4, 3, 2],
+        [0, 3, 5, 3],
+        [0, 5, 2, 4],
+        [1, 3, 4, 5],
+        [1, 4, 2, 6],
+        [1, 2, 5, 7],
+        [1, 5, 3, 8]
+    ];
+    scaleFactor = 1;
+    values = [...Array(8).keys()];
+    margin = 1.2;
+}
+
+export class GenesysAbilityDiceGeometry extends GenesysD8DiceGeometry {
+    labels = ["", "", "s", "a", "s\na", "s\ns", "a", "s", "a\na", ""];
+}
+export class GenesysDifficultyDiceGeometry extends GenesysD8DiceGeometry {
+    labels = ["", "", "t", "f", "f\nt", "t", "", "t\nt", "f\nf", "t", ""];
+}
+
+class GenesysD6DiceGeometry extends GenesysDice {
+    mass = 300;
+    tab = 0.1;
+    af = Math.PI / 4;
+    chamfer = 0.96;
+    vertices = [
+        [-1, -1, -1],
+        [1, -1, -1],
+        [1, 1, -1],
+        [-1, 1, -1],
+        [-1, -1, 1],
+        [1, -1, 1],
+        [1, 1, 1],
+        [-1, 1, 1]
+    ];
+    faces = [
+        [0, 3, 2, 1, 1],
+        [1, 2, 6, 5, 2],
+        [0, 1, 5, 4, 3],
+        [3, 7, 6, 2, 4],
+        [0, 4, 7, 3, 5],
+        [4, 5, 6, 7, 6]
+    ];
+    scaleFactor = 0.9;
+    sides = 6;
+    margin = 1.0;
+    values = [null, 1, -1, 0, 1, -1, 0];
+    fontFace: string = "DICE_ROLLER_GENESYS_FONT";
+}
+
+export class GenesysBoostDiceGeometry extends GenesysD6DiceGeometry {
+    labels = ["", "", "s  \n  a", "a  \n  a", "s", "a", "", ""];
+}
+export class GenesysSetbackDiceGeometry extends GenesysD6DiceGeometry {
+    labels = ["", "", "", "t", "f", "", ""];
+}
+
 export {
-    D100DiceShape,
-    D20DiceShape,
-    D12DiceShape,
-    D10DiceShape,
-    D8DiceShape,
-    D6DiceShape,
-    FudgeDiceShape,
-    D4DiceShape
+    D100DiceGeometry,
+    D20DiceGeometry,
+    D12DiceGeometry,
+    D10DiceGeometry,
+    D8DiceGeometry,
+    D6DiceGeometry,
+    D4DiceGeometry,
+    //FudgeFate
+    FudgeDiceGeometry
+    //Genesys
 };
