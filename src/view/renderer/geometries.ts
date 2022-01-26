@@ -75,11 +75,15 @@ export default abstract class DiceGeometry {
         diceColor,
         textColor
     }: {
-        diceColor: string;
-        textColor: string;
+        diceColor?: string;
+        textColor?: string;
     }) {
-        this.options.diceColor = diceColor;
-        this.options.textColor = textColor;
+        if (diceColor) {
+            this.options.diceColor = diceColor;
+        }
+        if (textColor) {
+            this.options.textColor = textColor;
+        }
     }
     get radius() {
         return this.scale * this.scaleFactor;
@@ -369,6 +373,7 @@ export default abstract class DiceGeometry {
         } */
         const texture = new THREE.Texture(canvas);
         texture.needsUpdate = true;
+        canvas.detach();
         return texture;
     }
     getContext(canvas: HTMLCanvasElement) {
@@ -396,7 +401,6 @@ export default abstract class DiceGeometry {
         return { context, fontsize };
     }
     clone() {
-        console.log(this.geometry);
         return {
             body: new CANNON.Body({
                 mass: this.mass,
@@ -774,7 +778,7 @@ class D4DiceGeometry extends DiceGeometry {
 abstract class GenesysDice extends DiceGeometry {
     fontFace: string = "DICE_ROLLER_GENESYS_FONT";
 
-    create() {
+    /* create() {
         if (!document.fonts.check(`12px '${this.fontFace}'`)) {
             const font = new FontFace(
                 this.fontFace,
@@ -785,7 +789,7 @@ abstract class GenesysDice extends DiceGeometry {
             console.log(document.fonts.check(`12px '${this.fontFace}'`));
         }
         return super.create();
-    }
+    } */
 }
 
 abstract class GenesysD12DiceGeometry extends GenesysDice {
@@ -859,6 +863,10 @@ export class GenesysProficiencyDiceGeometry extends GenesysD12DiceGeometry {
         "s\ns",
         ""
     ];
+    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
+        super(w, h, options);
+        this.setColor({ diceColor: "#FEF035", textColor: "#000000" });
+    }
 }
 
 export class GenesysChallengeDiceGeometry extends GenesysD12DiceGeometry {
@@ -878,6 +886,10 @@ export class GenesysChallengeDiceGeometry extends GenesysD12DiceGeometry {
         "f\nf",
         ""
     ];
+    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
+        super(w, h, options);
+        this.setColor({ diceColor: "#751317", textColor: "#FFFFFF" });
+    }
 }
 
 abstract class GenesysD8DiceGeometry extends GenesysDice {
@@ -911,9 +923,17 @@ abstract class GenesysD8DiceGeometry extends GenesysDice {
 
 export class GenesysAbilityDiceGeometry extends GenesysD8DiceGeometry {
     labels = ["", "", "s", "a", "s\na", "s\ns", "a", "s", "a\na", ""];
+    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
+        super(w, h, options);
+        this.setColor({ diceColor: "#46AC4E", textColor: "#000000" });
+    }
 }
 export class GenesysDifficultyDiceGeometry extends GenesysD8DiceGeometry {
     labels = ["", "", "t", "f", "f\nt", "t", "", "t\nt", "f\nf", "t", ""];
+    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
+        super(w, h, options);
+        this.setColor({ diceColor: "#52287E", textColor: "#FFFFFF" });
+    }
 }
 
 class GenesysD6DiceGeometry extends GenesysDice {
@@ -943,14 +963,21 @@ class GenesysD6DiceGeometry extends GenesysDice {
     sides = 6;
     margin = 1.0;
     values = [null, 1, -1, 0, 1, -1, 0];
-    fontFace: string = "DICE_ROLLER_GENESYS_FONT";
 }
 
 export class GenesysBoostDiceGeometry extends GenesysD6DiceGeometry {
-    labels = ["", "", "s  \n  a", "a  \n  a", "s", "a", "", ""];
+    labels = ["", "", "", "", "s", "s  \n  a", "a  \n  a", "a", "", ""];
+    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
+        super(w, h, options);
+        this.setColor({ diceColor: "#76CDDB", textColor: "#000000" });
+    }
 }
 export class GenesysSetbackDiceGeometry extends GenesysD6DiceGeometry {
     labels = ["", "", "", "t", "f", "", ""];
+    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
+        super(w, h, options);
+        this.setColor({ diceColor: "#000000", textColor: "#FFFFFF" });
+    }
 }
 
 export {
