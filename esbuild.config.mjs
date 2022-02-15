@@ -28,8 +28,18 @@ esbuild
         watch: !prod,
         target: "es2020",
         logLevel: "info",
-        sourcemap: prod ? false : "inline",
+        minify: true,
         treeShaking: true,
-        outdir: dir
+        sourcemap: !prod,
+        outdir: dir,
+        metafile: true
     })
-    .catch(() => process.exit(1));
+    .then(async (result) => {
+        console.log(
+            await esbuild.analyzeMetafile(result.metafile, { verbose: true })
+        );
+    })
+    .catch((e) => {
+        console.error(e);
+        process.exit(1);
+    });

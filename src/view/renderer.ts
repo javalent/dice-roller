@@ -1,6 +1,4 @@
 import { Component, Events } from "obsidian";
-import * as THREE from "three";
-import * as CANNON from "cannon-es";
 
 import { DiceRoller, StackRoller } from "src/roller";
 import DiceGeometry, {
@@ -30,23 +28,51 @@ import {
     D20Dice
 } from "./renderer/shapes";
 
+
+
+/* import {
+    WebGLRenderer,
+    Scene,
+    PerspectiveCamera,
+    DirectionalLight,
+    AmbientLight,
+    SpotLight,
+    PCFSoftShadowMap,
+    Vector3,
+    ShadowMaterial,
+    Mesh,
+    PlaneGeometry
+} from "three"; */
+import { Body, ContactMaterial, Material, NaiveBroadphase, Plane, Vec3, World } from "cannon-es";
+import { WebGLRenderer } from "three/src/renderers/WebGLRenderer";
+import { Scene } from "three/src/scenes/Scene";
+import { PerspectiveCamera } from "three/src/cameras/PerspectiveCamera";
+import { DirectionalLight } from "three/src/lights/DirectionalLight";
+import { AmbientLight } from "three/src/lights/AmbientLight";
+import { SpotLight } from "three/src/lights/SpotLight";
+import { PCFSoftShadowMap } from "three/src/constants";
+import { Vector3 } from "three/src/math/Vector3";
+import { ShadowMaterial } from "three/src/materials/ShadowMaterial";
+import { Mesh } from "three/src/objects/Mesh";
+import { PlaneGeometry } from "three/src/geometries/PlaneGeometry";
+
 export default class DiceRenderer extends Component {
     event = new Events();
 
-    renderer: THREE.WebGLRenderer;
-    scene: THREE.Scene;
-    world: World;
-    camera: THREE.PerspectiveCamera;
+    renderer: WebGLRenderer;
+    scene: Scene;
+    world: LocalWorld;
+    camera: PerspectiveCamera;
 
     container: HTMLElement = createDiv("renderer-container");
 
     current: Map<DiceRoller, Dice[]>;
-    directionalLight: THREE.DirectionalLight;
-    ambientLight: THREE.AmbientLight;
+    directionalLight: DirectionalLight;
+    ambientLight: AmbientLight;
 
     animation: number;
 
-    light: THREE.SpotLight;
+    light: SpotLight;
     shadows: boolean = true;
     desk: any;
     iterations: number = 0;
@@ -75,7 +101,7 @@ export default class DiceRenderer extends Component {
 
     constructor(public plugin: DiceRollerPlugin) {
         super();
-        this.renderer = new THREE.WebGLRenderer({
+        this.renderer = new WebGLRenderer({
             alpha: true,
             antialias: true
         });
@@ -105,11 +131,11 @@ export default class DiceRenderer extends Component {
         document.body.appendChild(this.container);
 
         this.renderer.shadowMap.enabled = this.shadows;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.shadowMap.type = PCFSoftShadowMap;
         this.container.appendChild(this.renderer.domElement);
         this.renderer.setClearColor(0x000000, 0);
 
-        this.scene = new THREE.Scene();
+        this.scene = new Scene();
 
         this.initScene();
 
@@ -209,7 +235,7 @@ export default class DiceRenderer extends Component {
 
     initCamera() {
         if (this.camera) this.scene.remove(this.camera);
-        this.camera = new THREE.PerspectiveCamera(
+        this.camera = new PerspectiveCamera(
             20,
             this.display.currentWidth / this.display.currentHeight,
             1,
@@ -218,7 +244,7 @@ export default class DiceRenderer extends Component {
 
         this.camera.position.z = this.cameraHeight.far;
 
-        this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+        this.camera.lookAt(new Vector3(0, 0, 0));
     }
     initLighting() {
         const maxwidth = Math.max(
@@ -228,7 +254,7 @@ export default class DiceRenderer extends Component {
 
         if (this.light) this.scene.remove(this.light);
         if (this.ambientLight) this.scene.remove(this.ambientLight);
-        this.light = new THREE.SpotLight(this.colors.spotlight, 0.25);
+        this.light = new SpotLight(this.colors.spotlight, 0.25);
         this.light.position.set(-maxwidth / 2, maxwidth / 2, maxwidth * 3);
         this.light.target.position.set(0, 0, 0);
         this.light.distance = maxwidth * 5;
@@ -242,15 +268,15 @@ export default class DiceRenderer extends Component {
         this.light.shadow.mapSize.height = 1024;
         this.scene.add(this.light);
 
-        this.ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+        this.ambientLight = new AmbientLight(0xffffff, 0.9);
         this.scene.add(this.ambientLight);
     }
     initDesk() {
         if (this.desk) this.scene.remove(this.desk);
-        let shadowplane = new THREE.ShadowMaterial();
+        let shadowplane = new ShadowMaterial();
         shadowplane.opacity = 0.5;
-        this.desk = new THREE.Mesh(
-            new THREE.PlaneGeometry(
+        this.desk = new Mesh(
+            new PlaneGeometry(
                 this.display.containerWidth * 6,
                 this.display.containerHeight * 6,
                 1,
@@ -272,7 +298,7 @@ export default class DiceRenderer extends Component {
         this.renderer.render(this.scene, this.camera);
     }
     initWorld() {
-        this.world = new World(this.WIDTH, this.HEIGHT);
+        this.world = new LocalWorld(this.WIDTH, this.HEIGHT);
         this.iterations = 0;
     }
     getResultsForRoller(roller: DiceRoller) {
@@ -555,7 +581,7 @@ export default class DiceRenderer extends Component {
     }
 }
 
-class World {
+class LocalWorld {
     add(...dice: Dice[]) {
         dice.forEach((die) => {
             this.world.addBody(die.body);
@@ -572,23 +598,23 @@ class World {
         }
         this.lastCallTime = time;
     }
-    world = new CANNON.World({ gravity: new CANNON.Vec3(0, 0, -9.82 * 400) });
+    world = new World({ gravity: new Vec3(0, 0, -9.82 * 400) });
     ground = this.getPlane();
     constructor(public WIDTH: number, public HEIGHT: number) {
-        this.world.broadphase = new CANNON.NaiveBroadphase();
+        this.world.broadphase = new NaiveBroadphase();
         this.world.allowSleep = true;
         this.ground.position.set(0, 0, 0);
         this.world.addBody(this.ground);
         this.buildWalls();
     }
 
-    diceMaterial = new CANNON.Material();
-    deskMaterial = new CANNON.Material();
-    barrierMaterial = new CANNON.Material();
+    diceMaterial = new Material();
+    deskMaterial = new Material();
+    barrierMaterial = new Material();
 
     buildWalls() {
         this.world.addContactMaterial(
-            new CANNON.ContactMaterial(this.deskMaterial, this.diceMaterial, {
+            new ContactMaterial(this.deskMaterial, this.diceMaterial, {
                 friction: 0.01,
                 restitution: 0.5,
                 contactEquationRelaxation: 3,
@@ -596,7 +622,7 @@ class World {
             })
         );
         this.world.addContactMaterial(
-            new CANNON.ContactMaterial(
+            new ContactMaterial(
                 this.barrierMaterial,
                 this.diceMaterial,
                 {
@@ -608,7 +634,7 @@ class World {
             )
         );
         this.world.addContactMaterial(
-            new CANNON.ContactMaterial(this.diceMaterial, this.diceMaterial, {
+            new ContactMaterial(this.diceMaterial, this.diceMaterial, {
                 friction: 0.1,
                 restitution: 0.5,
                 contactEquationRelaxation: 3,
@@ -616,70 +642,70 @@ class World {
             })
         );
         this.world.addBody(
-            new CANNON.Body({
+            new Body({
                 allowSleep: false,
                 mass: 0,
-                shape: new CANNON.Plane(),
+                shape: new Plane(),
                 material: this.deskMaterial
             })
         );
 
-        let barrier = new CANNON.Body({
+        let barrier = new Body({
             allowSleep: false,
             mass: 0,
-            shape: new CANNON.Plane(),
+            shape: new Plane(),
             material: this.barrierMaterial
         });
         barrier.quaternion.setFromAxisAngle(
-            new CANNON.Vec3(1, 0, 0),
+            new Vec3(1, 0, 0),
             Math.PI / 2
         );
         barrier.position.set(0, this.HEIGHT * 0.93, 0);
         this.world.addBody(barrier);
 
-        barrier = new CANNON.Body({
+        barrier = new Body({
             allowSleep: false,
             mass: 0,
-            shape: new CANNON.Plane(),
+            shape: new Plane(),
             material: this.barrierMaterial
         });
         barrier.quaternion.setFromAxisAngle(
-            new CANNON.Vec3(1, 0, 0),
+            new Vec3(1, 0, 0),
             -Math.PI / 2
         );
         barrier.position.set(0, -this.HEIGHT * 0.93, 0);
         this.world.addBody(barrier);
 
-        barrier = new CANNON.Body({
+        barrier = new Body({
             allowSleep: false,
             mass: 0,
-            shape: new CANNON.Plane(),
+            shape: new Plane(),
             material: this.barrierMaterial
         });
         barrier.quaternion.setFromAxisAngle(
-            new CANNON.Vec3(0, 1, 0),
+            new Vec3(0, 1, 0),
             -Math.PI / 2
         );
         barrier.position.set(this.WIDTH * 0.93, 0, 0);
         this.world.addBody(barrier);
 
-        barrier = new CANNON.Body({
+        barrier = new Body({
             allowSleep: false,
             mass: 0,
-            shape: new CANNON.Plane(),
+            shape: new Plane(),
             material: this.barrierMaterial
         });
         barrier.quaternion.setFromAxisAngle(
-            new CANNON.Vec3(0, 1, 0),
+            new Vec3(0, 1, 0),
             Math.PI / 2
         );
         barrier.position.set(-this.WIDTH * 0.93, 0, 0);
         this.world.addBody(barrier);
     }
     getPlane() {
-        return new CANNON.Body({
-            type: CANNON.Body.STATIC,
-            shape: new CANNON.Plane()
+        return new Body({
+            type: Body.STATIC,
+            shape: new Plane()
         });
     }
 }

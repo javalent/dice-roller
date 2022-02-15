@@ -1,5 +1,16 @@
-import * as CANNON from "cannon-es";
-import * as THREE from "three";
+/* import {
+    BufferGeometry,
+    Material,
+    Mesh,
+    Quaternion as ThreeQuaternion,
+    Vector3
+} from "three"; */
+import { Body, Mat3, Vec3, Quaternion } from "cannon-es";
+import { BufferGeometry } from "three/src/core/BufferGeometry";
+import { Material } from "three/src/materials/Material";
+import { Vector3 } from "three/src/math/Vector3";
+import { Mesh } from "three/src/objects/Mesh";
+import type { Quaternion as ThreeQuaternion } from "three/src/math/Quaternion";
 
 interface DiceVector {
     pos: { x: number; y: number; z: number };
@@ -36,11 +47,8 @@ export abstract class Dice {
     scale = 50;
     abstract sides: number;
     abstract inertia: number;
-    body: CANNON.Body;
-    geometry: THREE.Mesh<
-        THREE.BufferGeometry,
-        THREE.Material | THREE.Material[]
-    >;
+    body: Body;
+    geometry: Mesh<BufferGeometry, Material | Material[]>;
 
     stopped: boolean | number = false;
     iteration: number = 0;
@@ -50,8 +58,8 @@ export abstract class Dice {
         public w: number,
         public h: number,
         public data: {
-            geometry: THREE.Mesh;
-            body: CANNON.Body;
+            geometry: Mesh;
+            body: Body;
             values?: number[];
         }
     ) {
@@ -119,7 +127,7 @@ export abstract class Dice {
     exploded = false;
     rerolled = 0;
     getUpsideValue() {
-        let vector = new THREE.Vector3(0, 0, this.sides == 4 ? -1 : 1);
+        let vector = new Vector3(0, 0, this.sides == 4 ? -1 : 1);
         let closest_face,
             closest_angle = Math.PI * 2;
         const normals = this.buffer.getAttribute("normal").array;
@@ -127,7 +135,7 @@ export abstract class Dice {
             const face = this.buffer.groups[i];
             if (face.materialIndex == 0) continue;
             let startVertex = i * 9;
-            const normal = new THREE.Vector3(
+            const normal = new Vector3(
                 normals[startVertex],
                 normals[startVertex + 1],
                 normals[startVertex + 2]
@@ -135,12 +143,12 @@ export abstract class Dice {
             const angle = normal
                 .clone()
                 .applyQuaternion(
-                    new THREE.Quaternion(
+                    new Quaternion(
                         this.body.quaternion.x,
                         this.body.quaternion.y,
                         this.body.quaternion.z,
                         this.body.quaternion.w
-                    )
+                    ) as any as ThreeQuaternion
                 )
                 .angleTo(vector);
             if (angle < closest_angle) {
@@ -172,33 +180,31 @@ export abstract class Dice {
         this.geometry.geometry = geometry;
     }
     resetBody() {
-        this.body.vlambda = new CANNON.Vec3();
+        this.body.vlambda = new Vec3();
         //this..body.collisionResponse = true;
-        this.body.position = new CANNON.Vec3();
-        this.body.previousPosition = new CANNON.Vec3();
-        this.body.initPosition = new CANNON.Vec3();
-        this.body.velocity = new CANNON.Vec3();
-        this.body.initVelocity = new CANNON.Vec3();
-        this.body.force = new CANNON.Vec3();
+        this.body.position = new Vec3();
+        this.body.previousPosition = new Vec3();
+        this.body.initPosition = new Vec3();
+        this.body.velocity = new Vec3();
+        this.body.initVelocity = new Vec3();
+        this.body.force = new Vec3();
         //this.body.sleepState = 0;
         //this.body.timeLastSleepy = 0;
         //this.body._wakeUpAfterNarrowphase = false;
-        this.body.torque = new CANNON.Vec3();
-        this.body.quaternion = new CANNON.Quaternion();
-        this.body.initQuaternion = new CANNON.Quaternion();
-        this.body.angularVelocity = new CANNON.Vec3();
-        this.body.initAngularVelocity = new CANNON.Vec3();
-        this.body.interpolatedPosition = new CANNON.Vec3();
-        this.body.interpolatedQuaternion = new CANNON.Quaternion();
-        this.body.inertia = new CANNON.Vec3();
-        this.body.invInertia = new CANNON.Vec3();
-        this.body.invInertiaWorld = new CANNON.Mat3();
+        this.body.torque = new Vec3();
+        this.body.quaternion = new Quaternion();
+        this.body.initQuaternion = new Quaternion();
+        this.body.angularVelocity = new Vec3();
+        this.body.initAngularVelocity = new Vec3();
+        this.body.interpolatedPosition = new Vec3();
+        this.body.interpolatedQuaternion = new Quaternion();
+        this.body.inertia = new Vec3();
+        this.body.invInertia = new Vec3();
+        this.body.invInertiaWorld = new Mat3();
         //this.body.invMassSolve = 0;
-        this.body.invInertiaSolve = new CANNON.Vec3();
-        this.body.invInertiaWorldSolve = new CANNON.Mat3();
-        //this.body.aabb = new CANNON.AABB();
-        //this.body.aabbNeedsUpdate = true;
-        this.body.wlambda = new CANNON.Vec3();
+        this.body.invInertiaSolve = new Vec3();
+        this.body.invInertiaWorldSolve = new Mat3();
+        this.body.wlambda = new Vec3();
 
         this.body.updateMassProperties();
     }
@@ -223,7 +229,7 @@ export abstract class Dice {
             this.vector.pos.z
         );
         this.body.quaternion.setFromAxisAngle(
-            new CANNON.Vec3(
+            new Vec3(
                 this.vector.axis.x,
                 this.vector.axis.y,
                 this.vector.axis.z
@@ -251,7 +257,7 @@ export class D20Dice extends Dice {
     constructor(
         public w: number,
         public h: number,
-        public data: { geometry: THREE.Mesh; body: CANNON.Body },
+        public data: { geometry: Mesh; body: Body },
         vector?: { x: number; y: number }
     ) {
         super(w, h, data);
@@ -268,7 +274,7 @@ export class D12Dice extends Dice {
     constructor(
         public w: number,
         public h: number,
-        public data: { geometry: THREE.Mesh; body: CANNON.Body },
+        public data: { geometry: Mesh; body: Body },
         vector?: { x: number; y: number }
     ) {
         super(w, h, data);
@@ -285,7 +291,7 @@ export class D10Dice extends Dice {
     constructor(
         public w: number,
         public h: number,
-        public data: { geometry: THREE.Mesh; body: CANNON.Body },
+        public data: { geometry: Mesh; body: Body },
         vector?: { x: number; y: number },
         public isPercentile: boolean = false
     ) {
@@ -303,7 +309,7 @@ export class D8Dice extends Dice {
     constructor(
         public w: number,
         public h: number,
-        public data: { geometry: THREE.Mesh; body: CANNON.Body },
+        public data: { geometry: Mesh; body: Body },
         vector?: { x: number; y: number }
     ) {
         super(w, h, data);
@@ -321,8 +327,8 @@ export class D6Dice extends Dice {
         public w: number,
         public h: number,
         public data: {
-            geometry: THREE.Mesh;
-            body: CANNON.Body;
+            geometry: Mesh;
+            body: Body;
             values?: number[];
         },
         vector?: { x: number; y: number }
@@ -340,7 +346,7 @@ export class D4Dice extends Dice {
     constructor(
         public w: number,
         public h: number,
-        public data: { geometry: THREE.Mesh; body: CANNON.Body },
+        public data: { geometry: Mesh; body: Body },
         vector?: { x: number; y: number }
     ) {
         super(w, h, data);

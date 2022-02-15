@@ -1,5 +1,20 @@
-import * as CANNON from "cannon-es";
-import * as THREE from "three";
+import { Body, ConvexPolyhedron, Vec3 } from "cannon-es";
+import { Float32BufferAttribute } from "three/src/core/BufferAttribute";
+import { BufferGeometry } from "three/src/core/BufferGeometry";
+import { MeshPhongMaterial } from "three/src/materials/MeshPhongMaterial";
+import { Sphere } from "three/src/math/Sphere";
+import { Vector3 } from "three/src/math/Vector3";
+import { Mesh } from "three/src/objects/Mesh";
+import { Texture } from "three/src/textures/Texture";
+/* import {
+    BufferGeometry,
+    Float32BufferAttribute,
+    Mesh,
+    MeshPhongMaterial,
+    Sphere,
+    Texture,
+    Vector3
+} from "three"; */
 
 const MATERIAL_OPTIONS = {
     specular: 0x172022,
@@ -12,11 +27,11 @@ const DEFAULT_DICE_OPTIONS = {
     textColor: "#ffffff"
 };
 export default abstract class DiceGeometry {
-    body: CANNON.Body;
-    chamferGeometry: { vectors: THREE.Vector3[]; faces: any[][] };
-    geometry: THREE.Mesh;
+    body: Body;
+    chamferGeometry: { vectors: Vector3[]; faces: any[][] };
+    geometry: Mesh;
     scale = 50;
-    shape: CANNON.ConvexPolyhedron;
+    shape: ConvexPolyhedron;
 
     abstract af: number;
     abstract chamfer: number;
@@ -106,7 +121,7 @@ export default abstract class DiceGeometry {
 
         const geometry = this.getGeometry();
         const materials = this.getMaterials();
-        this.geometry = new THREE.Mesh(geometry, materials);
+        this.geometry = new Mesh(geometry, materials);
         this.geometry.receiveShadow = true;
         this.geometry.castShadow = true;
 
@@ -124,9 +139,7 @@ export default abstract class DiceGeometry {
     getGeometry() {
         let vectors = new Array(this.vertices.length);
         for (let i = 0; i < this.vertices.length; ++i) {
-            vectors[i] = new THREE.Vector3()
-                .fromArray(this.vertices[i])
-                .normalize();
+            vectors[i] = new Vector3().fromArray(this.vertices[i]).normalize();
         }
 
         this.chamferGeometry = this.getChamferGeometry(vectors);
@@ -137,19 +150,19 @@ export default abstract class DiceGeometry {
 
         this.shape = this.makeShape(vectors);
 
-        this.body = new CANNON.Body({
+        this.body = new Body({
             mass: this.mass,
             shape: this.shape
         });
 
         return geometry;
     }
-    makeShape(vertices: THREE.Vector3[]): CANNON.ConvexPolyhedron {
+    makeShape(vertices: Vector3[]): ConvexPolyhedron {
         let cv = new Array(vertices.length),
             cf = new Array(this.faces.length);
         for (let i = 0; i < vertices.length; ++i) {
             let v = vertices[i];
-            cv[i] = new CANNON.Vec3(
+            cv[i] = new Vec3(
                 v.x * this.radius,
                 v.y * this.radius,
                 v.z * this.radius
@@ -159,9 +172,9 @@ export default abstract class DiceGeometry {
             cf[i] = this.faces[i].slice(0, this.faces[i].length - 1);
         }
         this.shapeData = { vertices: cv, faces: cf };
-        return new CANNON.ConvexPolyhedron({ vertices: cv, faces: cf });
+        return new ConvexPolyhedron({ vertices: cv, faces: cf });
     }
-    getChamferGeometry(vectors: THREE.Vector3[]) {
+    getChamferGeometry(vectors: Vector3[]) {
         let chamfer_vectors = [],
             chamfer_faces = [],
             corner_faces = new Array(vectors.length);
@@ -169,7 +182,7 @@ export default abstract class DiceGeometry {
         for (let i = 0; i < this.faces.length; ++i) {
             let ii = this.faces[i],
                 fl = ii.length - 1;
-            let center_point = new THREE.Vector3();
+            let center_point = new Vector3();
             let face = new Array(fl);
             for (let j = 0; j < fl; ++j) {
                 let vv = vectors[ii[j]].clone();
@@ -234,8 +247,8 @@ export default abstract class DiceGeometry {
         }
         return { vectors: chamfer_vectors, faces: chamfer_faces };
     }
-    makeGeometry(vertices: THREE.Vector3[], faces: number[][]) {
-        let geom = new THREE.BufferGeometry();
+    makeGeometry(vertices: Vector3[], faces: number[][]) {
+        let geom = new BufferGeometry();
 
         for (let i = 0; i < vertices.length; ++i) {
             vertices[i] = vertices[i].multiplyScalar(this.radius);
@@ -245,8 +258,8 @@ export default abstract class DiceGeometry {
         const normals = [];
         const uvs = [];
 
-        const cb = new THREE.Vector3();
-        const ab = new THREE.Vector3();
+        const cb = new Vector3();
+        const ab = new Vector3();
         let materialIndex;
         let faceFirstVertexIndex = 0;
         for (let i = 0; i < faces.length; ++i) {
@@ -302,28 +315,19 @@ export default abstract class DiceGeometry {
             }
         }
 
-        geom.setAttribute(
-            "position",
-            new THREE.Float32BufferAttribute(positions, 3)
-        );
-        geom.setAttribute(
-            "normal",
-            new THREE.Float32BufferAttribute(normals, 3)
-        );
-        geom.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
-        geom.boundingSphere = new THREE.Sphere(
-            new THREE.Vector3(),
-            this.radius
-        );
+        geom.setAttribute("position", new Float32BufferAttribute(positions, 3));
+        geom.setAttribute("normal", new Float32BufferAttribute(normals, 3));
+        geom.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+        geom.boundingSphere = new Sphere(new Vector3(), this.radius);
         return geom;
     }
     getMaterials() {
-        let materials: THREE.MeshPhongMaterial[] = [];
+        let materials: MeshPhongMaterial[] = [];
         for (let i = 0; i < this.labels.length; i++) {
             let texture = this.createTextTexture(i);
 
             materials.push(
-                new THREE.MeshPhongMaterial(
+                new MeshPhongMaterial(
                     Object.assign({}, MATERIAL_OPTIONS, { map: texture })
                 )
             );
@@ -371,7 +375,7 @@ export default abstract class DiceGeometry {
         if (this.sides > 6 && (text == "6" || text == "9")) {
             context.fillText("  .", canvas.width / 2, canvas.height / 2);
         } */
-        const texture = new THREE.Texture(canvas);
+        const texture = new Texture(canvas);
         texture.needsUpdate = true;
         canvas.detach();
         return texture;
@@ -402,7 +406,7 @@ export default abstract class DiceGeometry {
     }
     clone() {
         return {
-            body: new CANNON.Body({
+            body: new Body({
                 mass: this.mass,
                 shape: this.shape
             }),
@@ -729,13 +733,13 @@ class D4DiceGeometry extends DiceGeometry {
     values = [...Array(4).keys()];
 
     getMaterials() {
-        let materials: THREE.MeshPhongMaterial[] = [];
+        let materials: MeshPhongMaterial[] = [];
         for (let i = 0; i < this.d4FaceTexts[0].length; ++i) {
             let texture = null;
             texture = this.createTextTexture(i);
 
             materials.push(
-                new THREE.MeshPhongMaterial(
+                new MeshPhongMaterial(
                     Object.assign({}, MATERIAL_OPTIONS, { map: texture })
                 )
             );
@@ -743,8 +747,8 @@ class D4DiceGeometry extends DiceGeometry {
         return materials;
     }
     createTextTexture(index: number) {
-        let canvas = document.createElement("canvas");
-        let ctx = canvas.getContext("2d");
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
         let ts =
             this.calculateTextureSize(this.radius / 2 + this.radius * 2) * 2;
         canvas.width = canvas.height = ts;
@@ -764,7 +768,7 @@ class D4DiceGeometry extends DiceGeometry {
             ctx.rotate((Math.PI * 2) / 3);
             ctx.translate(-canvas.width / 2, -canvas.height / 2);
         }
-        let texture = new THREE.Texture(canvas);
+        let texture = new Texture(canvas);
         texture.needsUpdate = true;
         return texture;
     }
