@@ -49,20 +49,6 @@ export default class SettingTab extends PluginSettingTab {
     buildGenerics(containerEl: HTMLDivElement) {
         containerEl.empty();
         new Setting(containerEl)
-            .setName("Default Face")
-            .setDesc("Use this as the number of faces when it is omitted.")
-            .addText((t) => {
-                t.setValue(`${this.plugin.data.defaultFace}`);
-                t.inputEl.onblur = async () => {
-                    if (isNaN(Number(t.inputEl.value))) {
-                        new Notice("The default face must be a number.");
-                    }
-
-                    this.plugin.data.defaultFace = Number(t.inputEl.value);
-                    await this.plugin.saveSettings();
-                };
-            });
-        new Setting(containerEl)
             .setName("Globally Save Results")
             .setDesc(
                 createFragment((e) => {
@@ -130,6 +116,20 @@ export default class SettingTab extends PluginSettingTab {
     buildDice(containerEl: HTMLDivElement) {
         containerEl.empty();
         new Setting(containerEl).setHeading().setName("Dice Rollers");
+        new Setting(containerEl)
+            .setName("Default Face")
+            .setDesc("Use this as the number of faces when it is omitted.")
+            .addText((t) => {
+                t.setValue(`${this.plugin.data.defaultFace}`);
+                t.inputEl.onblur = async () => {
+                    if (isNaN(Number(t.inputEl.value))) {
+                        new Notice("The default face must be a number.");
+                    }
+
+                    this.plugin.data.defaultFace = Number(t.inputEl.value);
+                    await this.plugin.saveSettings();
+                };
+            });
         new Setting(containerEl)
             .setName("Round Results")
             .setDesc("Determine the rounding behavior for dice results.")

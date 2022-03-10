@@ -6,9 +6,29 @@ Inline dice rolling for Obsidian.md.
 
 Simply place a code block with your formula in your note (such as `` `dice: XdX` ``) and in preview mode it will be replaced with the result of the dice rolls. The result can then be re-rolled by clicking on it.
 
-> Don't want to see the dice button on results? You can turn it off in settings, or by appending `|nodice` to **any** dice roll!
+# Dice Flags
 
-# Number Dice
+There are flags that can be appended to the dice formulas shown below that will modify how the dice behave.
+
+## `|nodice`
+
+Don't want to see the dice button on results?
+
+You can turn it off in settings, or by appending `|nodice` to **any** dice roll!
+
+## `|render`
+
+Want to roll graphical dice from your notes?
+
+Use the `|render` flag at the end of a [dice roller](#dice-roller) formula, and the plugin will roll 3D dice to calculate the result.
+
+See [Graphical Dice]() for more information.
+
+# Formulas
+
+[Dice formulas](#dice-formulas) can be added in settings, allowing you to define aliases for commonly used rolls. This works for _all_ dice types define below.
+
+# Dice Rollers
 
 The parser supports addition, subtraction, multiplication, division, and exponents of an arbitrary number of dice or static numbers. Spaces are removed before the formula is parsed.
 
@@ -262,7 +282,7 @@ These conditions are fully chainable.
 | `dice: 1d4r<3`   | Re-roll rolls less than 3                 | `[4, 1, 2, 4] -> [4, 4r, 3r, 4] = 15`    |
 | `dice: 1d4r<2>3` | Re-roll rolls less than 2, greater than 3 | `[4, 1, 2, 4] -> [3r, 2r, 2, 2r] = 9`    |
 
-# Block Dice
+# Section Rollers
 
 The Dice Roller can be given a link to a note or a tag, and it will return a random block from the note/notes.
 
@@ -329,7 +349,7 @@ Headings can be further filtered down by the heading size by appending the size 
 
 `` `dice: [[Note]]|heading-2` ``
 
-# Line Dice
+# Line Rollers
 
 The Dice Roller can be told to return a random line from any note using the following syntax:
 
@@ -337,7 +357,7 @@ The Dice Roller can be told to return a random line from any note using the foll
 
 > Note: The plugin will filter out zero-length lines, but depending on note content, you may still get "blank" lines.
 
-# Tag Dice
+# Tag Rollers
 
 The Dice Roller can also be told to return results from a tag if the [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugin is installed.
 
@@ -359,7 +379,7 @@ If the `Always Return Links for Tags` setting is on, or `|link` is appended to t
 
 At the moment this will only return a single link regardless of the number of rolls specified. This may change in a later release.
 
-# Table Dice
+# Table Rollers
 
 The Dice Roller may also be given a link to a table in a note, which it will read and return a random result from the table.
 
@@ -439,7 +459,7 @@ Example:
 `dice: [[ThisNote^encounter]]`
 ```
 
-# List Dice
+# List Rollers
 
 The Dice Roller may also be given a link to a list in a note, which it will read and return a random result from the list.
 
@@ -507,47 +527,121 @@ If `dice-mod` is used on a section roller, the plugin will attempt to find a blo
 
 If a block id does not exist for that section, the plugin will attempt to create one for the section. This will modify the file being rolled.
 
+# The Dice View
+
+The plugin comes with a Dice View that can be added to the workspace.
+
+If you have the [Open Dice View on Startup](#open-dice-view-on-startup) setting off or have closed the Dice View, it can be re-opened using the "Open Dice View" command in the command palette.
+
+The Dice View has buttons for common D20 dice set, can be set to roll with advantage or disadvantage, and modifiers can be added.
+
+Formulas can also just be written directly in the `Dice Formula` textbox. These formulas can be saved using the plus button under the text box for quick re-rolling.
+
+# Graphical Dice
+
+3D Dice can be rolled using the Dice View if [Display Graphics for Dice View Rolls](#display-graphics-for-dice-view-rolls) is turned on in settings or the [`|render` flag](#render) is used in the dice formula.
+
+> :pencil: Only the basic D20 set (D4, D6, D8, D10, D12, and D20) can be rolled graphically.
+
+See [Graphical Dice](#graphical-dice-1) for settings.
+
 # Settings
 
-## Roll All Files for Tags
+## Generic Settings
 
-Turn on to always return X results from _each file_ associated with a tag. Overrideable with `` `dice: #tag|-` ``
+### Globally Save Results
 
-## Always Return Links for Tags
+The plugin will attempt to save and reload the results for all dice rollers. Overridable using a `-` in the dice formula, like this: `` `dice-: ...` ``.
 
-Turn on to always return a file link for a tag roller. This option is the same as specifying `` `dice: #tag|link` ``.
+Please note that the plugin will **attempt** to save. Saving results of inline code blocks is tricky and difficult - the plugin has to remember _where_ in the note each dice roll was in order to properly save and reload the result. Any changes made to the note outside of Obsidian will cause the plugin to lose this state and the next time the note is re-opened, it will be rerolled.
 
-## Add Copy Button to Section Results
+If you have to have a permanent result, it is more reliable to use a `dice-mod` roll instead, which will actually modify the underlying note, making the result permanent. See [Replacing Note Content](#replacing-note-content) for more information.
 
-Add a "Copy Content" button to section results. This button will copy the returned content to your clipboard. If multiple results are returned, there will also be a "Copy All" button that will copy the content to your clipboard separated by two newline characters (`\n`).
+## Dice Display
 
-## Display Formulas with Results
+Settings to control how dice results are displayed.
 
-Instead of displaying a tooltip, dice rollers will display the formula and result inline.
+### Display Formula with Results
 
-## Display Lookup Table Roll
+The formula used to calculate the result will be displayed along with the result.
 
-Turn this off to only display the result of the lookup table, and not the value rolled.
+### Display Dice Button with Results
 
-## Show Dice Button
+A dice button will appear next to the results, making it obvious this is a dice roller.
 
-Turn this off to globally turn off the dice button in rendered results.
+### Add Formula when Using Modify Dice
 
-## Open Dice View on Startup
+A `dice-mod` roll will append the formula used to calculate the result when writing the result to the note.
 
-Dice view will automatically open on startup.
+## Dice Rollers
 
-## Globally Save Results
+Settings to control how [Dice Rollers](#dice-rollers) behave.
 
-The plugin will attempt to save and reload the results for all dice rollers. Overridable with `` `dice-: ...` ``.
+### Default Face
+
+The plugin will use this number as the default face if it is omitted - see [Faces](#faces) for more information.
+
+### Round Results
+
+Determine the rounding behavior when decimal numbers are returned.
+
+## Table Rollers
+
+Settings to control how [Table Rollers](#table-rollers) behave.
+
+### Display Lookup Table Roll
+
+Lookup table rolls will also display the number rolled along with the result from the table.
+
+## Section Rollers
+
+Settings to control how [Section Rollers](#section-rollers) behave.
+
+### Add Copy Button to Section Results
+
+Section roller results will have a "Copy Content" button added, allowing you to copy the note contents for that section to your clipboard.
+
+## Tag Rollers
+
+Settings to control how [Tag Rollers](#tag-rollers) behave.
+
+### Roll All Files for Tags
+
+A result from _each_ file with the specified tag will be returned. If this setting is off, a result from a _random_ file with the tag will be returned. Overrideable with `` `dice: #tag|-` ``
+
+### Always Return Links for Tags
+
+Tag rollers will behave like [Link Rollers](#links) by default. This option is the same as specifying `` `dice: #tag|link` ``.
+
+## Dice View
+
+### Open Dice View on Startup
+
+The [Dice View](#the-dice-view) will automatically open on startup. Otherwise it may be opened with the command "Open Dice View".
+
+## Graphical Dice
+
+Settings to control how [graphical dice](#graphical-dice) behave.
+
+### Display Graphics for Dice View Rolls
+
+Rolls made in the [Dice View](#the-dice-view) will use graphics.
+
+### Display Time for Dice Graphics
+
+Controls how long dice graphics are displayed before fading away. This should be a number of **milliseconds.** If blank, a click is required to clear dice.
+
+### Dice Base Color
+
+This is the color of the actual dice bodies.
+
+### Dice Text Color
+
+This is the color of the numbers on the dice.
 
 ## Dice Formulas
 
-Dice formulas can be created in settings. Formulas must be given an alias; when the plugin detects the formula alias, it will use the defined formula for the roll.
-
-# Coming Soon
-
-At this time, no new features are planned. If there is a specific feature you would like to see, please open an issue!
+Dice formulas can be created in settings. Formulas must be given an alias; when the plugin detects the formula alias, it will use the defined formula for the roll. This works for _all_ roller types.
 
 # Installation
 
