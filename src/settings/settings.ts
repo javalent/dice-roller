@@ -6,6 +6,7 @@ import {
     Setting,
     TextComponent
 } from "obsidian";
+import { Round } from "src/types";
 import type DiceRoller from "../main";
 import { DEFAULT_SETTINGS } from "../main";
 
@@ -25,6 +26,7 @@ export default class SettingTab extends PluginSettingTab {
 
         this.buildGenerics(containerEl.createDiv());
         this.buildDisplay(containerEl.createDiv());
+        this.buildDice(containerEl.createDiv());
         this.buildTables(containerEl.createDiv());
         this.buildSections(containerEl.createDiv());
         this.buildTags(containerEl.createDiv());
@@ -123,6 +125,21 @@ export default class SettingTab extends PluginSettingTab {
                     this.plugin.data.displayFormulaForMod = v;
                     await this.plugin.saveSettings();
                 });
+            });
+    }
+    buildDice(containerEl: HTMLDivElement) {
+        containerEl.empty();
+        new Setting(containerEl).setHeading().setName("Dice Rollers");
+        new Setting(containerEl)
+            .setName("Round Results")
+            .setDesc("Determine the rounding behavior for dice results.")
+            .addDropdown((d) => {
+                d.addOptions(Round)
+                    .setValue(this.plugin.data.round)
+                    .onChange((v: keyof typeof Round) => {
+                        this.plugin.data.round = v;
+                        this.plugin.saveSettings();
+                    });
             });
     }
     buildTables(containerEl: HTMLDivElement) {

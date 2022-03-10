@@ -24,3 +24,10 @@ export type ResultInterface<T> = {
     display: string;
     modifiers?: Set<string>;
 };
+
+export enum Round {
+    None = "None",
+    Normal = "Normal",
+    Up = "Up",
+    Down = "Down"
+}

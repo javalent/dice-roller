@@ -33,6 +33,7 @@ import { BasicRoller } from "./roller/roller";
 import DiceView, { VIEW_TYPE } from "./view/view";
 import DiceRenderer from "./view/renderer";
 import Lexer, { LexicalToken } from "./parser/lexer";
+import { Round } from "./types";
 
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -104,6 +105,8 @@ interface DiceRollerSettings {
     textColor: string;
     showLeafOnStartup: boolean;
     customFormulas: string[];
+
+    round: keyof typeof Round;
 }
 
 export const DEFAULT_SETTINGS: DiceRollerSettings = {
@@ -125,7 +128,8 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     diceColor: "#202020",
     textColor: "#ffffff",
     showLeafOnStartup: true,
-    showDice: true
+    showDice: true,
+    round: Round.None
 };
 
 export default class DiceRollerPlugin extends Plugin {

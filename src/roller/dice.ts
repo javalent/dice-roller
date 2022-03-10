@@ -1,7 +1,7 @@
 import { Notice } from "obsidian";
 import type DiceRollerPlugin from "src/main";
 import { LexicalToken } from "src/parser/lexer";
-import { ResultMapInterface, Conditional, Lexeme } from "src/types";
+import { ResultMapInterface, Conditional, Lexeme, Round } from "src/types";
 import { _insertIntoMap } from "src/utils/util";
 import { BaseRoller, GenericRoller, Roller } from "./roller";
 
@@ -74,7 +74,7 @@ export class DiceRoller {
         }
         this.dice = dice.split(" ").join("");
 
-        if (/^-?\d+$/.test(this.dice)) {
+        if (/^-?\d+(?:\.\d+)?$/.test(this.dice)) {
             this.static = true;
             this.modifiersAllowed = false;
         }
@@ -407,10 +407,7 @@ export class DiceRoller {
         }
     }
 
-    checkCondition(
-        value: number,
-        conditions: Conditional[]
-    ): boolean | number {
+    checkCondition(value: number, conditions: Conditional[]): boolean | number {
         if (!conditions || !conditions.length) return value;
         return conditions.some(({ operator, comparer }) => {
             if (Number.isNaN(value) || Number.isNaN(comparer)) {
@@ -549,11 +546,32 @@ export class StackRoller extends GenericRoller<number> {
     }
 
     async build() {
-        const result = [
-            this.result.toLocaleString(navigator.language, {
-                maximumFractionDigits: 2
-            })
-        ];
+        let rounded = this.result;
+
+        switch (this.plugin.data.round) {
+            case Round.None: {
+                rounded = Number(
+                    rounded.toLocaleString(navigator.language, {
+                        maximumFractionDigits: 2
+                    })
+                );
+                break;
+            }
+            case Round.Normal: {
+                rounded = Math.round(rounded);
+                break;
+            }
+            case Round.Up: {
+                rounded = Math.ceil(rounded);
+                break;
+            }
+            case Round.Down: {
+                rounded = Math.floor(rounded);
+                break;
+            }
+        }
+
+        const result = [`${rounded}`];
         if (this.plugin.data.displayResultsInline) {
             result.unshift(this.inlineText);
         }
