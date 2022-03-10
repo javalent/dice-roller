@@ -523,7 +523,7 @@ You can turn it off in settings, or by appending `|nodice` to **any** dice roll!
 
 These two flags can be used to control whether or not the dice formula is displayed with a [`dice-mod`](#replacing-note-content) roll.
 
-## `|render`
+## `|render` and `|norender`
 
 Want to roll graphical dice from your notes?
 
@@ -543,7 +543,7 @@ Formulas can also just be written directly in the `Dice Formula` textbox. These 
 
 # Graphical Dice
 
-3D Dice can be rolled using the Dice View if [Display Graphics for Dice View Rolls](#display-graphics-for-dice-view-rolls) is turned on in settings or the [`|render` flag](#render) is used in the dice formula.
+3D Dice can be rolled using the Dice View if [Display Graphics for Dice View Rolls](#display-graphics-for-dice-view-rolls) is turned on in settings, the  or the [`|render` flag](#render-and-norender) is used in the dice formula.
 
 > :pencil: Only the basic D20 set (D4, D6, D8, D10, D12, and D20) can be rolled graphically.
 
@@ -588,6 +588,10 @@ The plugin will use this number as the default face if it is omitted - see [Face
 ### Round Results
 
 Determine the rounding behavior when decimal numbers are returned.
+
+### Always Render Dice
+
+Dice rolls in notes will always be rendered. Use the [`|norender`](#render-and-norender) flag to prevent this behavior.
 
 ## Table Rollers
 

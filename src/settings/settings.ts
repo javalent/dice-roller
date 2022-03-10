@@ -141,6 +141,23 @@ export default class SettingTab extends PluginSettingTab {
                         this.plugin.saveSettings();
                     });
             });
+        new Setting(containerEl)
+            .setName("Always Render Dice")
+            .setDesc(
+                createFragment((e) => {
+                    e.createSpan({
+                        text: "Dice rolled in notes will always be rendered. Use the "
+                    });
+                    e.createEl("code", { text: "|norender" });
+                    e.createSpan({ text: " flag to prevent it." });
+                })
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.renderAllDice).onChange((v) => {
+                    this.plugin.data.renderAllDice = v;
+                    this.plugin.saveSettings();
+                });
+            });
     }
     buildTables(containerEl: HTMLDivElement) {
         containerEl.empty();

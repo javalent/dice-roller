@@ -637,11 +637,21 @@ export default class DiceRollerPlugin extends Plugin {
         icon = this.data.showDice
     ): BasicRoller {
         let showDice = content.includes("|nodice") ? false : icon;
-        const shouldRender = content.includes("|render") ? true : false;
+        let shouldRender = this.data.renderAllDice;
+        if (content.includes("|render")) {
+            shouldRender = true;
+        }
+        if (content.includes("|norender")) {
+            shouldRender = false;
+        }
         content = decode(
+            //replace flags...
             content
                 .replace("|nodice", "")
                 .replace("|render", "")
+                .replace("|norender", "")
+                .replace("|noform", "")
+                .replace("|form", "")
                 .replace("\\|", "|")
         );
 
