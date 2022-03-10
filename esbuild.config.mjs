@@ -34,11 +34,6 @@ esbuild
         outdir: dir,
         metafile: true
     })
-    .then(async (result) => {
-        console.log(
-            await esbuild.analyzeMetafile(result.metafile, { verbose: true })
-        );
-    })
     .catch((e) => {
         console.error(e);
         process.exit(1);
