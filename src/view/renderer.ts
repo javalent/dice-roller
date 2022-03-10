@@ -28,8 +28,6 @@ import {
     D20Dice
 } from "./renderer/shapes";
 
-
-
 /* import {
     WebGLRenderer,
     Scene,
@@ -43,7 +41,15 @@ import {
     Mesh,
     PlaneGeometry
 } from "three"; */
-import { Body, ContactMaterial, Material, NaiveBroadphase, Plane, Vec3, World } from "cannon-es";
+import {
+    Body,
+    ContactMaterial,
+    Material,
+    NaiveBroadphase,
+    Plane,
+    Vec3,
+    World
+} from "cannon-es";
 import { WebGLRenderer } from "three/src/renderers/WebGLRenderer";
 import { Scene } from "three/src/scenes/Scene";
 import { PerspectiveCamera } from "three/src/cameras/PerspectiveCamera";
@@ -622,16 +628,12 @@ class LocalWorld {
             })
         );
         this.world.addContactMaterial(
-            new ContactMaterial(
-                this.barrierMaterial,
-                this.diceMaterial,
-                {
-                    friction: 0.01,
-                    restitution: 1,
-                    contactEquationRelaxation: 3,
-                    contactEquationStiffness: 1e8
-                }
-            )
+            new ContactMaterial(this.barrierMaterial, this.diceMaterial, {
+                friction: 0.01,
+                restitution: 1,
+                contactEquationRelaxation: 3,
+                contactEquationStiffness: 1e8
+            })
         );
         this.world.addContactMaterial(
             new ContactMaterial(this.diceMaterial, this.diceMaterial, {
@@ -656,10 +658,7 @@ class LocalWorld {
             shape: new Plane(),
             material: this.barrierMaterial
         });
-        barrier.quaternion.setFromAxisAngle(
-            new Vec3(1, 0, 0),
-            Math.PI / 2
-        );
+        barrier.quaternion.setFromAxisAngle(new Vec3(1, 0, 0), Math.PI / 2);
         barrier.position.set(0, this.HEIGHT * 0.93, 0);
         this.world.addBody(barrier);
 
@@ -669,10 +668,7 @@ class LocalWorld {
             shape: new Plane(),
             material: this.barrierMaterial
         });
-        barrier.quaternion.setFromAxisAngle(
-            new Vec3(1, 0, 0),
-            -Math.PI / 2
-        );
+        barrier.quaternion.setFromAxisAngle(new Vec3(1, 0, 0), -Math.PI / 2);
         barrier.position.set(0, -this.HEIGHT * 0.93, 0);
         this.world.addBody(barrier);
 
@@ -682,10 +678,7 @@ class LocalWorld {
             shape: new Plane(),
             material: this.barrierMaterial
         });
-        barrier.quaternion.setFromAxisAngle(
-            new Vec3(0, 1, 0),
-            -Math.PI / 2
-        );
+        barrier.quaternion.setFromAxisAngle(new Vec3(0, 1, 0), -Math.PI / 2);
         barrier.position.set(this.WIDTH * 0.93, 0, 0);
         this.world.addBody(barrier);
 
@@ -695,10 +688,7 @@ class LocalWorld {
             shape: new Plane(),
             material: this.barrierMaterial
         });
-        barrier.quaternion.setFromAxisAngle(
-            new Vec3(0, 1, 0),
-            Math.PI / 2
-        );
+        barrier.quaternion.setFromAxisAngle(new Vec3(0, 1, 0), Math.PI / 2);
         barrier.position.set(-this.WIDTH * 0.93, 0, 0);
         this.world.addBody(barrier);
     }
@@ -772,91 +762,13 @@ class DiceFactory extends Component {
                                 new D6Dice(
                                     this.width,
                                     this.height,
-                                    this.clone("ability"),
-                                    vector
-                                )
-                        )
-                );
-                dice.push(
-                    ...new Array(roller.rolls)
-                        .fill(0)
-                        .map(
-                            (r) =>
-                                new D6Dice(
-                                    this.width,
-                                    this.height,
-                                    this.clone("boost"),
-                                    vector
-                                )
-                        )
-                );
-                dice.push(
-                    ...new Array(roller.rolls)
-                        .fill(0)
-                        .map(
-                            (r) =>
-                                new D6Dice(
-                                    this.width,
-                                    this.height,
-                                    this.clone("setback"),
-                                    vector
-                                )
-                        )
-                );
-                dice.push(
-                    ...new Array(roller.rolls)
-                        .fill(0)
-                        .map(
-                            (r) =>
-                                new D6Dice(
-                                    this.width,
-                                    this.height,
-                                    this.clone("challenge"),
-                                    vector
-                                )
-                        )
-                );
-                dice.push(
-                    ...new Array(roller.rolls)
-                        .fill(0)
-                        .map(
-                            (r) =>
-                                new D6Dice(
-                                    this.width,
-                                    this.height,
-                                    this.clone("difficulty"),
-                                    vector
-                                )
-                        )
-                );
-                dice.push(
-                    ...new Array(roller.rolls)
-                        .fill(0)
-                        .map(
-                            (r) =>
-                                new D6Dice(
-                                    this.width,
-                                    this.height,
-                                    this.clone("proficiency"),
-                                    vector
-                                )
-                        )
-                );
-                /* dice.push(
-                    ...new Array(roller.rolls)
-                        .fill(0)
-                        .map(
-                            (r) =>
-                                new D6Dice(
-                                    this.width,
-                                    this.height,
                                     roller.fudge
-                                        ? this.fudge.clone()
-                                        : this.d6.clone(),
+                                        ? this.clone("fudge")
+                                        : this.clone("d6"),
                                     vector
                                 )
                         )
-                ) */
+                );
                 break;
             }
             case 8: {
