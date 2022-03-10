@@ -6,24 +6,6 @@ Inline dice rolling for Obsidian.md.
 
 Simply place a code block with your formula in your note (such as `` `dice: XdX` ``) and in preview mode it will be replaced with the result of the dice rolls. The result can then be re-rolled by clicking on it.
 
-# Dice Flags
-
-There are flags that can be appended to the dice formulas shown below that will modify how the dice behave.
-
-## `|nodice`
-
-Don't want to see the dice button on results?
-
-You can turn it off in settings, or by appending `|nodice` to **any** dice roll!
-
-## `|render`
-
-Want to roll graphical dice from your notes?
-
-Use the `|render` flag at the end of a [dice roller](#dice-roller) formula, and the plugin will roll 3D dice to calculate the result.
-
-See [Graphical Dice]() for more information.
-
 # Formulas
 
 [Dice formulas](#dice-formulas) can be added in settings, allowing you to define aliases for commonly used rolls. This works for _all_ dice types define below.
@@ -526,6 +508,28 @@ This can be turned off globally by turning off `Add Formula When Modifying` in s
 If `dice-mod` is used on a section roller, the plugin will attempt to find a block id for the resulting section, so it can be embedded.
 
 If a block id does not exist for that section, the plugin will attempt to create one for the section. This will modify the file being rolled.
+
+# Dice Flags
+
+There are flags that can be appended to the dice formulas shown below that will modify how the dice behave.
+
+## `|nodice`
+
+Don't want to see the dice button on results?
+
+You can turn it off in settings, or by appending `|nodice` to **any** dice roll!
+
+## `|form` and `|noform`
+
+These two flags can be used to control whether or not the dice formula is displayed with a [`dice-mod`](#replacing-note-content) roll.
+
+## `|render`
+
+Want to roll graphical dice from your notes?
+
+Use the `|render` flag at the end of a [dice roller](#dice-roller) formula, and the plugin will roll 3D dice to calculate the result.
+
+See [Graphical Dice]() for more information.
 
 # The Dice View
 

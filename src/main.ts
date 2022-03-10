@@ -275,8 +275,13 @@ export default class DiceRollerPlugin extends Plugin {
                             if (content.includes("|noform")) {
                                 showFormula = false;
                             }
+                            if (content.includes("|form")) {
+                                showFormula = true;
+                            }
 
-                            content = content.replace("|noform", "");
+                            content = content
+                                .replace("|noform", "")
+                                .replace("|form", "");
 
                             //build result map;
                             const roller = this.getRoller(
