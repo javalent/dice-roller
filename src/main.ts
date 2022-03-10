@@ -586,6 +586,10 @@ export default class DiceRollerPlugin extends Plugin {
     }
 
     async renderRoll(roller: StackRoller) {
+        if (!(roller instanceof StackRoller) || !roller?.dice?.length) {
+            new Notice(`This dice roll can't be rendered: ${roller.original}`);
+            return;
+        }
         this.addChild(this.renderer);
         this.renderer.setDice(roller);
 
@@ -628,8 +632,13 @@ export default class DiceRollerPlugin extends Plugin {
         icon = this.data.showDice
     ): BasicRoller {
         let showDice = content.includes("|nodice") ? false : icon;
-
-        content = decode(content.replace("|nodice", "").replace("\\|", "|"));
+        const shouldRender = content.includes("|render") ? true : false;
+        content = decode(
+            content
+                .replace("|nodice", "")
+                .replace("|render", "")
+                .replace("\\|", "|")
+        );
 
         if (content in this.data.formulas) {
             content = this.data.formulas[content];
@@ -641,7 +650,14 @@ export default class DiceRollerPlugin extends Plugin {
 
         switch (type) {
             case "dice": {
-                return new StackRoller(this, content, lexemes, showDice);
+                const roller = new StackRoller(
+                    this,
+                    content,
+                    lexemes,
+                    showDice
+                );
+                roller.shouldRender = shouldRender;
+                return roller;
             }
             case "table": {
                 return new TableRoller(

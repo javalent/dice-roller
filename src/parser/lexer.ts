@@ -10,8 +10,6 @@ export const TAG_REGEX =
 export const LINK_REGEX =
     /(?:\d+[Dd])?#(?:[\p{Letter}\p{Emoji_Presentation}\w/-]+)(?:\|(?:[+-]))?\|link/u;
 
-const INTERNAL_LINK = /(?:\[.*\]\(|\[\[)(?:.+)(?:\)|\]\])/;
-
 export const TABLE_REGEX =
     /(?:\d+[Dd])?(?:\[.*\]\(|\[\[)(?:.+?)#?\^(?:.+?)(?:\)|\]\])\|?(?:.+)?/u;
 export const SECTION_REGEX =
