@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.3.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.2.1...8.3.0) (2022-03-10)
+
+
+### Features
+
+* Add rounding controls for dice (close [#86](https://github.com/valentine195/obsidian-dice-roller/issues/86)) ([946f8be](https://github.com/valentine195/obsidian-dice-roller/commit/946f8bebc8ac83fe525b5c467e5e35f4acacab22))
+* Added `|render` flag to render dice rolls from notes (close [#85](https://github.com/valentine195/obsidian-dice-roller/issues/85)) ([11de860](https://github.com/valentine195/obsidian-dice-roller/commit/11de860f9396873b8a43b38c5d5afcc6a18b973c))
+* Adds `|form` flag (close [#80](https://github.com/valentine195/obsidian-dice-roller/issues/80)) ([050998f](https://github.com/valentine195/obsidian-dice-roller/commit/050998f3ff6ac82de3e8d9bb826a127823f4adc0))
+* Adds the Always Render Dice and the `|norender` flag ([39178ff](https://github.com/valentine195/obsidian-dice-roller/commit/39178ff1fb5e07e6c21c3b4a98f7e3baeaa1ef23))
+
+
+### Bug Fixes
+
+* Accidentally left starwars testing dice in production, whoops ([16078b1](https://github.com/valentine195/obsidian-dice-roller/commit/16078b1aed6b635a4c659ef9a0d9dbfbdd5dd523))
+
 ### [8.2.1](https://github.com/valentine195/obsidian-dice-roller/compare/8.2.0...8.2.1) (2022-01-24)
 
 
