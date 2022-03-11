@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.3.1](https://github.com/valentine195/obsidian-dice-roller/compare/8.3.0...8.3.1) (2022-03-11)
+
+
+### Bug Fixes
+
+* Fixes layout of embedded table results if the results have line breaks ([5db4ff8](https://github.com/valentine195/obsidian-dice-roller/commit/5db4ff882775fa954fd0ed05471717db6b5d7367))
+
 ## [8.3.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.2.1...8.3.0) (2022-03-10)
 
 
