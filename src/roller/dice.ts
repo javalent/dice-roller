@@ -550,9 +550,7 @@ export class StackRoller extends GenericRoller<number> {
 
         switch (this.plugin.data.round) {
             case Round.None: {
-                rounded = Number(
-                    rounded = Math.trunc(rounded*100)/100;                    
-                );
+                rounded = Math.trunc(rounded*100)/100;
                 break;
             }
             case Round.Normal: {
