@@ -551,9 +551,7 @@ export class StackRoller extends GenericRoller<number> {
         switch (this.plugin.data.round) {
             case Round.None: {
                 rounded = Number(
-                    rounded.toLocaleString(navigator.language, {
-                        maximumFractionDigits: 2
-                    })
+                    rounded = Math.trunc(rounded*100)/100;                    
                 );
                 break;
             }
