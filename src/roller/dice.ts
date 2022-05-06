@@ -538,6 +538,7 @@ export class StackRoller extends GenericRoller<number> {
                 dice.lexeme.text.length +
                 dice.modifierText.length;
         });
+        text.push(this.original.slice(index));
         return text.join("");
     }
     get tooltip() {
