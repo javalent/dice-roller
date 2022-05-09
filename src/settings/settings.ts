@@ -6,7 +6,7 @@ import {
     Setting,
     TextComponent
 } from "obsidian";
-import { Round } from "src/types";
+import { Round, ExpectedResult } from "src/types";
 import type DiceRoller from "../main";
 import { DEFAULT_SETTINGS } from "../main";
 
@@ -138,6 +138,17 @@ export default class SettingTab extends PluginSettingTab {
                     .setValue(this.plugin.data.round)
                     .onChange((v: keyof typeof Round) => {
                         this.plugin.data.round = v;
+                        this.plugin.saveSettings();
+                    });
+            });
+            new Setting(containerEl)
+            .setName("Initial Value")
+            .setDesc("Determine the initial value for dice rolls.")
+            .addDropdown((d) => {
+                d.addOptions(ExpectedResult)
+                    .setValue(this.plugin.data.expectedResult)
+                    .onChange((v: keyof typeof ExpectedResult) => {
+                        this.plugin.data.expectedResult = v;
                         this.plugin.saveSettings();
                     });
             });

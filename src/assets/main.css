@@ -5,6 +5,7 @@
     cursor: pointer;
 
     margin: 0 0.25em 0 0;
+    vertical-align: top;
 }
 .dice-roller.no-icon {
     margin: 0;

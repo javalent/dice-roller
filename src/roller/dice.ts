@@ -1,9 +1,9 @@
 import { Notice } from "obsidian";
 import type DiceRollerPlugin from "src/main";
 import { LexicalToken } from "src/parser/lexer";
-import { ResultMapInterface, Conditional, Lexeme, Round } from "src/types";
+import { ResultMapInterface, Conditional, Round, ExpectedResult } from "src/types";
 import { _insertIntoMap } from "src/utils/util";
-import { BaseRoller, GenericRoller, Roller } from "./roller";
+import { GenericRoller } from "./roller";
 
 interface Modifier {
     conditionals: Conditional[];
@@ -16,6 +16,8 @@ export class DiceRoller {
     modifiers: Map<string, Modifier> = new Map();
     rolls: number;
     faces: { min: number; max: number };
+    avg: number;
+    expectedResult: keyof typeof ExpectedResult;
     results: ResultMapInterface<number>;
     resultArray: number[];
     modifiersAllowed: boolean = true;
@@ -23,6 +25,9 @@ export class DiceRoller {
     conditions: Conditional[] = [];
     multiplier: number;
     fudge: boolean = false;
+    updateExpectedResult(expectedResult: keyof typeof ExpectedResult) {
+        this.expectedResult = expectedResult;
+    }
     get text() {
         return `${this.result}`;
     }
@@ -63,12 +68,14 @@ export class DiceRoller {
     }
     constructor(
         dice: string,
+        expectedResult: keyof typeof ExpectedResult,
         public lexeme: Partial<LexicalToken> = {
             value: dice,
             conditions: [],
             type: "dice"
         }
     ) {
+        this.expectedResult = expectedResult;
         if (!/(\-?\d+)[dD]?(\d+|%|\[\d+,\s?\d+\])?/.test(dice)) {
             throw new Error("Non parseable dice string passed to DiceRoll.");
         }
@@ -78,14 +85,15 @@ export class DiceRoller {
             this.static = true;
             this.modifiersAllowed = false;
         }
-        let [, rolls, min = null, max = 1] = this.dice.match(
+
+        let [, rolls, min = 1, max = 1] = this.dice.match(
             /(\-?\d+)[dD]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?/
-        ) || [, 1, null, 1];
+        ) || [, 1, 1, 1];
 
         this.multiplier = rolls < 0 ? -1 : 1;
 
         this.rolls = Math.abs(Number(rolls)) || 1;
-        if (Number(max) < 0 && !min) {
+        if (Number(max) < 0) {
             min = -1;
         }
         if (max === "%") max = 100;
@@ -99,6 +107,10 @@ export class DiceRoller {
         }
 
         this.faces = { max: max ? Number(max) : 1, min: min ? Number(min) : 1 };
+
+        if (!this.static) {
+            this.avg = Math.floor((Number(max) + Number(min)) / 2);
+        }
 
         this.conditions = this.lexeme.conditions ?? [];
 
@@ -440,13 +452,19 @@ export class DiceRoller {
         });
     }
     getRandomBetween(min: number, max: number): number {
+        if (this.expectedResult === ExpectedResult.Average) {
+            return this.avg;
+        }
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 }
 
 class StuntRoller extends DiceRoller {
-    constructor(public dice: string, public lexeme: LexicalToken) {
-        super(`3d6`, lexeme);
+    constructor(public dice: string, expectedResult: keyof typeof ExpectedResult, public lexeme: LexicalToken) {
+        super(`3d6`, expectedResult, lexeme);
+    }
+    updateExpectedResult(expectedResult: keyof typeof ExpectedResult) {
+        this.expectedResult = expectedResult;
     }
     get doubles() {
         return (
@@ -481,17 +499,26 @@ class StuntRoller extends DiceRoller {
 
 export class PercentRoller extends DiceRoller {
     stack: DiceRoller[][] = [];
-    constructor(public dice: string, public lexeme: LexicalToken) {
-        super(dice, lexeme);
+    constructor(public dice: string, expectedResult: keyof typeof ExpectedResult, public lexeme: LexicalToken) {
+        super(dice, expectedResult, lexeme);
         const faces = `${this.faces.max}`.split("");
         for (let i = 0; i < this.rolls; i++) {
             const stack = [];
             for (const face of faces) {
-                const roller = new DiceRoller(`1d${face}`);
+                const roller = new DiceRoller(`1d${face}`, expectedResult);
                 stack.push(roller);
                 roller.roll();
             }
             this.stack.push(stack);
+        }
+    }
+    updateExpectedResult(expectedResult: keyof typeof ExpectedResult) {
+        if (this.expectedResult !== expectedResult) {
+            // Propagate expectedResult to sub rollers
+            this.expectedResult = expectedResult;
+            this.stack.map((stack) => stack.map((dice) => {
+                dice.updateExpectedResult(this.expectedResult);
+            }));
         }
     }
     get result() {
@@ -501,7 +528,7 @@ export class PercentRoller extends DiceRoller {
     }
     get display() {
         return this.stack
-            .map((stack) => stack.map((v) => v.result).join(","))
+            .map((stack) => stack.map((v) => v.display).join(","))
             .join("|");
     }
     roll() {
@@ -523,6 +550,20 @@ export class StackRoller extends GenericRoller<number> {
     stunted: string = "";
     private _tooltip: string;
     shouldRender: boolean = false;
+    updateExpectedResult(expectedResult: keyof typeof ExpectedResult) {
+        if (this.expectedResult !== expectedResult) {
+            // Propagate expectedResult to sub rollers
+            this.expectedResult = expectedResult;
+            this.stack.map((r) => {
+                r.updateExpectedResult(this.expectedResult);
+            });
+            this.stackCopy.map((r) => {
+                if (typeof r !== "string") {
+                    r.updateExpectedResult(this.expectedResult);
+                }
+            });
+        }
+    }
     get resultText() {
         let text: string[] = [];
         let index = 0;
@@ -543,9 +584,15 @@ export class StackRoller extends GenericRoller<number> {
     }
     get tooltip() {
         if (this._tooltip) return this._tooltip;
-        return `${this.original}\n${this.resultText}`;
-    }
+        if (this.expectedResult === ExpectedResult.Roll || this.shouldRender) {
+            return `${this.original}\n${this.resultText}`;
+        }
+        if (this.expectedResult === ExpectedResult.Average) {
+            return `${this.original}\nAverage`
+        }
 
+        return `${this.original}\nNone`
+    }
     async build() {
         let rounded = this.result;
 
@@ -568,15 +615,40 @@ export class StackRoller extends GenericRoller<number> {
             }
         }
 
-        const result = [`${rounded}`];
-        if (this.plugin.data.displayResultsInline) {
-            result.unshift(this.inlineText);
+        let result;
+        if (this.expectedResult === ExpectedResult.None) {
+            result = [""];
+            if (this.plugin.data.displayResultsInline) {
+                result.unshift(this.original+" -> ");
+            }
         }
+        else {
+            result = [`${rounded}`];
+
+            // NOTE: Could also prefix the result with avg:
+            // if (this.expectedResult == ExpectedResult.Average) {
+            //     result.unshift("avg: ");
+            // }
+
+            if (this.plugin.data.displayResultsInline) {
+                result.unshift(this.inlineText);
+            }
+        }
+        this.updateExpectedResult(ExpectedResult.Roll);
+
         this.resultEl.setText(result.join("") + this.stunted);
     }
     async onClick(evt: MouseEvent) {
         evt.stopPropagation();
         evt.stopImmediatePropagation();
+
+        if (evt.altKey) {
+            this.updateExpectedResult(ExpectedResult.Average);
+        }
+        else if (evt.ctrlKey) {
+            this.updateExpectedResult(ExpectedResult.None);
+        }
+
         if (window.getSelection()?.isCollapsed) {
             await this.roll();
         }
@@ -601,6 +673,7 @@ export class StackRoller extends GenericRoller<number> {
         super(plugin, original, lexemes, showDice);
         this.loaded = true;
         this.trigger("loaded");
+        this.expectedResult = plugin.data.expectedResult;
     }
     operators: Record<string, (...args: number[]) => number> = {
         "+": (a: number, b: number): number => a + b,
@@ -614,6 +687,8 @@ export class StackRoller extends GenericRoller<number> {
     stack: DiceRoller[] = [];
     stackCopy: Array<DiceRoller | string> = [];
     dice: DiceRoller[] = [];
+    expectedResult: keyof typeof ExpectedResult;
+
     async roll() {
         let index = 0;
         this.stunted = "";
@@ -629,7 +704,7 @@ export class StackRoller extends GenericRoller<number> {
                         a = this.stack.pop();
                     if (!a) {
                         if (dice.value === "-") {
-                            b = new DiceRoller(`-${b.dice}`, b.lexeme);
+                            b = new DiceRoller(`-${b.dice}`, this.expectedResult, b.lexeme);
                         }
                         this.stackCopy.push(dice.value);
                         this.stack.push(b);
@@ -659,7 +734,7 @@ export class StackRoller extends GenericRoller<number> {
                     );
 
                     this.stackCopy.push(dice.value);
-                    this.stack.push(new DiceRoller(`${result}`, dice));
+                    this.stack.push(new DiceRoller(`${result}`, this.expectedResult, dice));
                     break;
                 case "kh": {
                     let diceInstance = this.dice[index - 1];
@@ -752,10 +827,10 @@ export class StackRoller extends GenericRoller<number> {
                     ) {
                         const previous = this.stack.pop();
                         dice.value = `${previous.result}${dice.value}`;
-                        this.dice[index] = new DiceRoller(dice.value, dice);
+                        this.dice[index] = new DiceRoller(dice.value, this.expectedResult, dice);
                     }
                     if (!this.dice[index]) {
-                        this.dice[index] = new DiceRoller(dice.value, dice);
+                        this.dice[index] = new DiceRoller(dice.value, this.expectedResult, dice);
                     }
 
                     this.stack.push(this.dice[index]);
@@ -765,7 +840,7 @@ export class StackRoller extends GenericRoller<number> {
                 }
                 case "stunt": {
                     if (!this.dice[index]) {
-                        this.dice[index] = new StuntRoller(dice.value, dice);
+                        this.dice[index] = new StuntRoller(dice.value, this.expectedResult, dice);
                     }
 
                     this.stack.push(this.dice[index]);
@@ -773,10 +848,9 @@ export class StackRoller extends GenericRoller<number> {
                     index++;
                     break;
                 }
-
                 case "%": {
                     if (!this.dice[index]) {
-                        this.dice[index] = new PercentRoller(dice.value, dice);
+                        this.dice[index] = new PercentRoller(dice.value, this.expectedResult, dice);
                     }
 
                     this.stack.push(this.dice[index]);
@@ -787,6 +861,9 @@ export class StackRoller extends GenericRoller<number> {
             }
         }
         if (this.shouldRender) {
+            // Don't think we can force a 3D die to give our expected result!
+            // So, for now, just force ExpectedResult.Roll if using 3D dice.
+            this.updateExpectedResult(ExpectedResult.Roll);
             await this.plugin.renderRoll(this);
         } else {
             const final = this.stack.pop();
@@ -820,15 +897,19 @@ export class StackRoller extends GenericRoller<number> {
 
                 if (!a) {
                     if (item === "-") {
-                        b = new DiceRoller(`-${b.result}`, b.lexeme);
+                        b = new DiceRoller(`-${b.result}`, this.expectedResult, b.lexeme);
                     }
                     stack.push(b);
                     continue;
                 }
 
                 const r = this.operators[item](a.result, b.result);
-                stack.push(new DiceRoller(`${r}`));
+                stack.push(new DiceRoller(`${r}`, this.expectedResult));
             } else {
+                // FIX Issue #94
+                if (item instanceof DiceRoller) {
+                    item.applyModifiers();
+                }
                 stack.push(item);
             }
         }

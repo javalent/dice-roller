@@ -589,6 +589,18 @@ The plugin will use this number as the default face if it is omitted - see [Face
 
 Determine the rounding behavior when decimal numbers are returned.
 
+### Initial Value
+
+Determine the initial value for dice rolls.
+- Roll: result is computed rolling each die.
+- Average: result is computed using the average value for each die.
+-None: result is empty (only the die icon is displayed).
+
+When re-rolling, use Alt-click to set the result to Average,
+Ctrl-click to empty the result or just a click to roll the dice.
+
+Note: this setting does not apply when using rendered dice.
+
 ### Always Render Dice
 
 Dice rolls in notes will always be rendered. Use the [`|norender`](#render-and-norender) flag to prevent this behavior.
@@ -667,7 +679,7 @@ From Obsidian v0.9.8, you can activate this plugin within Obsidian by doing the 
 ## From GitHub
 
 -   Download the Latest Release from the Releases section of the GitHub Repository
--   Extract the plugin folder from the zip to your vault's plugins folder: `<vault>/.obsidian/plugins/`  
+-   Extract the plugin folder from the zip to your vault's plugins folder: `<vault>/.obsidian/plugins/`
     Note: On some machines the `.obsidian` folder may be hidden. On MacOS you should be able to press `Command+Shift+Dot` to show the folder in Finder.
 -   Reload Obsidian
 -   If prompted about Safe Mode, you can disable safe mode and enable the plugin.
