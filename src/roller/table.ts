@@ -39,7 +39,7 @@ export class TableRoller extends GenericFileRoller<string> {
         this.resultEl.empty();
         const result = [this.result];
 
-        if (this.plugin.data.displayLookupRoll) {
+        if (this.plugin.data.displayResultsInline) {
             result.unshift(this.inlineText);
         }
 
