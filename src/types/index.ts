@@ -31,3 +31,9 @@ export enum Round {
     Up = "Up",
     Down = "Down"
 }
+
+export enum ExpectedValue {
+    None = "None",
+    Average = "Average",
+    Roll = "Roll"
+}

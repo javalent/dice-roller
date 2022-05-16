@@ -33,7 +33,7 @@ import { BasicRoller } from "./roller/roller";
 import DiceView, { VIEW_TYPE } from "./view/view";
 import DiceRenderer from "./view/renderer";
 import Lexer, { LexicalToken } from "./parser/lexer";
-import { Round } from "./types";
+import { Round, ExpectedValue } from "./types";
 
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -638,11 +638,32 @@ export default class DiceRollerPlugin extends Plugin {
     ): BasicRoller {
         let showDice = content.includes("|nodice") ? false : icon;
         let shouldRender = this.data.renderAllDice;
+        let showFormula = this.data.displayResultsInline;
+        let expectedValue: ExpectedValue = ExpectedValue.Roll;
+        let fixedText:string = "";
+        const regextext = /\|text\((.*)\)/;
+
         if (content.includes("|render")) {
             shouldRender = true;
         }
         if (content.includes("|norender")) {
             shouldRender = false;
+        }
+        if (content.includes("|form")) {
+            showFormula = true;
+        }
+        if (content.includes("|noform")) {
+            showFormula = false;
+        }
+        if (content.includes("|avg")) {
+            expectedValue = ExpectedValue.Average;
+        }
+        if (content.includes("|none")) {
+            expectedValue = ExpectedValue.None;
+        }
+        if (content.includes("|text(")) {
+            let [, text] = content.match(regextext) ?? [null, ""];
+            fixedText = text;
         }
         content = decode(
             //replace flags...
@@ -653,6 +674,9 @@ export default class DiceRollerPlugin extends Plugin {
                 .replace("|noform", "")
                 .replace("|form", "")
                 .replace("\\|", "|")
+                .replace("|avg", "")
+                .replace("|none", "")
+                .replace(regextext, "")
         );
 
         if (content in this.data.formulas) {
@@ -669,9 +693,12 @@ export default class DiceRollerPlugin extends Plugin {
                     this,
                     content,
                     lexemes,
-                    showDice
+                    showDice,
+                    fixedText,
+                    expectedValue
                 );
                 roller.shouldRender = shouldRender;
+                roller.showFormula = showFormula;
                 return roller;
             }
             case "table": {

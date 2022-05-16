@@ -1,9 +1,9 @@
 import { Notice } from "obsidian";
 import type DiceRollerPlugin from "src/main";
 import { LexicalToken } from "src/parser/lexer";
-import { ResultMapInterface, Conditional, Lexeme, Round } from "src/types";
+import { ResultMapInterface, Conditional, Round, ExpectedValue } from "src/types";
 import { _insertIntoMap } from "src/utils/util";
-import { BaseRoller, GenericRoller, Roller } from "./roller";
+import { GenericRoller } from "./roller";
 
 interface Modifier {
     conditionals: Conditional[];
@@ -439,6 +439,12 @@ export class DiceRoller {
             return result;
         });
     }
+    allowAverage() : boolean {
+        return true;
+    }
+    average(): number {
+        return (this.faces.min + this.faces.max) / 2.;
+    }
     getRandomBetween(min: number, max: number): number {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
@@ -477,6 +483,9 @@ class StuntRoller extends DiceRoller {
         }
         return `[${str.join(", ")}]`;
     }
+    allowAverage() : boolean {
+        return false;
+    }
 }
 
 export class PercentRoller extends DiceRoller {
@@ -513,16 +522,23 @@ export class PercentRoller extends DiceRoller {
                 .flat()
         ];
     }
+    allowAverage() : boolean {
+        return false;
+    }
 }
 
 export class StackRoller extends GenericRoller<number> {
     result: number;
+    fixedText: string;
+    displayFixedText: boolean = false;
+    expectedValue: ExpectedValue;
     get replacer() {
         return `${this.result}`;
     }
     stunted: string = "";
     private _tooltip: string;
     shouldRender: boolean = false;
+    showFormula: boolean = false;
     get resultText() {
         let text: string[] = [];
         let index = 0;
@@ -543,10 +559,42 @@ export class StackRoller extends GenericRoller<number> {
     }
     get tooltip() {
         if (this._tooltip) return this._tooltip;
-        return `${this.original}\n${this.resultText}`;
-    }
+        if (this.expectedValue === ExpectedValue.Roll || this.shouldRender) {
+            if (this.displayFixedText) {
+                return `${this.original}\n${this.result} = ${this.resultText}`;
+            }
+            return `${this.original}\n${this.resultText}`;
+        }
+        if (this.expectedValue === ExpectedValue.Average) {
+            if (this.displayFixedText) {
+                return `${this.original}\n${this.result} = average: ${this.resultText}`
+            }
+            return `${this.original}\naverage: ${this.resultText}`
+        }
 
+        return `${this.original}\nempty`
+    }
+    allowAverage(): boolean {
+        const avgAllowed = (roller:DiceRoller) => roller.allowAverage();
+        return this.dynamic.every(avgAllowed);
+    }
     async build() {
+        if (this.expectedValue === ExpectedValue.Average && !this.shouldRender) {
+            if (this.allowAverage()) {
+                for (let roller of this.dynamic) {
+                    const avg: number = roller.average();
+                    var results = Array(roller.rolls).fill(avg);
+                    roller.setResults(results)
+                    this.recalculate();
+                }
+            }
+            else {
+                this.expectedValue = ExpectedValue.Roll;
+            }
+            this.result = Math.floor(this.result);
+            this.setTooltip();
+        }
+
         let rounded = this.result;
 
         switch (this.plugin.data.round) {
@@ -568,15 +616,43 @@ export class StackRoller extends GenericRoller<number> {
             }
         }
 
-        const result = [`${rounded}`];
-        if (this.plugin.data.displayResultsInline) {
-            result.unshift(this.inlineText);
+        let result;
+        if (this.expectedValue === ExpectedValue.None && !this.shouldRender) {
+            if (this.showDice) {
+                result = [""];
+            }
+            else {
+                result = ['\xa0'];
+            }
+            if (this.showFormula) {
+                result.unshift(this.original+" -> ");
+            }
         }
-        this.resultEl.setText(result.join("") + this.stunted);
+        else {
+            result = [`${rounded}`];
+            if (this.showFormula) {
+                result.unshift(this.inlineText);
+            }
+        }
+
+        this.expectedValue = ExpectedValue.Roll;
+
+        if (this.displayFixedText) {
+            this.resultEl.setText(this.fixedText);
+        }
+        else {
+            this.resultEl.setText(result.join("") + this.stunted);
+        }
     }
     async onClick(evt: MouseEvent) {
         evt.stopPropagation();
         evt.stopImmediatePropagation();
+        if (evt.getModifierState("Alt")) {
+            this.expectedValue = ExpectedValue.Average;
+        }
+        else if (evt.getModifierState("Control")) {
+            this.expectedValue = ExpectedValue.None;
+        }
         if (window.getSelection()?.isCollapsed) {
             await this.roll();
         }
@@ -596,9 +672,14 @@ export class StackRoller extends GenericRoller<number> {
         public plugin: DiceRollerPlugin,
         public original: string,
         public lexemes: LexicalToken[],
-        showDice = plugin.data.showDice
+        showDice = plugin.data.showDice,
+        fixedText: string,
+        expectedValue: ExpectedValue
     ) {
         super(plugin, original, lexemes, showDice);
+        this.fixedText = fixedText;
+        this.expectedValue = expectedValue;
+        this.displayFixedText = this.fixedText !== "";
         this.loaded = true;
         this.trigger("loaded");
     }

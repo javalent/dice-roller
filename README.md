@@ -531,6 +531,43 @@ Use the `|render` flag at the end of a [dice roller](#dice-roller) formula, and 
 
 See [Graphical Dice]() for more information.
 
+## `|form` and `|noform`
+
+These two flags can be used to control whether or not the dice formula is displayed along with the result when using a [dice roller](#dice-roller).
+
+This can be turned on or off globally by using [Display Formula With Results](#display-formula-with-results) in settings.
+
+## `|avg`
+
+Want the initial dice value to be the average instead of rolling it?
+
+Use the `|avg` flag at the end of a [dice roller](#dice-roller) formula, and the plugin will initialize the result using the average value of dice rolls.
+The tooltip will indicate that the result is an average and show the averages.
+
+Example: `dice: 2d6+3|avg` gives `10`as the result and displays `average: [3.5,3.5]+3` in the tooltip.
+
+Next rolls will not use the average anymore but normal random dice roll results. On the other hand, using Alt-click to reroll forces average to be (re)used.
+
+## `|none`
+
+Want no value being displayed before clicking on the reroll icon?
+
+Use the `|none` flag at the end of a [dice roller](#dice-roller) formula, and the plugin will initialize the result with an empty value.
+The tooltip will indicate that the result is none.
+
+Next rolls will display the normal result using random dice roll results. On the other hand, using Ctrl-click to reroll forces none to be (re)used.
+
+## `|text(my text)`
+
+Want to roll dice without displaying the result in your note?
+
+Use the `|text(my text)` flag at the end of a [dice roller](#dice-roller) formula, and the plugin will display your 'my text' and let you click on it to trigger a roll.
+
+The roll result is only visible in the tooltip.
+
+Example for a DnD saving throw, use: `dice: 1d20 + 2|nodice|text(Dexterity +2)`
+When hovering on top of `Dexterity +2`, you'll see a random saving throw result (click to reroll as usual).
+
 # The Dice View
 
 The plugin comes with a Dice View that can be added to the workspace.
@@ -667,7 +704,7 @@ From Obsidian v0.9.8, you can activate this plugin within Obsidian by doing the 
 ## From GitHub
 
 -   Download the Latest Release from the Releases section of the GitHub Repository
--   Extract the plugin folder from the zip to your vault's plugins folder: `<vault>/.obsidian/plugins/`  
+-   Extract the plugin folder from the zip to your vault's plugins folder: `<vault>/.obsidian/plugins/`
     Note: On some machines the `.obsidian` folder may be hidden. On MacOS you should be able to press `Command+Shift+Dot` to show the folder in Finder.
 -   Reload Obsidian
 -   If prompted about Safe Mode, you can disable safe mode and enable the plugin.
