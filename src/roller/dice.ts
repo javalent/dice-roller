@@ -911,6 +911,9 @@ export class StackRoller extends GenericRoller<number> {
                 stack.push(new DiceRoller(`${r}`));
             } else {
                 stack.push(item);
+                if (item instanceof DiceRoller) {
+                    item.applyModifiers();
+                }
             }
         }
 
