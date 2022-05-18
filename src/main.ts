@@ -636,6 +636,8 @@ export default class DiceRollerPlugin extends Plugin {
         source: string,
         icon = this.data.showDice
     ): BasicRoller {
+        content = content.replace(/\\\|/g, "|");
+
         let showDice = content.includes("|nodice") ? false : icon;
         let shouldRender = this.data.renderAllDice;
         let showFormula = this.data.displayResultsInline;
@@ -666,14 +668,13 @@ export default class DiceRollerPlugin extends Plugin {
             fixedText = text;
         }
         content = decode(
-            //replace flags...
+            //remove flags...
             content
                 .replace("|nodice", "")
                 .replace("|render", "")
                 .replace("|norender", "")
                 .replace("|noform", "")
                 .replace("|form", "")
-                .replace("\\|", "|")
                 .replace("|avg", "")
                 .replace("|none", "")
                 .replace(regextext, "")
