@@ -186,7 +186,7 @@ export class TableRoller extends GenericFileRoller<string> {
     }
 }
 const MATCH = /^\|?([\s\S]+?)\|?$/;
-const SPLIT = /\|/;
+const SPLIT = /\|/g;
 
 function extract(content: string) {
     const lines = content.split("\n");
@@ -207,8 +207,9 @@ function extract(content: string) {
     for (let line of lines.slice(2)) {
         const entries = line
             .trim()
-            .replace("\\|", "{ESCAPED_PIPE}")
+            .replace(/\\\|/g, "{ESCAPED_PIPE}")
             .split(SPLIT)
+            .map((e) => e.replace(/{ESCAPED_PIPE}/g, "|"))
             .map((e) => e.trim())
             .filter((e) => e.length);
 
