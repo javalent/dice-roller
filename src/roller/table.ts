@@ -140,8 +140,9 @@ export class TableRoller extends GenericFileRoller<string> {
 
                     this.lookupRanges = table.rows.map((row) => {
                         const [range, option] = row
+                            .replace(/\\\|/g, "{ESCAPED_PIPE}")
                             .split("|")
-                            .map((str) => str.replace("{ESCAPED_PIPE}", "|"))
+                            .map((str) => str.replace("{ESCAPED_PIPE}", "\\|"))
                             .map((s) => s.trim());
 
                         let [, min, max] =
@@ -209,7 +210,7 @@ function extract(content: string) {
             .trim()
             .replace(/\\\|/g, "{ESCAPED_PIPE}")
             .split(SPLIT)
-            .map((e) => e.replace(/{ESCAPED_PIPE}/g, "|"))
+            .map((e) => e.replace(/{ESCAPED_PIPE}/g, "\\|"))
             .map((e) => e.trim())
             .filter((e) => e.length);
 
