@@ -142,7 +142,7 @@ export class TableRoller extends GenericFileRoller<string> {
                         const [range, option] = row
                             .replace(/\\\|/g, "{ESCAPED_PIPE}")
                             .split("|")
-                            .map((str) => str.replace("{ESCAPED_PIPE}", "\\|"))
+                            .map((str) => str.replace(/{ESCAPED_PIPE}/g, "\\|"))
                             .map((s) => s.trim());
 
                         let [, min, max] =
