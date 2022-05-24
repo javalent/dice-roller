@@ -1,7 +1,7 @@
 export const TAG_REGEX =
     /(?:(?<roll>\d+)[Dd])?#(?<tag>[\p{Letter}\p{Emoji_Presentation}\w/-]+)(?:\|(?<collapse>[\+-]))?(?:\|(?<types>[^\+-]+))?/u;
 export const TABLE_REGEX =
-    /(?:(?<roll>\d+)[Dd])?(?:\[.*\]\(|\[\[)(?<link>.+?)#?\^(?<block>.+?)(?:\]\]|\))\|?(?<header>.+)?/;
+    /(?:(?<roll>\d+)[Dd])?(?:\[.*\]\(|\[\[)(?<link>.+?)#?\^(?<block>.+?)(?:\]\]|\))(?:\|(?<header>.+))?/
 export const SECTION_REGEX =
     /(?:(?<roll>\d+)[Dd])?(?:\[.*\]\(|\[\[)(?<link>.+)(?:\]\]|\))\|?(?<types>.+)?/;
 export const MATH_REGEX = /[\(\^\+\-\*\/\)]/;
