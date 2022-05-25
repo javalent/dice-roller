@@ -13,9 +13,9 @@
 .dice-roller > div {
     display: inline-block;
 }
-.dice-roller span {
+/* .dice-roller span {
     font-weight: 700;
-}
+} */
 .dice-roller > .dice-roller-button {
     display: inline-block;
     position: relative;
@@ -107,7 +107,7 @@
 
 .dice-roller-result .embedded-table-result p {
     margin: 0;
-    display: inline-flex;
+    /* display: inline-flex; */
 }
 
 /** Settings */

@@ -284,7 +284,7 @@ export default class DiceRollerPlugin extends Plugin {
                                 .replace("|form", "");
 
                             //build result map;
-                            const roller = this.getRoller(
+                            const roller = await this.getRoller(
                                 content,
                                 ctx.sourcePath
                             );
@@ -343,7 +343,7 @@ export default class DiceRollerPlugin extends Plugin {
                         );
 
                         //build result map;
-                        const roller = this.getRoller(content, ctx.sourcePath);
+                        const roller = await this.getRoller(content, ctx.sourcePath);
                         const savedResult =
                             this.data.results?.[path]?.[lineStart]?.[index] ??
                             null;
@@ -603,7 +603,7 @@ export default class DiceRollerPlugin extends Plugin {
         roller.recalculate();
     }
     public async parseDice(content: string, source: string) {
-        const roller = this.getRoller(content, source);
+        const roller = await this.getRoller(content, source);
         return { result: await roller.roll(), roller };
     }
     clearEmpties(o: Record<any, any>) {
@@ -631,11 +631,11 @@ export default class DiceRollerPlugin extends Plugin {
 
         return new RegExp(`(${fields.join("|")})`, "g");
     }
-    getRoller(
+    async getRoller(
         content: string,
         source: string,
         icon = this.data.showDice
-    ): BasicRoller {
+    ): Promise<BasicRoller> {
         content = content.replace(/\\\|/g, "|");
 
         let showDice = content.includes("|nodice") ? false : icon;
@@ -703,13 +703,15 @@ export default class DiceRollerPlugin extends Plugin {
                 return roller;
             }
             case "table": {
-                return new TableRoller(
+                const roller = new TableRoller(
                     this,
                     content,
                     lexemes[0],
                     source,
                     showDice
                 );
+                await roller.initPromise;
+                return roller;
             }
             case "section": {
                 return new SectionRoller(
