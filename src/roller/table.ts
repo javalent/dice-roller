@@ -5,8 +5,8 @@ import { StackRoller } from ".";
 import { GenericFileRoller } from "./roller";
 
 class SubRollerResult {
-    result: string;
-    combinedTooltip: string;
+    result: string="";
+    combinedTooltip: string="";
 }
 
 export class TableRoller extends GenericFileRoller<string> {
@@ -92,10 +92,14 @@ export class TableRoller extends GenericFileRoller<string> {
         return output;
     }
 
-    async getSubResult(input: string): Promise<SubRollerResult> {
+    async getSubResult(input: string | number): Promise<SubRollerResult> {
         let res: SubRollerResult = new SubRollerResult();
-        res.result = input;
-
+        if (typeof input === "number") {
+            res.result = input.toString();
+        }
+        else {
+            res.result = input;
+        }
         let subTooltips: string[] = [];
 
         // WARN: we may receive an input that is not string (but a number). Check
@@ -140,9 +144,9 @@ export class TableRoller extends GenericFileRoller<string> {
         let subTooltips: string[] = [];
 
         for (let i = 0; i < this.rolls; i++) {
-            let subTooltip:string;
+            let subTooltip:string = "";
             let subResult: SubRollerResult;
-            let selectedOption:string;
+            let selectedOption:string = "";
 
             if (this.isLookup) {
                 const result = await this.lookupRoller.roll();
