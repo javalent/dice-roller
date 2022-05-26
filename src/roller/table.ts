@@ -54,38 +54,41 @@ export class TableRoller extends GenericFileRoller<string> {
         );
     }
 
-    // Quick and Dirty
-    // TODO: to be refactored (using regex maybe?)
     prettify(input: string): string {
-        let tab = "\t";
-
+        const specialChars = /(.*?)(\(|\)|;|\|\|)(.*)/
+        const tab = "\t";
         let tabCount = 0;
         let output:string = "";
 
-        for (let i = 0; i < input.length; i++) {
-            if (input.charAt(i) == "(") {
-                tabCount++;
-                output += "(\n";
-                output += tab.repeat(tabCount);
-            }
-            else if (input.charAt(i) == ")") {
+        let remaining:string = input;
+        let matches: RegExpMatchArray;
+        while (matches = remaining.match(specialChars)) {
+            let [, beforeSpecial, special, afterSpecial] = matches;
+            output += beforeSpecial;
+            if (special == ")") {
                 tabCount--;
                 output += "\n";
                 output += tab.repeat(tabCount);
                 output += ")";
             }
-            else if (input.charAt(i) == ";") {
-                output += ",\n";
-                output += tab.repeat(tabCount);
-            }
-            else if (input.charAt(i) == "|" && input.charAt(i-1) == "|") {
-                output += "|\n";
-                output += tab.repeat(tabCount);
-            }
             else {
-                output += input.charAt(i);
+                if (special == "(") {
+                    tabCount++;
+                    output += "(";
+                }
+                else if (special == ";") {
+                    output += ",";
+                }
+                else if (special == "||") {
+                    output += "|";
+                }
+                output += "\n"
+                output += tab.repeat(tabCount);
             }
+            remaining = afterSpecial;
         }
+        output += remaining;
+
         return output;
     }
 
@@ -97,7 +100,7 @@ export class TableRoller extends GenericFileRoller<string> {
 
         // WARN: we may receive an input that is not string (but a number). Check
         // for embeded formulas only if we can.
-        if (typeof input?.matchAll === "function") {
+        if (typeof input === "string") {
             // Look for dice blocks: `dice: <formula>`
             const rollerPattern = /(?:\`dice:)(.*?)(?:\`)/g;
             const foundRollers = input.matchAll(rollerPattern);
@@ -156,8 +159,6 @@ export class TableRoller extends GenericFileRoller<string> {
             else {
                 const options = [...this.options];
                 const randomRowNumber = this.getRandomBetween(0, options.length - 1);
-                // TODO: to be confirmed (was this to forbid rolling the same result twice ?)
-                // options.splice(options.indexOf(option), 1);
                 subTooltip = options.length + " rows" + " --> " + "[row " + (randomRowNumber+1) + "]";
                 selectedOption = options[randomRowNumber];
             }
