@@ -710,7 +710,7 @@ export default class DiceRollerPlugin extends Plugin {
                     source,
                     showDice
                 );
-                await roller.initPromise;
+                await roller.init;
                 return roller;
             }
             case "section": {

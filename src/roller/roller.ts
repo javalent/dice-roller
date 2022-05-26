@@ -102,7 +102,7 @@ export abstract class GenericFileRoller<T> extends GenericRoller<T> {
     cache: CachedMetadata;
     options: T[];
     results: T[];
-    initPromise: Promise<void>;
+    init: Promise<void>;
     constructor(
         public plugin: DiceRollerPlugin,
         public original: string,
@@ -113,7 +113,7 @@ export abstract class GenericFileRoller<T> extends GenericRoller<T> {
         super(plugin, original, [lexeme], showDice);
 
         this.getPath();
-        this.initPromise = this.getFile();
+        this.init = this.getFile();
     }
     abstract getPath(): void;
     async getFile() {
