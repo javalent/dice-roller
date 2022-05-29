@@ -260,6 +260,9 @@ export default class DiceRollerPlugin extends Plugin {
 
                 const toPersist: Record<number, BasicRoller> = {};
 
+                let fileContent: string[];
+                let replacementFound: boolean = false;
+
                 for (let index = 0; index < nodeList.length; index++) {
                     const node = nodeList.item(index);
 
@@ -268,6 +271,13 @@ export default class DiceRollerPlugin extends Plugin {
                         info
                     ) {
                         try {
+                            if (!replacementFound) {
+                                fileContent = (
+                                        await this.app.vault.cachedRead(file)
+                                    ).split("\n");
+                                replacementFound = true;
+                            }
+
                             let [full, content] = node.innerText.match(
                                 /^dice\-mod:\s*([\s\S]+)\s*?/
                             );
@@ -290,9 +300,6 @@ export default class DiceRollerPlugin extends Plugin {
                             );
 
                             roller.on("new-result", async () => {
-                                const fileContent = (
-                                    await this.app.vault.cachedRead(file)
-                                ).split("\n");
                                 let splitContent = fileContent.slice(
                                     info.lineStart,
                                     info.lineEnd + 1
@@ -317,11 +324,6 @@ export default class DiceRollerPlugin extends Plugin {
                                     info.lineStart,
                                     info.lineEnd - info.lineStart + 1,
                                     ...splitContent
-                                );
-
-                                await this.app.vault.modify(
-                                    file,
-                                    fileContent.join("\n")
                                 );
                             });
                             await roller.roll();
@@ -416,6 +418,13 @@ export default class DiceRollerPlugin extends Plugin {
                         );
                         continue;
                     }
+                }
+
+                if (replacementFound) {
+                    await this.app.vault.modify(
+                        file,
+                        fileContent.join("\n")
+                    );
                 }
 
                 if (path in this.data.results) {
