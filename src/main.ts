@@ -260,6 +260,9 @@ export default class DiceRollerPlugin extends Plugin {
 
                 const toPersist: Record<number, BasicRoller> = {};
 
+                let fileContent: string[];
+                let replacementFound: boolean = false;
+                const modPromises: Promise<void>[] = [];
                 for (let index = 0; index < nodeList.length; index++) {
                     const node = nodeList.item(index);
 
@@ -268,6 +271,13 @@ export default class DiceRollerPlugin extends Plugin {
                         info
                     ) {
                         try {
+                            if (!replacementFound) {
+                                fileContent = (
+                                    await this.app.vault.cachedRead(file)
+                                ).split("\n");
+                                replacementFound = true;
+                            }
+
                             let [full, content] = node.innerText.match(
                                 /^dice\-mod:\s*([\s\S]+)\s*?/
                             );
@@ -284,46 +294,44 @@ export default class DiceRollerPlugin extends Plugin {
                                 .replace("|form", "");
 
                             //build result map;
-                            const roller = this.getRoller(
+                            const roller = await this.getRoller(
                                 content,
                                 ctx.sourcePath
                             );
 
-                            roller.on("new-result", async () => {
-                                const fileContent = (
-                                    await this.app.vault.cachedRead(file)
-                                ).split("\n");
-                                let splitContent = fileContent.slice(
-                                    info.lineStart,
-                                    info.lineEnd + 1
-                                );
-                                const replacer = roller.replacer;
-                                if (!replacer) {
-                                    new Notice(
-                                        "Dice Roller: There was an issue modifying the file."
-                                    );
-                                    return;
-                                }
-                                const rep = showFormula
-                                    ? `${roller.inlineText} **${replacer}**`
-                                    : `${replacer}`;
+                            modPromises.push(
+                                new Promise((resolve, reject) => {
+                                    roller.on("new-result", async () => {
+                                        let splitContent = fileContent.slice(
+                                            info.lineStart,
+                                            info.lineEnd + 1
+                                        );
+                                        const replacer = roller.replacer;
+                                        if (!replacer) {
+                                            new Notice(
+                                                "Dice Roller: There was an issue modifying the file."
+                                            );
+                                            return;
+                                        }
+                                        const rep = showFormula
+                                            ? `${roller.inlineText} **${replacer}**`
+                                            : `${replacer}`;
 
-                                splitContent = splitContent
-                                    .join("\n")
-                                    .replace(`\`${full}\``, rep)
-                                    .split("\n");
+                                        splitContent = splitContent
+                                            .join("\n")
+                                            .replace(`\`${full}\``, rep)
+                                            .split("\n");
 
-                                fileContent.splice(
-                                    info.lineStart,
-                                    info.lineEnd - info.lineStart + 1,
-                                    ...splitContent
-                                );
+                                        fileContent.splice(
+                                            info.lineStart,
+                                            info.lineEnd - info.lineStart + 1,
+                                            ...splitContent
+                                        );
+                                        resolve();
+                                    });
+                                })
+                            );
 
-                                await this.app.vault.modify(
-                                    file,
-                                    fileContent.join("\n")
-                                );
-                            });
                             await roller.roll();
 
                             continue;
@@ -343,7 +351,10 @@ export default class DiceRollerPlugin extends Plugin {
                         );
 
                         //build result map;
-                        const roller = this.getRoller(content, ctx.sourcePath);
+                        const roller = await this.getRoller(
+                            content,
+                            ctx.sourcePath
+                        );
                         const savedResult =
                             this.data.results?.[path]?.[lineStart]?.[index] ??
                             null;
@@ -416,6 +427,11 @@ export default class DiceRollerPlugin extends Plugin {
                         );
                         continue;
                     }
+                }
+
+                if (replacementFound && modPromises.length) {
+                    await Promise.all(modPromises);
+                    await this.app.vault.modify(file, fileContent.join("\n"));
                 }
 
                 if (path in this.data.results) {
@@ -603,7 +619,7 @@ export default class DiceRollerPlugin extends Plugin {
         roller.recalculate();
     }
     public async parseDice(content: string, source: string) {
-        const roller = this.getRoller(content, source);
+        const roller = await this.getRoller(content, source);
         return { result: await roller.roll(), roller };
     }
     clearEmpties(o: Record<any, any>) {
@@ -631,18 +647,18 @@ export default class DiceRollerPlugin extends Plugin {
 
         return new RegExp(`(${fields.join("|")})`, "g");
     }
-    getRoller(
+    async getRoller(
         content: string,
         source: string,
         icon = this.data.showDice
-    ): BasicRoller {
+    ): Promise<BasicRoller> {
         content = content.replace(/\\\|/g, "|");
 
         let showDice = content.includes("|nodice") ? false : icon;
         let shouldRender = this.data.renderAllDice;
         let showFormula = this.data.displayResultsInline;
         let expectedValue: ExpectedValue = ExpectedValue.Roll;
-        let fixedText:string = "";
+        let fixedText: string = "";
         const regextext = /\|text\((.*)\)/;
 
         if (content.includes("|render")) {
@@ -703,13 +719,15 @@ export default class DiceRollerPlugin extends Plugin {
                 return roller;
             }
             case "table": {
-                return new TableRoller(
+                const roller = new TableRoller(
                     this,
                     content,
                     lexemes[0],
                     source,
                     showDice
                 );
+                await roller.init;
+                return roller;
             }
             case "section": {
                 return new SectionRoller(

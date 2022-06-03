@@ -107,7 +107,7 @@
 
 .dice-roller-result .embedded-table-result p {
     margin: 0;
-    display: inline-flex;
+    /* display: inline-flex; */
 }
 
 /** Settings */

@@ -4,6 +4,11 @@ import { TABLE_REGEX } from "src/utils/constants";
 import { StackRoller } from ".";
 import { GenericFileRoller } from "./roller";
 
+class SubRollerResult {
+    result: string="";
+    combinedTooltip: string="";
+}
+
 export class TableRoller extends GenericFileRoller<string> {
     content: string;
     position: Pos;
@@ -12,6 +17,8 @@ export class TableRoller extends GenericFileRoller<string> {
     isLookup: any;
     lookupRoller: StackRoller;
     lookupRanges: [range: [min: number, max: number], option: string][];
+    combinedTooltip: string = "";
+    prettyTooltip: string = "";
     getPath() {
         const { groups } = this.lexeme.value.match(TABLE_REGEX);
 
@@ -27,9 +34,7 @@ export class TableRoller extends GenericFileRoller<string> {
         this.header = header;
     }
     get tooltip() {
-        return `${this.original}\n${this.path} > ${this.block}${
-            this.header ? " | " + this.header : ""
-        }`;
+        return this.prettyTooltip;
     }
     get replacer() {
         return this.result;
@@ -38,11 +43,9 @@ export class TableRoller extends GenericFileRoller<string> {
     async build() {
         this.resultEl.empty();
         const result = [this.result];
-
         if (this.plugin.data.displayResultsInline) {
             result.unshift(this.inlineText);
         }
-
         MarkdownRenderer.renderMarkdown(
             result.join(""),
             this.resultEl.createSpan("embedded-table-result"),
@@ -50,28 +53,143 @@ export class TableRoller extends GenericFileRoller<string> {
             null
         );
     }
-    async getResult() {
-        if (this.isLookup) {
-            const result = await this.lookupRoller.roll();
-            const option = this.lookupRanges.find(
-                ([range]) =>
-                    (range[1] === undefined && result === range[0]) ||
-                    (result >= range[0] && range[1] >= result)
-            );
-            if (option) {
-                return option[1];
+
+    prettify(input: string): string {
+        const specialChars = /(.*?)(\(|\)|;|\|\|)(.*)/
+        const tab = "\t";
+        let tabCount = 0;
+        let output:string = "";
+
+        let remaining:string = input;
+        let matches: RegExpMatchArray;
+        while (matches = remaining.match(specialChars)) {
+            let [, beforeSpecial, special, afterSpecial] = matches;
+            output += beforeSpecial;
+            if (special == ")") {
+                tabCount--;
+                output += "\n";
+                output += tab.repeat(tabCount);
+                output += ")";
+            }
+            else {
+                if (special == "(") {
+                    tabCount++;
+                    output += "(";
+                }
+                else if (special == ";") {
+                    output += ",";
+                }
+                else if (special == "||") {
+                    output += "|";
+                }
+                output += "\n"
+                output += tab.repeat(tabCount);
+            }
+            remaining = afterSpecial;
+        }
+        output += remaining;
+
+        return output;
+    }
+
+    async getSubResult(input: string | number): Promise<SubRollerResult> {
+        let res: SubRollerResult = new SubRollerResult();
+        if (typeof input === "number") {
+            res.result = input.toString();
+        }
+        else {
+            res.result = input;
+        }
+        let subTooltips: string[] = [];
+
+        // WARN: we may receive an input that is not string (but a number). Check
+        // for embeded formulas only if we can.
+        if (typeof input === "string") {
+            // Look for dice blocks: `dice: <formula>`
+            const rollerPattern = /(?:\`dice:)(.*?)(?:\`)/g;
+            const foundRollers = input.matchAll(rollerPattern);
+
+            for (let foundRoller of foundRollers) {
+                const formula = foundRoller[1].trim();
+
+                // Create sub roller with formula
+                const subRoller = await this.plugin.getRoller(formula, this.source);
+                // Roll it
+                await subRoller.roll();
+                // Get sub result
+                const rollerResult = await this.getSubResult(subRoller.result);
+
+                // Replace dice block by sub result
+                res.result = res.result.replace(foundRoller[0], rollerResult.result);
+
+                // Update tooltip
+                if (subRoller instanceof TableRoller) {
+                    subTooltips.push(subRoller.combinedTooltip);
+                }
+                else {
+                    const [top, bottom] = subRoller.tooltip.split("\n");
+                    subTooltips.push(top + " --> " + bottom);
+                }
             }
         }
-        const options = [...this.options];
 
-        return [...Array(this.rolls)]
-            .map(() => {
-                let option =
-                    options[this.getRandomBetween(0, options.length - 1)];
-                options.splice(options.indexOf(option), 1);
-                return option;
-            })
-            .join("||");
+        res.combinedTooltip = subTooltips.join(";");
+
+        return res;
+    }
+
+    async getResult() {
+        let res = [];
+
+        let subTooltips: string[] = [];
+
+        for (let i = 0; i < this.rolls; i++) {
+            let subTooltip:string = "";
+            let subResult: SubRollerResult;
+            let selectedOption:string = "";
+
+            if (this.isLookup) {
+                const result = await this.lookupRoller.roll();
+                const option = this.lookupRanges.find(
+                    ([range]) =>
+                        (range[1] === undefined && result === range[0]) ||
+                        (result >= range[0] && range[1] >= result)
+                );
+                if (option) {
+                    subTooltip = this.lookupRoller.original.trim() + " --> " + `${this.lookupRoller.resultText}${this.header ? " | " + this.header : ""}`.trim();
+                    selectedOption = option[1];
+                }
+            }
+            else {
+                const options = [...this.options];
+                const randomRowNumber = this.getRandomBetween(0, options.length - 1);
+                subTooltip = options.length + " rows" + " --> " + "[row " + (randomRowNumber+1) + "]";
+                selectedOption = options[randomRowNumber];
+            }
+
+            subResult = await this.getSubResult(selectedOption);
+            res.push(subResult.result);
+
+            if (subResult.combinedTooltip) {
+                subTooltip += " > (" + subResult.combinedTooltip + ")";
+            }
+            subTooltips.push(subTooltip);
+        }
+
+        // TODO: find a simpler way
+        if (subTooltips.length == 0) {
+            this.combinedTooltip = this.original;
+        }
+        else if (subTooltips.length == 1) {
+            this.combinedTooltip = this.original + " " + subTooltips.join("");
+        }
+        else {
+            this.combinedTooltip = this.original + " ==> (" + subTooltips.join(" ||") + ")";
+        }
+
+        this.prettyTooltip = this.prettify(this.combinedTooltip);
+
+        return res.join("||");
     }
     async roll(): Promise<string> {
         return new Promise(async (resolve) => {
@@ -130,13 +248,14 @@ export class TableRoller extends GenericFileRoller<string> {
                 Object.keys(table.columns).length === 2 &&
                 /dice:\s*([\s\S]+)\s*?/.test(Object.keys(table.columns)[0])
             ) {
-                const roller = this.plugin.getRoller(
+                const roller = await this.plugin.getRoller(
                     Object.keys(table.columns)[0].split(":").pop(),
                     this.source
                 );
                 if (roller instanceof StackRoller) {
                     this.lookupRoller = roller;
-                    await this.lookupRoller.roll();
+                    // TODO: useless roll I think
+                    // let result = await this.lookupRoller.roll();
 
                     this.lookupRanges = table.rows.map((row) => {
                         const [range, option] = row
