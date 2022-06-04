@@ -1,4 +1,4 @@
-import { MarkdownRenderer, Pos } from "obsidian";
+import { MarkdownRenderer, Notice, Pos } from "obsidian";
 
 import { TABLE_REGEX } from "src/utils/constants";
 import { StackRoller } from ".";
@@ -14,6 +14,7 @@ export class TableRoller extends GenericFileRoller<string> {
     position: Pos;
     block: string;
     header: string;
+    rollsFormula: string;
     isLookup: any;
     lookupRoller: StackRoller;
     lookupRanges: [range: [min: number, max: number], option: string][];
@@ -22,10 +23,20 @@ export class TableRoller extends GenericFileRoller<string> {
     getPath() {
         const { groups } = this.lexeme.value.match(TABLE_REGEX);
 
-        const { roll = 1, link, block, header } = groups;
+        const { diceRoll="1", link, block, header } = groups;
         if (!link || !block) throw new Error("Could not parse link.");
 
-        this.rolls = (roll && !isNaN(Number(roll)) && Number(roll)) ?? 1;
+        // For backward compatiblity: xd transformed into x (instead of xd100)
+        const matches = diceRoll.match(/(\d*?)[Dd]$/);
+        if (matches) {
+            const [, nbRolls = "1", ] = matches;
+            this.rollsFormula = nbRolls;
+        }
+        else {
+            this.rollsFormula = diceRoll;
+        }
+        this.rolls = 1;
+
         this.path = decodeURIComponent(link.replace(/(\[|\]|\(|\))/g, ""));
         this.block = block
             .replace(/(\^|#)/g, "")
@@ -140,8 +151,30 @@ export class TableRoller extends GenericFileRoller<string> {
 
     async getResult() {
         let res = [];
-
         let subTooltips: string[] = [];
+        let formula = this.original;
+
+        if (this.rollsFormula) {
+            try {
+                const roller = await this.plugin.getRoller(this.rollsFormula, this.source);
+                if (!(roller instanceof StackRoller)) {
+                    this.prettyTooltip = "TableRoller only supports dice rolls to select multiple elements.";
+                    new Notice(this.prettyTooltip);
+                    return("ERROR");
+                }
+                const rollsRoller = roller as StackRoller;
+                await rollsRoller.roll();
+                this.rolls = rollsRoller.result;
+                if (!rollsRoller.isStatic) {
+                    formula = formula.replace(this.rollsFormula, `${this.rollsFormula.trim()} --> ${rollsRoller.resultText} > `);
+                }
+            }
+            catch(error) {
+                this.prettyTooltip = `TableRoller: '${this.rollsFormula}' is not a valid dice roll.`;
+                new Notice(this.prettyTooltip);
+                return("ERROR");
+            }
+        }
 
         for (let i = 0; i < this.rolls; i++) {
             let subTooltip:string = "";
@@ -176,15 +209,14 @@ export class TableRoller extends GenericFileRoller<string> {
             subTooltips.push(subTooltip);
         }
 
-        // TODO: find a simpler way
         if (subTooltips.length == 0) {
-            this.combinedTooltip = this.original;
+            this.combinedTooltip = formula;
         }
         else if (subTooltips.length == 1) {
-            this.combinedTooltip = this.original + " " + subTooltips.join("");
+            this.combinedTooltip = formula + " " + subTooltips.join("");
         }
         else {
-            this.combinedTooltip = this.original + " ==> (" + subTooltips.join(" ||") + ")";
+            this.combinedTooltip = formula + " ==> (" + subTooltips.join(" ||") + ")";
         }
 
         this.prettyTooltip = this.prettify(this.combinedTooltip);
