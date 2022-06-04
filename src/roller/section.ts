@@ -528,7 +528,7 @@ export class LinkRoller extends GenericRoller<TFile> {
             this.plugin.app.workspace.openLinkText(
                 this.result.path,
                 this.plugin.app.workspace.getActiveFile()?.path,
-                true
+                evt.getModifierState("Control")
             );
         };
 
