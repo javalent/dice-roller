@@ -772,6 +772,133 @@ export default class DiceRollerPlugin extends Plugin {
             }
         }
     }
+
+   getRollerSync(
+        content: string,
+        source: string,
+        icon = this.data.showDice
+    ): Promise<BasicRoller> {
+        content = content.replace(/\\\|/g, "|");
+
+        let showDice = content.includes("|nodice") ? false : icon;
+        let shouldRender = this.data.renderAllDice;
+        let showFormula = this.data.displayResultsInline;
+        let expectedValue: ExpectedValue = ExpectedValue.Roll;
+        let fixedText: string = "";
+        const regextext = /\|text\((.*)\)/;
+
+        if (content.includes("|render")) {
+            shouldRender = true;
+        }
+        if (content.includes("|norender")) {
+            shouldRender = false;
+        }
+        if (content.includes("|form")) {
+            showFormula = true;
+        }
+        if (content.includes("|noform")) {
+            showFormula = false;
+        }
+        if (content.includes("|avg")) {
+            expectedValue = ExpectedValue.Average;
+        }
+        if (content.includes("|none")) {
+            expectedValue = ExpectedValue.None;
+        }
+        if (content.includes("|text(")) {
+            let [, text] = content.match(regextext) ?? [null, ""];
+            fixedText = text;
+        }
+        content = decode(
+            //remove flags...
+            content
+                .replace("|nodice", "")
+                .replace("|render", "")
+                .replace("|norender", "")
+                .replace("|noform", "")
+                .replace("|form", "")
+                .replace("|avg", "")
+                .replace("|none", "")
+                .replace(regextext, "")
+        );
+
+        if (content in this.data.formulas) {
+            content = this.data.formulas[content];
+        }
+
+        const lexemes = this.parse(content);
+
+        const type = this.getTypeFromLexemes(lexemes);
+
+        switch (type) {
+            case "dice": {
+                const roller = new StackRoller(
+                    this,
+                    content,
+                    lexemes,
+                    showDice,
+                    fixedText,
+                    expectedValue
+                );
+                roller.shouldRender = shouldRender;
+                roller.showFormula = showFormula;
+                return roller;
+            }
+            case "table": {
+                const roller = new TableRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
+                roller.init;
+                return roller;
+            }
+            case "section": {
+                return new SectionRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
+            }
+            case "tag": {
+                if (!this.canUseDataview) {
+                    throw new Error(
+                        "Tags are only supported with the Dataview plugin installed."
+                    );
+                }
+                return new TagRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
+            }
+            case "link": {
+                return new LinkRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
+            }
+            case "line": {
+                return new LineRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
+            }
+        }
+    }
+
     getTypeFromLexemes(lexemes: LexicalToken[]) {
         if (lexemes.some(({ type }) => type === "table")) {
             return "table";
