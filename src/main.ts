@@ -29,7 +29,7 @@ import {
 
 import SettingTab from "./settings/settings";
 
-import { BasicRoller } from "./roller/roller";
+import { ArrayRoller, BasicRoller } from "./roller/roller";
 import DiceView, { VIEW_TYPE } from "./view/view";
 import DiceRenderer from "./view/renderer";
 import Lexer, { LexicalToken } from "./parser/lexer";
@@ -551,6 +551,14 @@ export default class DiceRollerPlugin extends Plugin {
         if (leaf && leaf.view && leaf.view instanceof DiceView)
             return leaf.view;
     }
+
+    async getArrayRoller(options: any[], rolls = 1) {
+        const roller = new ArrayRoller(this, options, rolls);
+
+        await roller.roll();
+        return roller;
+    }
+
     async addDiceView(startup = false) {
         if (startup && !this.data.showLeafOnStartup) return;
         if (this.app.workspace.getLeavesOfType(VIEW_TYPE).length) {
@@ -649,7 +657,7 @@ export default class DiceRollerPlugin extends Plugin {
     }
     async getRoller(
         content: string,
-        source: string,
+        source: string = "",
         icon = this.data.showDice
     ): Promise<BasicRoller> {
         content = content.replace(/\\\|/g, "|");
@@ -773,7 +781,7 @@ export default class DiceRollerPlugin extends Plugin {
         }
     }
 
-   getRollerSync(
+    getRollerSync(
         content: string,
         source: string,
         icon = this.data.showDice

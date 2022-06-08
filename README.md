@@ -580,11 +580,53 @@ Formulas can also just be written directly in the `Dice Formula` textbox. These 
 
 # Graphical Dice
 
-3D Dice can be rolled using the Dice View if [Display Graphics for Dice View Rolls](#display-graphics-for-dice-view-rolls) is turned on in settings, the  or the [`|render` flag](#render-and-norender) is used in the dice formula.
+3D Dice can be rolled using the Dice View if [Display Graphics for Dice View Rolls](#display-graphics-for-dice-view-rolls) is turned on in settings, the or the [`|render` flag](#render-and-norender) is used in the dice formula.
 
 > :pencil: Only the basic D20 set (D4, D6, D8, D10, D12, and D20) can be rolled graphically.
 
 See [Graphical Dice](#graphical-dice-1) for settings.
+
+# Usage in Other plugins
+
+Plugins that have the ability to write JavaScript (such as DataView) can interface with the Dice Roller plugin in by accessing it on the Obsidian app object:
+
+```js
+const diceRollerPlugin = app.plugins.getPlugin("obsidian-dice-roller");
+```
+
+Once you have an instance of the plugin, you can then generate the various types of rollers, such as a dice roller, tag roller, etc, using the `getRoller` method:
+
+```typescript
+//definition
+getRoller(diceString: string, sourceFile: string = ""): Promise<Roller>;
+
+//example
+const diceRoller = await diceRollerPlugin.getRoller("1d3+3d8");
+```
+
+## Array Roller
+
+A special type of roller is available using the JavaScript interface, where you can directly pass in an array you want a result from. 
+
+```ts
+//definition
+getArrayRoller(options: any[], rolls: number = 1): Promise<ArrayRoller>;
+
+ArrayRoller {
+    /** Roll the array roller and generate a new set of results. */
+    roll(): Promise<any>
+
+    /** Property containing the container element of the array roller. Use this to attach it to the note's DOM */
+    containerEl: HTMLElement;
+
+    /** Property containing the array of randomly-generated results. This will change every time the array roller is rolled. */
+    results: any[]
+}
+
+//example
+const diceRoller = await diceRollerPlugin.getArrayRoller([1, 2, 3, 4, 5], 2);
+
+```
 
 # Settings
 
