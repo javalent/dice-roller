@@ -1,12 +1,12 @@
-import { MarkdownRenderer, Pos } from "obsidian";
+import { MarkdownRenderer, Pos, TFile } from "obsidian";
 
 import { TABLE_REGEX } from "src/utils/constants";
-import { StackRoller } from ".";
+import { LinkRoller, StackRoller, TagRoller } from ".";
 import { GenericFileRoller } from "./roller";
 
 class SubRollerResult {
-    result: string="";
-    combinedTooltip: string="";
+    result: string = "";
+    combinedTooltip: string = "";
 }
 
 export class TableRoller extends GenericFileRoller<string> {
@@ -55,14 +55,14 @@ export class TableRoller extends GenericFileRoller<string> {
     }
 
     prettify(input: string): string {
-        const specialChars = /(.*?)(\(|\)|;|\|\|)(.*)/
+        const specialChars = /(.*?)(\(|\)|;|\|\|)(.*)/;
         const tab = "\t";
         let tabCount = 0;
-        let output:string = "";
+        let output: string = "";
 
-        let remaining:string = input;
+        let remaining: string = input;
         let matches: RegExpMatchArray;
-        while (matches = remaining.match(specialChars)) {
+        while ((matches = remaining.match(specialChars))) {
             let [, beforeSpecial, special, afterSpecial] = matches;
             output += beforeSpecial;
             if (special == ")") {
@@ -70,19 +70,16 @@ export class TableRoller extends GenericFileRoller<string> {
                 output += "\n";
                 output += tab.repeat(tabCount);
                 output += ")";
-            }
-            else {
+            } else {
                 if (special == "(") {
                     tabCount++;
                     output += "(";
-                }
-                else if (special == ";") {
+                } else if (special == ";") {
                     output += ",";
-                }
-                else if (special == "||") {
+                } else if (special == "||") {
                     output += "|";
                 }
-                output += "\n"
+                output += "\n";
                 output += tab.repeat(tabCount);
             }
             remaining = afterSpecial;
@@ -96,8 +93,7 @@ export class TableRoller extends GenericFileRoller<string> {
         let res: SubRollerResult = new SubRollerResult();
         if (typeof input === "number") {
             res.result = input.toString();
-        }
-        else {
+        } else {
             res.result = input;
         }
         let subTooltips: string[] = [];
@@ -113,20 +109,29 @@ export class TableRoller extends GenericFileRoller<string> {
                 const formula = foundRoller[1].trim();
 
                 // Create sub roller with formula
-                const subRoller = await this.plugin.getRoller(formula, this.source);
+                const subRoller = await this.plugin.getRoller(
+                    formula,
+                    this.source
+                );
                 // Roll it
                 await subRoller.roll();
                 // Get sub result
                 const rollerResult = await this.getSubResult(subRoller.result);
 
+                let result: string;
+                if ((rollerResult.result as any) instanceof TFile) {
+                    result = (rollerResult.result as unknown as TFile).basename;
+                } else {
+                    result = rollerResult.result;
+                }
+
                 // Replace dice block by sub result
-                res.result = res.result.replace(foundRoller[0], rollerResult.result);
+                res.result = res.result.replace(foundRoller[0], result);
 
                 // Update tooltip
                 if (subRoller instanceof TableRoller) {
                     subTooltips.push(subRoller.combinedTooltip);
-                }
-                else {
+                } else {
                     const [top, bottom] = subRoller.tooltip.split("\n");
                     subTooltips.push(top + " --> " + bottom);
                 }
@@ -144,9 +149,9 @@ export class TableRoller extends GenericFileRoller<string> {
         let subTooltips: string[] = [];
 
         for (let i = 0; i < this.rolls; i++) {
-            let subTooltip:string = "";
+            let subTooltip: string = "";
             let subResult: SubRollerResult;
-            let selectedOption:string = "";
+            let selectedOption: string = "";
 
             if (this.isLookup) {
                 const result = await this.lookupRoller.roll();
@@ -156,14 +161,27 @@ export class TableRoller extends GenericFileRoller<string> {
                         (result >= range[0] && range[1] >= result)
                 );
                 if (option) {
-                    subTooltip = this.lookupRoller.original.trim() + " --> " + `${this.lookupRoller.resultText}${this.header ? " | " + this.header : ""}`.trim();
+                    subTooltip =
+                        this.lookupRoller.original.trim() +
+                        " --> " +
+                        `${this.lookupRoller.resultText}${
+                            this.header ? " | " + this.header : ""
+                        }`.trim();
                     selectedOption = option[1];
                 }
-            }
-            else {
+            } else {
                 const options = [...this.options];
-                const randomRowNumber = this.getRandomBetween(0, options.length - 1);
-                subTooltip = options.length + " rows" + " --> " + "[row " + (randomRowNumber+1) + "]";
+                const randomRowNumber = this.getRandomBetween(
+                    0,
+                    options.length - 1
+                );
+                subTooltip =
+                    options.length +
+                    " rows" +
+                    " --> " +
+                    "[row " +
+                    (randomRowNumber + 1) +
+                    "]";
                 selectedOption = options[randomRowNumber];
             }
 
@@ -179,12 +197,11 @@ export class TableRoller extends GenericFileRoller<string> {
         // TODO: find a simpler way
         if (subTooltips.length == 0) {
             this.combinedTooltip = this.original;
-        }
-        else if (subTooltips.length == 1) {
+        } else if (subTooltips.length == 1) {
             this.combinedTooltip = this.original + " " + subTooltips.join("");
-        }
-        else {
-            this.combinedTooltip = this.original + " ==> (" + subTooltips.join(" ||") + ")";
+        } else {
+            this.combinedTooltip =
+                this.original + " ==> (" + subTooltips.join(" ||") + ")";
         }
 
         this.prettyTooltip = this.prettify(this.combinedTooltip);
