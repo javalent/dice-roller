@@ -47,7 +47,10 @@ export abstract class BasicRoller extends Events {
         });
     }
     getRandomBetween(min: number, max: number): number {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
+        const randomBuffer = new Uint32Array(1);
+        crypto.getRandomValues(randomBuffer);
+        const rand = randomBuffer[0] / (0xffffffff + 1);
+        return Math.floor(rand * (max - min + 1)) + min;
     }
     async render() {
         this.setTooltip();
@@ -141,3 +144,4 @@ export abstract class GenericFileRoller<T> extends GenericRoller<T> {
         );
     }
 }
+
