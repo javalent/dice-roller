@@ -777,7 +777,7 @@ export default class DiceRollerPlugin extends Plugin {
         content: string,
         source: string,
         icon = this.data.showDice
-    ): Promise<BasicRoller> {
+    ): BasicRoller {
         content = content.replace(/\\\|/g, "|");
 
         let showDice = content.includes("|nodice") ? false : icon;
