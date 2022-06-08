@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.6.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.5.2...8.6.0) (2022-06-08)
+
+
+### Features
+
+* added ArrayRoller interface ([4160dc6](https://github.com/valentine195/obsidian-dice-roller/commit/4160dc6e3e06c2d12668ecd5d24773542bafde1b))
+
+
+### Bug Fixes
+
+* fix typing on syncronous getRoller ([23a65ba](https://github.com/valentine195/obsidian-dice-roller/commit/23a65bad42a52f0d1aa460c35f2e838158ff69fc))
+* hacky fix for ebullient's issue ([649285f](https://github.com/valentine195/obsidian-dice-roller/commit/649285fc48563e8c707412a672d82785a7791270))
+
 ## [8.5.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.4.3...8.5.0) (2022-06-03)
 
 
