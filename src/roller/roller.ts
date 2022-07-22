@@ -56,9 +56,9 @@ abstract class BareRoller extends Events {
         this.setTooltip();
         await this.build();
     }
-    constructor(public plugin: DiceRollerPlugin, public original = "") {
+    constructor(public plugin: DiceRollerPlugin, public original = "", showDice = plugin.data.showDice) {
         super();
-        if (this.plugin.data.showDice) {
+        if (showDice) {
             const icon = this.containerEl.createDiv({
                 cls: "dice-roller-button"
             });
@@ -93,7 +93,7 @@ export abstract class BasicRoller extends BareRoller {
         public lexemes: LexicalToken[],
         public showDice = plugin.data.showDice
     ) {
-        super(plugin, original);
+        super(plugin, original, showDice);
     }
 
     abstract toResult(): { type: string; result: any };
