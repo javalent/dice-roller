@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.6.3](https://github.com/valentine195/obsidian-dice-roller/compare/8.6.2...8.6.3) (2022-08-20)
+
+
+### Bug Fixes
+
+* Rendered dice no longer render on note-open, only click (close [#138](https://github.com/valentine195/obsidian-dice-roller/issues/138)) ([f5b6f98](https://github.com/valentine195/obsidian-dice-roller/commit/f5b6f98fc7b8e786e1f0a1c6fe637692426536a1))
+* Show notice with rendered dice results (close [#130](https://github.com/valentine195/obsidian-dice-roller/issues/130)) ([6a5262c](https://github.com/valentine195/obsidian-dice-roller/commit/6a5262cf43c3ecbefef39085d607c19ae93773ed))
+
 ## [8.6.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.5.2...8.6.0) (2022-06-08)
 
 
