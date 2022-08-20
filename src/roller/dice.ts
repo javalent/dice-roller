@@ -869,6 +869,7 @@ export class StackRoller extends GenericRoller<number> {
         }
         if (this.shouldRender) {
             await this.plugin.renderRoll(this);
+            new Notice(`${this.tooltip}\n\nResult: ${this.result}`);
         } else {
             const final = this.stack.pop();
             final.roll();
