@@ -367,11 +367,22 @@ export default class DiceRollerPlugin extends Plugin {
                             toPersist[index] = roller;
                             roller.save = true;
                         }
+
+                        let shouldRender = this.data.renderAllDice;
+                        if (content.includes("|render")) {
+                            shouldRender = true;
+                        }
+                        if (content.includes("|norender")) {
+                            shouldRender = false;
+                        }
                         const load = async () => {
                             await roller.roll();
 
                             if (roller.save && savedResult) {
                                 await roller.applyResult(savedResult);
+                            }
+                            if (roller instanceof StackRoller) {
+                                roller.shouldRender = shouldRender;
                             }
 
                             node.replaceWith(roller.containerEl);
@@ -663,18 +674,11 @@ export default class DiceRollerPlugin extends Plugin {
         content = content.replace(/\\\|/g, "|");
 
         let showDice = content.includes("|nodice") ? false : icon;
-        let shouldRender = this.data.renderAllDice;
         let showFormula = this.data.displayResultsInline;
         let expectedValue: ExpectedValue = ExpectedValue.Roll;
         let fixedText: string = "";
         const regextext = /\|text\((.*)\)/;
 
-        if (content.includes("|render")) {
-            shouldRender = true;
-        }
-        if (content.includes("|norender")) {
-            shouldRender = false;
-        }
         if (content.includes("|form")) {
             showFormula = true;
         }
@@ -722,7 +726,6 @@ export default class DiceRollerPlugin extends Plugin {
                     fixedText,
                     expectedValue
                 );
-                roller.shouldRender = shouldRender;
                 roller.showFormula = showFormula;
                 return roller;
             }
