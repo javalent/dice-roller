@@ -8,6 +8,8 @@ import {
     WorkspaceLeaf
 } from "obsidian";
 
+import { getAPI, Link } from "obsidian-dataview";
+
 import type { Plugins } from "../../obsidian-overload/index";
 
 import { faDice } from "@fortawesome/free-solid-svg-icons";
@@ -34,6 +36,7 @@ import DiceView, { VIEW_TYPE } from "./view/view";
 import DiceRenderer from "./view/renderer";
 import Lexer, { LexicalToken } from "./parser/lexer";
 import { Round, ExpectedValue } from "./types";
+import { ListField } from "obsidian-dataview/lib/expression/field";
 
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -45,6 +48,49 @@ String.prototype.matchAll =
             yield match;
         }
     };
+
+/** Functional return type for error handling. */
+export declare class Success<T, E> {
+    value: T;
+    successful: true;
+    constructor(value: T);
+    map<U>(f: (a: T) => U): Result<U, E>;
+    flatMap<U>(f: (a: T) => Result<U, E>): Result<U, E>;
+    orElse(_value: T): T;
+    orElseThrow(_message?: (e: E) => string): T;
+}
+/** Functional return type for error handling. */
+export declare class Failure<T, E> {
+    error: E;
+    successful: false;
+    constructor(error: E);
+    map<U>(_f: (a: T) => U): Result<U, E>;
+    flatMap<U>(_f: (a: T) => Result<U, E>): Result<U, E>;
+    orElse(value: T): T;
+    orElseThrow(message?: (e: E) => string): T;
+}
+export declare type Result<T, E> = Success<T, E> | Failure<T, E>;
+/** Monadic 'Result' type which encapsulates whether a procedure succeeded or failed, as well as it's return value. */
+export declare namespace Result {
+    function success<T, E>(value: T): Result<T, E>;
+    function failure<T, E>(error: E): Result<T, E>;
+    function flatMap2<T1, T2, O, E>(
+        first: Result<T1, E>,
+        second: Result<T2, E>,
+        f: (a: T1, b: T2) => Result<O, E>
+    ): Result<O, E>;
+    function map2<T1, T2, O, E>(
+        first: Result<T1, E>,
+        second: Result<T2, E>,
+        f: (a: T1, b: T2) => O
+    ): Result<O, E>;
+}
+
+declare module "obsidian-dataview" {
+    interface DataviewAPI {
+        query(source: string): Promise<Result<{ values: Link[] }, string>>;
+    }
+}
 
 //expose dataview plugin for tags
 declare module "obsidian" {
@@ -159,6 +205,8 @@ export default class DiceRollerPlugin extends Plugin {
         this.renderer = new DiceRenderer(this);
 
         this.addSettingTab(new SettingTab(this.app, this));
+
+        console.log(this.dataviewAPI);
 
         this.registerView(
             VIEW_TYPE,
@@ -542,6 +590,7 @@ export default class DiceRollerPlugin extends Plugin {
     get dataview() {
         return this.app.plugins.getPlugin("dataview");
     }
+    dataviewAPI = getAPI();
     async dataviewReady() {
         return new Promise((resolve) => {
             if (!this.canUseDataview) resolve(false);

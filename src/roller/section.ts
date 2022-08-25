@@ -351,7 +351,24 @@ export class TagRoller extends GenericRoller<SectionRoller> {
     }
     async getFiles() {
         await this.plugin.dataviewReady();
-        const files = this.plugin.dataview.index.tags.invMap.get(this.tag);
+        const query = await this.plugin.dataviewAPI.query(
+            `list from ${this.tag}`
+        );
+        if (!query.successful) {
+            throw new Error(
+                "No files found with that tag. Is the tag correct?\n\n" +
+                    this.tag
+            );
+        }
+
+        const files = new Set(
+            query.value.values.reduce((acc, curr) => {
+                if (curr.type == "file") {
+                    acc.push(curr.path);
+                }
+                return acc;
+            }, [])
+        );
 
         if (files) files.delete(this.source);
         if (!files || !files.size) {
@@ -544,7 +561,24 @@ export class LinkRoller extends GenericRoller<TFile> {
     }
     async getFiles() {
         await this.plugin.dataviewReady();
-        const files = this.plugin.dataview.index.tags.invMap.get(this.tag);
+        const query = await this.plugin.dataviewAPI.query(
+            `list from ${this.tag}`
+        );
+        if (!query.successful) {
+            throw new Error(
+                "No files found with that tag. Is the tag correct?\n\n" +
+                    this.tag
+            );
+        }
+
+        const files = new Set(
+            query.value.values.reduce((acc, curr) => {
+                if (curr.type == "file") {
+                    acc.push(curr.path);
+                }
+                return acc;
+            }, [])
+        );
         if (files) files.delete(this.source);
         if (!files || !files.size) {
             throw new Error(
