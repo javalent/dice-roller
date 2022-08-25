@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.6.4](https://github.com/valentine195/obsidian-dice-roller/compare/8.6.3...8.6.4) (2022-08-25)
+
+
+### Bug Fixes
+
+* fixes Dataview interfacing issue (close [#141](https://github.com/valentine195/obsidian-dice-roller/issues/141)) ([a21c80a](https://github.com/valentine195/obsidian-dice-roller/commit/a21c80ae08560edaf5c3951fd4e0898e8b6f59e4))
+
 ### [8.6.3](https://github.com/valentine195/obsidian-dice-roller/compare/8.6.2...8.6.3) (2022-08-20)
 
 
