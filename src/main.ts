@@ -37,7 +37,7 @@ import DiceRenderer from "./view/renderer";
 import Lexer, { LexicalToken } from "./parser/lexer";
 import { Round, ExpectedValue } from "./types";
 import { ListField } from "obsidian-dataview/lib/expression/field";
-import GenesysView, { GENESYS_VIEW_TYPE } from "./view/genesys";
+/* import GenesysView, { GENESYS_VIEW_TYPE } from "./view/genesys"; */
 
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -213,10 +213,10 @@ export default class DiceRollerPlugin extends Plugin {
             VIEW_TYPE,
             (leaf: WorkspaceLeaf) => new DiceView(this, leaf)
         );
-        this.registerView(
+        /* this.registerView(
             GENESYS_VIEW_TYPE,
             (leaf: WorkspaceLeaf) => new GenesysView(this, leaf)
-        );
+        ); */
         this.app.workspace.onLayoutReady(() => this.addDiceView(true));
 
         this.registerEvent(
@@ -264,7 +264,7 @@ export default class DiceRollerPlugin extends Plugin {
                 }
             }
         });
-        this.addCommand({
+        /* this.addCommand({
             id: "open-view",
             name: "Open Genesys Dice View",
             checkCallback: (checking) => {
@@ -275,7 +275,7 @@ export default class DiceRollerPlugin extends Plugin {
                     return true;
                 }
             }
-        });
+        }); */
 
         this.addCommand({
             id: "reroll",
@@ -630,12 +630,12 @@ export default class DiceRollerPlugin extends Plugin {
         if (leaf && leaf.view && leaf.view instanceof DiceView)
             return leaf.view;
     }
-    get genesysView() {
+    /* get genesysView() {
         const leaves = this.app.workspace.getLeavesOfType(GENESYS_VIEW_TYPE);
         const leaf = leaves.length ? leaves[0] : null;
         if (leaf && leaf.view && leaf.view instanceof GenesysView)
             return leaf.view;
-    }
+    } */
 
     async getArrayRoller(options: any[], rolls = 1) {
         const roller = new ArrayRoller(this, options, rolls);
@@ -654,7 +654,7 @@ export default class DiceRollerPlugin extends Plugin {
         });
         /* this.app.workspace.revealLeaf(this.view.leaf); */
     }
-    async addGenesysDiceView(startup = false) {
+    /* async addGenesysDiceView(startup = false) {
         if (startup && !this.data.showLeafOnStartup) return;
         if (this.app.workspace.getLeavesOfType(GENESYS_VIEW_TYPE).length) {
             return;
@@ -662,8 +662,7 @@ export default class DiceRollerPlugin extends Plugin {
         await this.app.workspace.getRightLeaf(false).setViewState({
             type: GENESYS_VIEW_TYPE
         });
-        /* this.app.workspace.revealLeaf(this.view.leaf); */
-    }
+    } */
 
     async registerDataviewInlineFields() {
         if (!this.canUseDataview) return;
