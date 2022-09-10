@@ -350,6 +350,12 @@ export class TagRoller extends GenericRoller<SectionRoller> {
         return `|${this.types}`;
     }
     async getFiles() {
+        if (!this.plugin.dataviewAPI) {
+            new Notice(
+                "Dice Roller: Dataview must be installed and enabled to use tag rollers."
+            );
+            return;
+        }
         await this.plugin.dataviewReady();
         const query = await this.plugin.dataviewAPI.query(
             `list from ${this.tag}`
@@ -560,6 +566,12 @@ export class LinkRoller extends GenericRoller<TFile> {
         };
     }
     async getFiles() {
+        if (!this.plugin.dataviewAPI) {
+            new Notice(
+                "Dice Roller: Dataview must be installed and enabled to use tag rollers."
+            );
+            return;
+        }
         await this.plugin.dataviewReady();
         const query = await this.plugin.dataviewAPI.query(
             `list from ${this.tag}`
