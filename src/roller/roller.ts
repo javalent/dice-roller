@@ -32,14 +32,14 @@ abstract class BareRoller extends Events {
     loaded: boolean = false;
     abstract build(): Promise<void>;
     abstract get tooltip(): string;
-    containerEl = createDiv({
+    containerEl = createSpan({
         cls: "dice-roller",
         attr: {
             "aria-label-position": "top",
             "data-dice": this.original
         }
     });
-    resultEl = this.containerEl.createDiv("dice-roller-result");
+    resultEl = this.containerEl.createSpan("dice-roller-result");
     setTooltip() {
         if (this.plugin.data.displayResultsInline) return;
         this.containerEl.setAttrs({
@@ -56,10 +56,14 @@ abstract class BareRoller extends Events {
         this.setTooltip();
         await this.build();
     }
-    constructor(public plugin: DiceRollerPlugin, public original = "", showDice = plugin.data.showDice) {
+    constructor(
+        public plugin: DiceRollerPlugin,
+        public original = "",
+        showDice = plugin.data.showDice
+    ) {
         super();
         if (showDice) {
-            const icon = this.containerEl.createDiv({
+            const icon = this.containerEl.createSpan({
                 cls: "dice-roller-button"
             });
             setIcon(icon, ICON_DEFINITION);
