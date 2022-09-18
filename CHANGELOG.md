@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.6.7](https://github.com/valentine195/obsidian-dice-roller/compare/8.6.6...8.6.7) (2022-09-18)
+
+
+### Bug Fixes
+
+* Switch to span elements to allow for copying text without line breaks ([223f33b](https://github.com/valentine195/obsidian-dice-roller/commit/223f33b1a18235837a08cf45e8a75357b7cf0fd7))
+
 ### [8.6.6](https://github.com/valentine195/obsidian-dice-roller/compare/8.6.5...8.6.6) (2022-09-10)
 
 
