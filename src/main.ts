@@ -726,7 +726,8 @@ export default class DiceRollerPlugin extends Plugin {
     }
     public parseDiceSync(content: string, source: string) {
         const roller = this.getRollerSync(content, source);
-        return { result: roller.roll(), roller };
+        if (!(roller instanceof StackRoller)) return;
+        return { result: roller.result, roller };
     }
     clearEmpties(o: Record<any, any>) {
         for (var k in o) {
