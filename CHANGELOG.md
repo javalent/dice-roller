@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.6.9](https://github.com/valentine195/obsidian-dice-roller/compare/8.6.8...8.6.9) (2022-09-27)
+
+
+### Bug Fixes
+
+* type guard parseDiceSync ([a340af4](https://github.com/valentine195/obsidian-dice-roller/commit/a340af42a3c889504afc8701bb8e648f54916e1c))
+
 ### [8.6.8](https://github.com/valentine195/obsidian-dice-roller/compare/8.6.7...8.6.8) (2022-09-27)
 
 
