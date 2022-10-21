@@ -36,7 +36,7 @@ import DiceView, { VIEW_TYPE } from "./view/view";
 import DiceRenderer from "./view/renderer";
 import Lexer, { LexicalToken } from "./parser/lexer";
 import { Round, ExpectedValue } from "./types";
-import { ListField } from "obsidian-dataview/lib/expression/field";
+import { inlinePlugin } from "./live-preview";
 /* import GenesysView, { GENESYS_VIEW_TYPE } from "./view/genesys"; */
 
 String.prototype.matchAll =
@@ -206,8 +206,6 @@ export default class DiceRollerPlugin extends Plugin {
         this.renderer = new DiceRenderer(this);
 
         this.addSettingTab(new SettingTab(this.app, this));
-
-        console.log(this.dataviewAPI);
 
         this.registerView(
             VIEW_TYPE,
@@ -596,6 +594,8 @@ export default class DiceRollerPlugin extends Plugin {
             }
         );
 
+        this.registerEditorExtension(inlinePlugin(this));
+
         this.app.workspace.onLayoutReady(async () => {
             await this.registerDataviewInlineFields();
         });
@@ -886,12 +886,12 @@ export default class DiceRollerPlugin extends Plugin {
         let fixedText: string = "";
         const regextext = /\|text\((.*)\)/;
 
-        /* if (content.includes("|render")) {
+        if (content.includes("|render")) {
             shouldRender = true;
         }
         if (content.includes("|norender")) {
             shouldRender = false;
-        } */
+        }
         if (content.includes("|form")) {
             showFormula = true;
         }
