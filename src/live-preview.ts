@@ -35,7 +35,7 @@ import {
     ViewUpdate,
     WidgetType
 } from "@codemirror/view";
-import { EditorSelection, Range } from "@codemirror/state";
+import { EditorSelection, Range, EditorState } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
 import {
     editorEditorField,
@@ -94,13 +94,10 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
 
                 const original = view.state.doc.sliceString(start, end).trim();
 
-                if (!/^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/.test(original))
-                    return;
+                if (!/^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/.test(original)) return;
                 let [, content] = original.match(
-                    /^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/
+                    /^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/
                 );
-
-                //build result map;
                 const roller = plugin.getRollerSync(content, currentFile.path);
 
                 widgets.push(
@@ -113,7 +110,6 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
             }
         });
     }
-
     return Decoration.set(widgets, true);
 }
 class InlineWidget extends WidgetType {
@@ -172,7 +168,6 @@ export function inlinePlugin(plugin: DiceRollerPlugin) {
     return ViewPlugin.fromClass(
         class {
             decorations: DecorationSet;
-
             constructor(view: EditorView) {
                 this.decorations =
                     inlineRender(view, plugin) ?? Decoration.none;
@@ -197,4 +192,37 @@ export function inlinePlugin(plugin: DiceRollerPlugin) {
         },
         { decorations: (v) => v.decorations }
     );
+}
+
+export function modTransactionFilter(plugin: DiceRollerPlugin) {
+    return EditorState.transactionFilter.of((transaction) => {
+        if (
+            !transaction.docChanged ||
+            (!transaction.isUserEvent("input.type") &&
+                !transaction.isUserEvent("input.complete"))
+        )
+            return transaction;
+        const newDoc = transaction.newDoc;
+        const head = transaction.newSelection.main.head;
+        const line = newDoc.lineAt(head);
+
+        if (!/`dice-mod/.test(line.text)) return transaction;
+        let [, content] = line.text.match(/`dice-mod:\s*([\s\S]+)\s*?`/);
+
+        const currentFile = app.workspace.getActiveFile();
+        const roller = plugin.getRollerSync(content, currentFile.path);
+
+        roller.roll();
+
+        const insert = plugin.data.displayFormulaForMod
+            ? `${roller.inlineText} **${roller.replacer}**`
+            : `${roller.replacer}`;
+        const mod = {
+            from: line.from + line.text.indexOf("`dice-mod:"),
+            to: line.to,
+            insert
+        };
+
+        return [transaction, { changes: mod, sequential: true }];
+    });
 }

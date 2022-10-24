@@ -36,7 +36,7 @@ import DiceView, { VIEW_TYPE } from "./view/view";
 import DiceRenderer from "./view/renderer";
 import Lexer, { LexicalToken } from "./parser/lexer";
 import { Round, ExpectedValue } from "./types";
-import { inlinePlugin } from "./live-preview";
+import { inlinePlugin, modTransactionFilter } from "./live-preview";
 /* import GenesysView, { GENESYS_VIEW_TYPE } from "./view/genesys"; */
 
 String.prototype.matchAll =
@@ -594,7 +594,10 @@ export default class DiceRollerPlugin extends Plugin {
             }
         );
 
-        this.registerEditorExtension(inlinePlugin(this));
+        this.registerEditorExtension([
+            inlinePlugin(this),
+            modTransactionFilter(this)
+        ]);
 
         this.app.workspace.onLayoutReady(async () => {
             await this.registerDataviewInlineFields();
