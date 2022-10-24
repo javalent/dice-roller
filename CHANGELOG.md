@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.7.1](https://github.com/valentine195/obsidian-dice-roller/compare/8.7.0...8.7.1) (2022-10-24)
+
+
+### Bug Fixes
+
+* fixes dice-mod behavior in live preview ([88a656e](https://github.com/valentine195/obsidian-dice-roller/commit/88a656ebd766acc89e5a3f45e3a3df74470fc989))
+
 ## [8.7.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.6.9...8.7.0) (2022-10-21)
 
 
