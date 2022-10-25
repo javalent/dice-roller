@@ -8,6 +8,8 @@ import {
     WorkspaceLeaf
 } from "obsidian";
 
+import { getAPI, Link } from "obsidian-dataview";
+
 import type { Plugins } from "../../obsidian-overload/index";
 
 import { faDice } from "@fortawesome/free-solid-svg-icons";
@@ -29,11 +31,13 @@ import {
 
 import SettingTab from "./settings/settings";
 
-import { BasicRoller } from "./roller/roller";
+import { ArrayRoller, BasicRoller } from "./roller/roller";
 import DiceView, { VIEW_TYPE } from "./view/view";
 import DiceRenderer from "./view/renderer";
 import Lexer, { LexicalToken } from "./parser/lexer";
 import { Round, ExpectedValue } from "./types";
+import { inlinePlugin } from "./live-preview";
+/* import GenesysView, { GENESYS_VIEW_TYPE } from "./view/genesys"; */
 
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -45,6 +49,49 @@ String.prototype.matchAll =
             yield match;
         }
     };
+
+/** Functional return type for error handling. */
+export declare class Success<T, E> {
+    value: T;
+    successful: true;
+    constructor(value: T);
+    map<U>(f: (a: T) => U): Result<U, E>;
+    flatMap<U>(f: (a: T) => Result<U, E>): Result<U, E>;
+    orElse(_value: T): T;
+    orElseThrow(_message?: (e: E) => string): T;
+}
+/** Functional return type for error handling. */
+export declare class Failure<T, E> {
+    error: E;
+    successful: false;
+    constructor(error: E);
+    map<U>(_f: (a: T) => U): Result<U, E>;
+    flatMap<U>(_f: (a: T) => Result<U, E>): Result<U, E>;
+    orElse(value: T): T;
+    orElseThrow(message?: (e: E) => string): T;
+}
+export declare type Result<T, E> = Success<T, E> | Failure<T, E>;
+/** Monadic 'Result' type which encapsulates whether a procedure succeeded or failed, as well as it's return value. */
+export declare namespace Result {
+    function success<T, E>(value: T): Result<T, E>;
+    function failure<T, E>(error: E): Result<T, E>;
+    function flatMap2<T1, T2, O, E>(
+        first: Result<T1, E>,
+        second: Result<T2, E>,
+        f: (a: T1, b: T2) => Result<O, E>
+    ): Result<O, E>;
+    function map2<T1, T2, O, E>(
+        first: Result<T1, E>,
+        second: Result<T2, E>,
+        f: (a: T1, b: T2) => O
+    ): Result<O, E>;
+}
+
+declare module "obsidian-dataview" {
+    interface DataviewAPI {
+        query(source: string): Promise<Result<{ values: Link[] }, string>>;
+    }
+}
 
 //expose dataview plugin for tags
 declare module "obsidian" {
@@ -164,6 +211,10 @@ export default class DiceRollerPlugin extends Plugin {
             VIEW_TYPE,
             (leaf: WorkspaceLeaf) => new DiceView(this, leaf)
         );
+        /* this.registerView(
+            GENESYS_VIEW_TYPE,
+            (leaf: WorkspaceLeaf) => new GenesysView(this, leaf)
+        ); */
         this.app.workspace.onLayoutReady(() => this.addDiceView(true));
 
         this.registerEvent(
@@ -211,6 +262,18 @@ export default class DiceRollerPlugin extends Plugin {
                 }
             }
         });
+        /* this.addCommand({
+            id: "open-view",
+            name: "Open Genesys Dice View",
+            checkCallback: (checking) => {
+                if (!this.genesysView) {
+                    if (!checking) {
+                        this.addGenesysDiceView();
+                    }
+                    return true;
+                }
+            }
+        }); */
 
         this.addCommand({
             id: "reroll",
@@ -367,11 +430,22 @@ export default class DiceRollerPlugin extends Plugin {
                             toPersist[index] = roller;
                             roller.save = true;
                         }
+
+                        let shouldRender = this.data.renderAllDice;
+                        if (content.includes("|render")) {
+                            shouldRender = true;
+                        }
+                        if (content.includes("|norender")) {
+                            shouldRender = false;
+                        }
                         const load = async () => {
                             await roller.roll();
 
                             if (roller.save && savedResult) {
                                 await roller.applyResult(savedResult);
+                            }
+                            if (roller instanceof StackRoller) {
+                                roller.shouldRender = shouldRender;
                             }
 
                             node.replaceWith(roller.containerEl);
@@ -520,6 +594,8 @@ export default class DiceRollerPlugin extends Plugin {
             }
         );
 
+        this.registerEditorExtension([inlinePlugin(this)]);
+
         this.app.workspace.onLayoutReady(async () => {
             await this.registerDataviewInlineFields();
         });
@@ -530,6 +606,9 @@ export default class DiceRollerPlugin extends Plugin {
     }
     get dataview() {
         return this.app.plugins.getPlugin("dataview");
+    }
+    get dataviewAPI() {
+        return getAPI();
     }
     async dataviewReady() {
         return new Promise((resolve) => {
@@ -551,6 +630,20 @@ export default class DiceRollerPlugin extends Plugin {
         if (leaf && leaf.view && leaf.view instanceof DiceView)
             return leaf.view;
     }
+    /* get genesysView() {
+        const leaves = this.app.workspace.getLeavesOfType(GENESYS_VIEW_TYPE);
+        const leaf = leaves.length ? leaves[0] : null;
+        if (leaf && leaf.view && leaf.view instanceof GenesysView)
+            return leaf.view;
+    } */
+
+    async getArrayRoller(options: any[], rolls = 1) {
+        const roller = new ArrayRoller(this, options, rolls);
+
+        await roller.roll();
+        return roller;
+    }
+
     async addDiceView(startup = false) {
         if (startup && !this.data.showLeafOnStartup) return;
         if (this.app.workspace.getLeavesOfType(VIEW_TYPE).length) {
@@ -561,6 +654,15 @@ export default class DiceRollerPlugin extends Plugin {
         });
         /* this.app.workspace.revealLeaf(this.view.leaf); */
     }
+    /* async addGenesysDiceView(startup = false) {
+        if (startup && !this.data.showLeafOnStartup) return;
+        if (this.app.workspace.getLeavesOfType(GENESYS_VIEW_TYPE).length) {
+            return;
+        }
+        await this.app.workspace.getRightLeaf(false).setViewState({
+            type: GENESYS_VIEW_TYPE
+        });
+    } */
 
     async registerDataviewInlineFields() {
         if (!this.canUseDataview) return;
@@ -622,6 +724,11 @@ export default class DiceRollerPlugin extends Plugin {
         const roller = await this.getRoller(content, source);
         return { result: await roller.roll(), roller };
     }
+    public parseDiceSync(content: string, source: string) {
+        const roller = this.getRollerSync(content, source);
+        if (!(roller instanceof StackRoller)) return;
+        return { result: roller.result, roller };
+    }
     clearEmpties(o: Record<any, any>) {
         for (var k in o) {
             if (!o[k] || typeof o[k] !== "object") {
@@ -649,14 +756,132 @@ export default class DiceRollerPlugin extends Plugin {
     }
     async getRoller(
         content: string,
-        source: string,
+        source: string = "",
         icon = this.data.showDice
     ): Promise<BasicRoller> {
         content = content.replace(/\\\|/g, "|");
 
         let showDice = content.includes("|nodice") ? false : icon;
-        let shouldRender = this.data.renderAllDice;
         let showFormula = this.data.displayResultsInline;
+        let expectedValue: ExpectedValue = ExpectedValue.Roll;
+        let fixedText: string = "";
+        const regextext = /\|text\((.*)\)/;
+
+        if (content.includes("|form")) {
+            showFormula = true;
+        }
+        if (content.includes("|noform")) {
+            showFormula = false;
+        }
+        if (content.includes("|avg")) {
+            expectedValue = ExpectedValue.Average;
+        }
+        if (content.includes("|none")) {
+            expectedValue = ExpectedValue.None;
+        }
+        if (content.includes("|text(")) {
+            let [, text] = content.match(regextext) ?? [null, ""];
+            fixedText = text;
+        }
+        content = decode(
+            //remove flags...
+            content
+                .replace("|nodice", "")
+                .replace("|render", "")
+                .replace("|norender", "")
+                .replace("|noform", "")
+                .replace("|form", "")
+                .replace("|avg", "")
+                .replace("|none", "")
+                .replace(regextext, "")
+        );
+
+        if (content in this.data.formulas) {
+            content = this.data.formulas[content];
+        }
+
+        const lexemes = this.parse(content);
+
+        const type = this.getTypeFromLexemes(lexemes);
+
+        switch (type) {
+            case "dice": {
+                const roller = new StackRoller(
+                    this,
+                    content,
+                    lexemes,
+                    showDice,
+                    fixedText,
+                    expectedValue
+                );
+                roller.showFormula = showFormula;
+                return roller;
+            }
+            case "table": {
+                const roller = new TableRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
+                await roller.init;
+                return roller;
+            }
+            case "section": {
+                return new SectionRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
+            }
+            case "tag": {
+                if (!this.canUseDataview) {
+                    throw new Error(
+                        "Tags are only supported with the Dataview plugin installed."
+                    );
+                }
+                return new TagRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
+            }
+            case "link": {
+                return new LinkRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
+            }
+            case "line": {
+                return new LineRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
+            }
+        }
+    }
+
+    getRollerSync(
+        content: string,
+        source: string,
+        icon = this.data.showDice
+    ): BasicRoller {
+        content = content.replace(/\\\|/g, "|");
+
+        let showDice = content.includes("|nodice") ? false : icon;
+        let shouldRender = this.data.renderAllDice;
+        let showFormula = false; //this.data.displayResultsInline;
         let expectedValue: ExpectedValue = ExpectedValue.Roll;
         let fixedText: string = "";
         const regextext = /\|text\((.*)\)/;
@@ -726,7 +951,7 @@ export default class DiceRollerPlugin extends Plugin {
                     source,
                     showDice
                 );
-                await roller.init;
+                roller.init;
                 return roller;
             }
             case "section": {
@@ -772,6 +997,7 @@ export default class DiceRollerPlugin extends Plugin {
             }
         }
     }
+
     getTypeFromLexemes(lexemes: LexicalToken[]) {
         if (lexemes.some(({ type }) => type === "table")) {
             return "table";

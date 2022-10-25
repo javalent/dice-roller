@@ -2,6 +2,90 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.7.2](https://github.com/valentine195/obsidian-dice-roller/compare/8.7.1...8.7.2) (2022-10-25)
+
+
+### Bug Fixes
+
+* dice-mod async ([1439e07](https://github.com/valentine195/obsidian-dice-roller/commit/1439e0768398374efcfadb31ab315dcf8442c1a9))
+
+### [8.7.1](https://github.com/valentine195/obsidian-dice-roller/compare/8.7.0...8.7.1) (2022-10-24)
+
+
+### Bug Fixes
+
+* fixes dice-mod behavior in live preview ([88a656e](https://github.com/valentine195/obsidian-dice-roller/commit/88a656ebd766acc89e5a3f45e3a3df74470fc989))
+
+## [8.7.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.6.9...8.7.0) (2022-10-21)
+
+
+### Features
+
+* live preview support ([3c4c8a6](https://github.com/valentine195/obsidian-dice-roller/commit/3c4c8a6a1ea85b0ed201517ca52ed44f6ed09033))
+
+### [8.6.9](https://github.com/valentine195/obsidian-dice-roller/compare/8.6.8...8.6.9) (2022-09-27)
+
+
+### Bug Fixes
+
+* type guard parseDiceSync ([a340af4](https://github.com/valentine195/obsidian-dice-roller/commit/a340af42a3c889504afc8701bb8e648f54916e1c))
+
+### [8.6.8](https://github.com/valentine195/obsidian-dice-roller/compare/8.6.7...8.6.8) (2022-09-27)
+
+
+### Bug Fixes
+
+* adds parseDiceSync ([298ee64](https://github.com/valentine195/obsidian-dice-roller/commit/298ee646299c28a3d428f0799e42688fe3fd8c07))
+
+### [8.6.7](https://github.com/valentine195/obsidian-dice-roller/compare/8.6.6...8.6.7) (2022-09-18)
+
+
+### Bug Fixes
+
+* Switch to span elements to allow for copying text without line breaks ([223f33b](https://github.com/valentine195/obsidian-dice-roller/commit/223f33b1a18235837a08cf45e8a75357b7cf0fd7))
+
+### [8.6.6](https://github.com/valentine195/obsidian-dice-roller/compare/8.6.5...8.6.6) (2022-09-10)
+
+
+### Bug Fixes
+
+* removed genesys imports ([bfbadc2](https://github.com/valentine195/obsidian-dice-roller/commit/bfbadc2f5a17b0440818f720553385a29eecbf90))
+
+### [8.6.5](https://github.com/valentine195/obsidian-dice-roller/compare/8.6.4...8.6.5) (2022-09-10)
+
+
+### Bug Fixes
+
+* fixes load order issue with dataview ([e793d1d](https://github.com/valentine195/obsidian-dice-roller/commit/e793d1d468a8ae7295ab9739f4f1cbeb5e1084ff))
+
+### [8.6.4](https://github.com/valentine195/obsidian-dice-roller/compare/8.6.3...8.6.4) (2022-08-25)
+
+
+### Bug Fixes
+
+* fixes Dataview interfacing issue (close [#141](https://github.com/valentine195/obsidian-dice-roller/issues/141)) ([a21c80a](https://github.com/valentine195/obsidian-dice-roller/commit/a21c80ae08560edaf5c3951fd4e0898e8b6f59e4))
+
+### [8.6.3](https://github.com/valentine195/obsidian-dice-roller/compare/8.6.2...8.6.3) (2022-08-20)
+
+
+### Bug Fixes
+
+* Rendered dice no longer render on note-open, only click (close [#138](https://github.com/valentine195/obsidian-dice-roller/issues/138)) ([f5b6f98](https://github.com/valentine195/obsidian-dice-roller/commit/f5b6f98fc7b8e786e1f0a1c6fe637692426536a1))
+* Show notice with rendered dice results (close [#130](https://github.com/valentine195/obsidian-dice-roller/issues/130)) ([6a5262c](https://github.com/valentine195/obsidian-dice-roller/commit/6a5262cf43c3ecbefef39085d607c19ae93773ed))
+
+## [8.6.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.5.2...8.6.0) (2022-06-08)
+
+
+### Features
+
+* added ArrayRoller interface ([4160dc6](https://github.com/valentine195/obsidian-dice-roller/commit/4160dc6e3e06c2d12668ecd5d24773542bafde1b))
+
+
+### Bug Fixes
+
+* fix typing on syncronous getRoller ([23a65ba](https://github.com/valentine195/obsidian-dice-roller/commit/23a65bad42a52f0d1aa460c35f2e838158ff69fc))
+* hacky fix for ebullient's issue ([649285f](https://github.com/valentine195/obsidian-dice-roller/commit/649285fc48563e8c707412a672d82785a7791270))
+
 ## [8.5.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.4.3...8.5.0) (2022-06-03)
 
 

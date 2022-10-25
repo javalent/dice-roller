@@ -1,6 +1,6 @@
 {
     "name": "obsidian-dice-roller",
-    "version": "8.5.0",
+    "version": "8.7.2",
     "description": "Inline dice rolling for Obsidian.md",
     "main": "main.js",
     "scripts": {
@@ -21,6 +21,7 @@
     "author": "Jeremy Valentine",
     "license": "MIT",
     "devDependencies": {
+        "@codemirror/language": "https://github.com/lishid/cm-language",
         "@fortawesome/fontawesome-svg-core": "^1.2.32",
         "@fortawesome/free-regular-svg-icons": "^5.15.4",
         "@fortawesome/free-solid-svg-icons": "^5.15.4",
@@ -33,6 +34,7 @@
         "@types/node": "^14.14.2",
         "@types/three": "^0.132.1",
         "cannon-es": "^0.18.0",
+        "compare-versions": "^4.1.4",
         "copy-webpack-plugin": "^9.0.1",
         "css-loader": "^6.3.0",
         "dotenv": "^10.0.0",
@@ -42,8 +44,8 @@
         "mini-css-extract-plugin": "^2.3.0",
         "monkey-around": "^2.2.0",
         "moo": "^0.5.1",
-        "obsidian": "latest",
-        "obsidian-dataview": "^0.4.21",
+        "obsidian": "^0.16.3",
+        "obsidian-dataview": "^0.4.25",
         "rollup": "^2.32.1",
         "rollup-plugin-css-only": "^3.1.0",
         "standard-version": "^9.3.2",

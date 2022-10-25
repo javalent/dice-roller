@@ -25,21 +25,21 @@ export abstract class Roller<T> {
     ) => Promise<HTMLElement> | HTMLElement;
 }
 
-export abstract class BasicRoller extends Events {
-    rolls: number;
-    loaded: boolean = false;
+abstract class BareRoller extends Events {
     abstract roll(): Promise<any>;
+    rolls: number;
     result: any;
-    abstract replacer: string;
-    containerEl = createDiv({
+    loaded: boolean = false;
+    abstract build(): Promise<void>;
+    abstract get tooltip(): string;
+    containerEl = createSpan({
         cls: "dice-roller",
         attr: {
             "aria-label-position": "top",
             "data-dice": this.original
         }
     });
-    save: boolean = false;
-    resultEl = this.containerEl.createDiv("dice-roller-result");
+    resultEl = this.containerEl.createSpan("dice-roller-result");
     setTooltip() {
         if (this.plugin.data.displayResultsInline) return;
         this.containerEl.setAttrs({
@@ -47,26 +47,23 @@ export abstract class BasicRoller extends Events {
         });
     }
     getRandomBetween(min: number, max: number): number {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
+        const randomBuffer = new Uint32Array(1);
+        crypto.getRandomValues(randomBuffer);
+        const rand = randomBuffer[0] / (0xffffffff + 1);
+        return Math.floor(rand * (max - min + 1)) + min;
     }
     async render() {
         this.setTooltip();
         await this.build();
     }
-    abstract get tooltip(): string;
-    get inlineText() {
-        return `${this.tooltip.split("\n").join(" -> ")} -> `;
-    }
-    abstract build(): Promise<void>;
     constructor(
         public plugin: DiceRollerPlugin,
-        public original: string,
-        public lexemes: LexicalToken[],
-        public showDice = plugin.data.showDice
+        public original = "",
+        showDice = plugin.data.showDice
     ) {
         super();
-        if (this.showDice) {
-            const icon = this.containerEl.createDiv({
+        if (showDice) {
+            const icon = this.containerEl.createSpan({
                 cls: "dice-roller-button"
             });
             setIcon(icon, ICON_DEFINITION);
@@ -85,6 +82,23 @@ export abstract class BasicRoller extends Events {
             await this.roll();
         }
     }
+}
+
+export abstract class BasicRoller extends BareRoller {
+    abstract replacer: string;
+    save: boolean = false;
+
+    get inlineText() {
+        return `${this.tooltip.split("\n").join(" -> ")} -> `;
+    }
+    constructor(
+        public plugin: DiceRollerPlugin,
+        public original: string,
+        public lexemes: LexicalToken[],
+        public showDice = plugin.data.showDice
+    ) {
+        super(plugin, original, showDice);
+    }
 
     abstract toResult(): { type: string; result: any };
     abstract applyResult(result: any): Promise<void>;
@@ -93,7 +107,6 @@ export abstract class BasicRoller extends Events {
 export abstract class GenericRoller<T> extends BasicRoller {
     abstract result: T;
     abstract roll(): Promise<T>;
-    loaded: boolean;
 }
 
 export abstract class GenericFileRoller<T> extends GenericRoller<T> {
@@ -139,5 +152,40 @@ export abstract class GenericFileRoller<T> extends GenericRoller<T> {
                 await this.getOptions();
             })
         );
+    }
+}
+
+export class ArrayRoller extends BareRoller {
+    result: any;
+    results: any[];
+    get tooltip() {
+        return `${this.options.toString()}\n\n${this.results.toString()}`;
+    }
+    async roll() {
+        const options = [...this.options];
+
+        this.results = [...Array(this.rolls)]
+            .map(() => {
+                let option =
+                    options[this.getRandomBetween(0, options.length - 1)];
+                options.splice(options.indexOf(option), 1);
+                return option;
+            })
+            .filter((r) => r);
+        this.render();
+        this.trigger("new-result");
+        this.result = this.results[0];
+        return this.results[0];
+    }
+    async build() {
+        this.resultEl.empty();
+        this.resultEl.setText(this.results.toString());
+    }
+    constructor(
+        plugin: DiceRollerPlugin,
+        public options: any[],
+        public rolls: number
+    ) {
+        super(plugin, ``);
     }
 }
