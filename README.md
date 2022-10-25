@@ -384,9 +384,16 @@ Then, in the dice formula, use a wikilink to the block reference of the table:
 
 The plugin will read the table and return a random result.
 
-To return multiple elements, use:
+To return multiple elements, use a [dice formula](#dice-rollers) before the wikilink:
 
-`` `dice: Xd[[Note^block-id]]` ``
+- `` `dice: X[[Note^block-id]]` ``
+
+- `` `dice: 1d4+1[[Note^block-id]]` ``
+
+- `` `dice: Xd[[Note^block-id]]` ``
+
+Note that, for backward compatibility reasons, `d` is interpreted as a `d1` and not as a `d100` like in regular dice formulas.
+
 
 Once in preview mode, you may <kbd>Ctrl</kbd> - click on the result to open the block reference in a new pane.
 
@@ -534,9 +541,11 @@ See [Graphical Dice]() for more information.
 
 ## `|form` and `|noform`
 
-These two flags can be used to control whether or not the dice formula is displayed along with the result when using a [dice roller](#dice-roller).
+These two flags can be used to control whether or not the dice formula is displayed with rolls.
 
-This can be turned on or off globally by using [Display Formula With Results](#display-formula-with-results) in settings.
+They can be used for [`dice-mod`](#replacing-note-content) and [dice roller](#dice-roller).
+
+This can be turned on or off globally in settings, using [Display Formula With Results](#display-formula-with-results) for [dice roller](#dice-roller) and [Add Formula when Using Modify Dice](#add-formula-when-using-modify-dice) for [`dice-mod`](#replacing-note-content).
 
 ## `|avg`
 
