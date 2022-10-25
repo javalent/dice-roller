@@ -93,6 +93,32 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                 if (selectionAndRangeOverlap(selection, start, end + 1)) return;
 
                 const original = view.state.doc.sliceString(start, end).trim();
+                if (/^dice-mod:\s*([\s\S]+)\s*?/.test(original)) {
+                    let [, content] = original.match(
+                        /dice-mod:\s*([\s\S]+)\s*?/
+                    );
+
+                    const currentFile = app.workspace.getActiveFile();
+                    const roller = plugin.getRollerSync(
+                        content,
+                        currentFile.path
+                    );
+
+                    roller.roll().then((result) => {
+                        const insert = plugin.data.displayFormulaForMod
+                            ? `${roller.inlineText} **${roller.replacer}**`
+                            : `${roller.replacer}`;
+                        const mod = {
+                            from: start - 1,
+                            to: end + 1,
+                            insert
+                        };
+                        const transaction = view.state.update({ changes: mod });
+                        view.dispatch(transaction);
+                    });
+
+                    return;
+                }
 
                 if (!/^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/.test(original)) return;
                 let [, content] = original.match(
@@ -192,37 +218,4 @@ export function inlinePlugin(plugin: DiceRollerPlugin) {
         },
         { decorations: (v) => v.decorations }
     );
-}
-
-export function modTransactionFilter(plugin: DiceRollerPlugin) {
-    return EditorState.transactionFilter.of((transaction) => {
-        if (
-            !transaction.docChanged ||
-            (!transaction.isUserEvent("input.type") &&
-                !transaction.isUserEvent("input.complete"))
-        )
-            return transaction;
-        const newDoc = transaction.newDoc;
-        const head = transaction.newSelection.main.head;
-        const line = newDoc.lineAt(head);
-
-        if (!/`dice-mod/.test(line.text)) return transaction;
-        let [, content] = line.text.match(/`dice-mod:\s*([\s\S]+)\s*?`/);
-
-        const currentFile = app.workspace.getActiveFile();
-        const roller = plugin.getRollerSync(content, currentFile.path);
-
-        roller.roll();
-
-        const insert = plugin.data.displayFormulaForMod
-            ? `${roller.inlineText} **${roller.replacer}**`
-            : `${roller.replacer}`;
-        const mod = {
-            from: line.from + line.text.indexOf("`dice-mod:"),
-            to: line.to,
-            insert
-        };
-
-        return [transaction, { changes: mod, sequential: true }];
-    });
 }
