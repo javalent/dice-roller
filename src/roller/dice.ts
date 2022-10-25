@@ -5,7 +5,8 @@ import {
     ResultMapInterface,
     Conditional,
     Round,
-    ExpectedValue
+    ExpectedValue,
+    ResultInterface
 } from "src/types";
 import { _insertIntoMap } from "src/utils/util";
 import { GenericRoller } from "./roller";
@@ -387,6 +388,23 @@ export class DiceRoller {
     }
     applyModifier(type: string, modifier: Modifier) {
         switch (type) {
+            case "sort": {
+                let values: ResultInterface<number>[];
+                //true = asc
+                if (modifier.value == "sa") {
+                    values = [...this.results.values()].sort(
+                        (a, b) => a.value - b.value
+                    );
+                } else {
+                    values = [...this.results.values()].sort(
+                        (a, b) => b.value - a.value
+                    );
+                }
+                this.results = new Map(
+                    [...this.results.keys()].map((k) => [k, values[k]])
+                );
+                break;
+            }
             case "kh": {
                 this.keepHigh(modifier.data);
                 break;
@@ -826,6 +844,17 @@ export class StackRoller extends GenericRoller<number> {
                         data,
                         conditionals: dice.conditions ?? [],
                         value: dice.text
+                    });
+                    break;
+                }
+                case "sort": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = Number(dice.value);
+
+                    diceInstance.modifiers.set("sort", {
+                        data,
+                        conditionals: dice.conditions ?? [],
+                        value: dice.value
                     });
                     break;
                 }

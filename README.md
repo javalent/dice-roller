@@ -88,6 +88,7 @@ If a modifier has a parameter, it will default to 1 if not provided.
 | Explode           | `!{n}`, `!i`   | Explode dice `{n}` times. If `i` is provided, will explode "infinitely" (capped at 100).           |
 | Explode & Combine | `!!{n}`, `!!i` | Same as explode, but exploded dice are summed in the display instead of being shown individually.  |
 | Re-roll           | `r{n}`, `ri`   | Re-roll a minimum dice `{n}` times. If `i` is provided, will re-roll "infinitely" (capped at 100). |
+| Sort              | `s(a)`, `sd`   | Sort results ascending or descending.                                                              |
 
 ### Min/Max
 
@@ -606,7 +607,7 @@ const diceRoller = await diceRollerPlugin.getRoller("1d3+3d8");
 
 ## Array Roller
 
-A special type of roller is available using the JavaScript interface, where you can directly pass in an array you want a result from. 
+A special type of roller is available using the JavaScript interface, where you can directly pass in an array you want a result from.
 
 ```ts
 //definition

@@ -37,6 +37,7 @@ export default class Lexer {
         tag: TAG_REGEX,
 
         condition: CONDITIONAL_REGEX,
+
         kl: { match: /kl\d*/u, value: this.clampInfinite },
         kh: [
             { match: /kh\d*/u, value: this.clampInfinite },
@@ -82,6 +83,12 @@ export default class Lexer {
                 }
             }
         ],
+        sort: [
+            {
+                match: /s(?:a|d)*/u,
+                value: (str) => (str == "s" || str == "sa" ? "sa" : "sd")
+            }
+        ],
         math: MATH_REGEX
     });
     parser: Parser;
@@ -119,7 +126,9 @@ export default class Lexer {
         return this.parser.parse(this.transform(tokens));
     }
     transform(tokens: moo.Token[]): LexicalToken[] {
-        tokens = tokens.filter((token) => token.type != "WS");
+        tokens = tokens.filter((token) => {
+            return token.type != "WS";
+        });
         let clone: LexicalToken[] = [];
         for (const token of tokens) {
             if (token.type == "condition" && clone.length > 0) {

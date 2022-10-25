@@ -306,299 +306,275 @@ export default class DiceRollerPlugin extends Plugin {
 
         addIcon(COPY_DEFINITION, COPY_SVG);
 
-        this.registerMarkdownPostProcessor(
-            async (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
-                let nodeList = el.querySelectorAll("code");
-
-                if (!nodeList.length) return;
-
-                const path = ctx.sourcePath;
-                const info = ctx.getSectionInfo(el);
-                const lineStart = ctx.getSectionInfo(el)?.lineStart;
-                const file = this.app.vault.getAbstractFileByPath(
-                    ctx.sourcePath
-                );
-
-                if (!file || !(file instanceof TFile)) return;
-
-                const toPersist: Record<number, BasicRoller> = {};
-
-                let fileContent: string[];
-                let replacementFound: boolean = false;
-                const modPromises: Promise<void>[] = [];
-                for (let index = 0; index < nodeList.length; index++) {
-                    const node = nodeList.item(index);
-
-                    if (
-                        /^dice\-mod:\s*([\s\S]+)\s*?/.test(node.innerText) &&
-                        info
-                    ) {
-                        try {
-                            if (!replacementFound) {
-                                fileContent = (
-                                    await this.app.vault.cachedRead(file)
-                                ).split("\n");
-                                replacementFound = true;
-                            }
-
-                            let [full, content] = node.innerText.match(
-                                /^dice\-mod:\s*([\s\S]+)\s*?/
-                            );
-                            let showFormula = this.data.displayFormulaForMod;
-                            if (content.includes("|noform")) {
-                                showFormula = false;
-                            }
-                            if (content.includes("|form")) {
-                                showFormula = true;
-                            }
-
-                            content = content
-                                .replace("|noform", "")
-                                .replace("|form", "");
-
-                            //build result map;
-                            const roller = await this.getRoller(
-                                content,
-                                ctx.sourcePath
-                            );
-
-                            modPromises.push(
-                                new Promise((resolve, reject) => {
-                                    roller.on("new-result", async () => {
-                                        let splitContent = fileContent.slice(
-                                            info.lineStart,
-                                            info.lineEnd + 1
-                                        );
-                                        const replacer = roller.replacer;
-                                        if (!replacer) {
-                                            new Notice(
-                                                "Dice Roller: There was an issue modifying the file."
-                                            );
-                                            return;
-                                        }
-                                        const rep = showFormula
-                                            ? `${roller.inlineText} **${replacer}**`
-                                            : `${replacer}`;
-
-                                        splitContent = splitContent
-                                            .join("\n")
-                                            .replace(`\`${full}\``, rep)
-                                            .split("\n");
-
-                                        fileContent.splice(
-                                            info.lineStart,
-                                            info.lineEnd - info.lineStart + 1,
-                                            ...splitContent
-                                        );
-                                        resolve();
-                                    });
-                                })
-                            );
-
-                            await roller.roll();
-
-                            continue;
-                        } catch (e) {
-                            console.error(e);
-                        }
-                    }
-                    if (
-                        !/^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/.test(
-                            node.innerText
-                        )
-                    )
-                        continue;
-                    try {
-                        let [, content] = node.innerText.match(
-                            /^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/
-                        );
-
-                        //build result map;
-                        const roller = await this.getRoller(
-                            content,
-                            ctx.sourcePath
-                        );
-                        const savedResult =
-                            this.data.results?.[path]?.[lineStart]?.[index] ??
-                            null;
-                        if (
-                            (this.data.persistResults &&
-                                !/dice\-/.test(node.innerText)) ||
-                            /dice\+/.test(node.innerText)
-                        ) {
-                            this.persistingFiles.add(ctx.sourcePath);
-                            toPersist[index] = roller;
-                            roller.save = true;
-                        }
-
-                        let shouldRender = this.data.renderAllDice;
-                        if (content.includes("|render")) {
-                            shouldRender = true;
-                        }
-                        if (content.includes("|norender")) {
-                            shouldRender = false;
-                        }
-                        const load = async () => {
-                            await roller.roll();
-
-                            if (roller.save && savedResult) {
-                                await roller.applyResult(savedResult);
-                            }
-                            if (roller instanceof StackRoller) {
-                                roller.shouldRender = shouldRender;
-                            }
-
-                            node.replaceWith(roller.containerEl);
-                        };
-
-                        if (roller.loaded) {
-                            await load();
-                        } else {
-                            roller.on("loaded", async () => {
-                                await load();
-                            });
-                        }
-
-                        if (!this.fileMap.has(file)) {
-                            this.fileMap.set(file, []);
-                        }
-                        this.fileMap.set(file, [
-                            ...this.fileMap.get(file),
-                            roller
-                        ]);
-
-                        const view =
-                            this.app.workspace.getActiveViewOfType(
-                                MarkdownView
-                            );
-                        if (
-                            view &&
-                            this.fileMap.has(file) &&
-                            this.fileMap.get(file).length === 1
-                        ) {
-                            const self = this;
-
-                            let unregisterOnUnloadFile = around(view, {
-                                onUnloadFile: function (next) {
-                                    return async function (unloaded: TFile) {
-                                        if (unloaded == file) {
-                                            self.fileMap.delete(file);
-                                            unregisterOnUnloadFile();
-                                        }
-
-                                        return await next.call(this, unloaded);
-                                    };
-                                }
-                            });
-                            view.register(unregisterOnUnloadFile);
-                            view.register(() => this.fileMap.delete(file));
-                        }
-                    } catch (e) {
-                        console.error(e);
-                        new Notice(
-                            `There was an error parsing the dice string: ${node.innerText}.\n\n${e}`,
-                            5000
-                        );
-                        continue;
-                    }
-                }
-
-                if (replacementFound && modPromises.length) {
-                    await Promise.all(modPromises);
-                    await this.app.vault.modify(file, fileContent.join("\n"));
-                }
-
-                if (path in this.data.results) {
-                    this.data.results[path][lineStart] = {};
-                }
-
-                //this needs to be asynchronous
-                if (Object.entries(toPersist).length) {
-                    const view =
-                        this.app.workspace.getActiveViewOfType(MarkdownView);
-                    if (view) {
-                        const self = this;
-                        let unregisterOnUnloadFile = around(view, {
-                            onUnloadFile: function (next) {
-                                return async function (unloaded: TFile) {
-                                    if ((unloaded = file)) {
-                                        if (self.persistingFiles.has(path)) {
-                                            self.persistingFiles.delete(path);
-                                            self.data.results[path] = {};
-                                        }
-
-                                        for (let index in toPersist) {
-                                            const roller = toPersist[index];
-                                            const newLineStart =
-                                                ctx.getSectionInfo(
-                                                    el
-                                                )?.lineStart;
-
-                                            if (newLineStart == null) continue;
-
-                                            const result = {
-                                                [newLineStart]: {
-                                                    ...(self.data.results[
-                                                        path
-                                                    ]?.[newLineStart] ?? {}),
-                                                    [index]: roller.toResult()
-                                                }
-                                            };
-
-                                            self.data.results[path] = {
-                                                ...(self.data.results[path] ??
-                                                    {}),
-                                                ...result
-                                            };
-
-                                            await self.saveSettings();
-                                        }
-                                    }
-                                    unregisterOnUnloadFile();
-                                    return await next.call(this, unloaded);
-                                };
-                            }
-                        });
-                        view.register(unregisterOnUnloadFile);
-                        view.register(async () => {
-                            if (this.persistingFiles.has(path)) {
-                                this.persistingFiles.delete(path);
-                                this.data.results[path] = {};
-                            }
-                            for (let index in toPersist) {
-                                const roller = toPersist[index];
-                                const newLineStart =
-                                    ctx.getSectionInfo(el)?.lineStart;
-
-                                if (newLineStart == null) continue;
-
-                                const result = {
-                                    [newLineStart]: {
-                                        ...(this.data.results[path]?.[
-                                            newLineStart
-                                        ] ?? {}),
-                                        [index]: roller.toResult()
-                                    }
-                                };
-
-                                this.data.results[path] = {
-                                    ...(this.data.results[path] ?? {}),
-                                    ...result
-                                };
-
-                                await this.saveSettings();
-                            }
-                        });
-                    }
-                }
-            }
-        );
+        this.registerMarkdownPostProcessor(this.postprocessor.bind(this));
 
         this.registerEditorExtension([inlinePlugin(this)]);
 
         this.app.workspace.onLayoutReady(async () => {
             await this.registerDataviewInlineFields();
         });
+    }
+
+    async postprocessor(el: HTMLElement, ctx: MarkdownPostProcessorContext) {
+        let nodeList = el.querySelectorAll("code");
+
+        if (!nodeList.length) return;
+
+        const path = ctx.sourcePath;
+        const info = ctx.getSectionInfo(el);
+        const lineStart = ctx.getSectionInfo(el)?.lineStart;
+        const file = this.app.vault.getAbstractFileByPath(ctx.sourcePath);
+
+        if (!file || !(file instanceof TFile)) return;
+
+        const toPersist: Record<number, BasicRoller> = {};
+
+        let fileContent: string[];
+        let replacementFound: boolean = false;
+        const modPromises: Promise<void>[] = [];
+        for (let index = 0; index < nodeList.length; index++) {
+            const node = nodeList.item(index);
+
+            if (/^dice\-mod:\s*([\s\S]+)\s*?/.test(node.innerText) && info) {
+                try {
+                    if (!replacementFound) {
+                        fileContent = (
+                            await this.app.vault.cachedRead(file)
+                        ).split("\n");
+                        replacementFound = true;
+                    }
+
+                    let [full, content] = node.innerText.match(
+                        /^dice\-mod:\s*([\s\S]+)\s*?/
+                    );
+                    let showFormula = this.data.displayFormulaForMod;
+                    if (content.includes("|noform")) {
+                        showFormula = false;
+                    }
+                    if (content.includes("|form")) {
+                        showFormula = true;
+                    }
+
+                    content = content
+                        .replace("|noform", "")
+                        .replace("|form", "");
+
+                    //build result map;
+                    const roller = await this.getRoller(
+                        content,
+                        ctx.sourcePath
+                    );
+
+                    modPromises.push(
+                        new Promise((resolve, reject) => {
+                            roller.on("new-result", async () => {
+                                let splitContent = fileContent.slice(
+                                    info.lineStart,
+                                    info.lineEnd + 1
+                                );
+                                const replacer = roller.replacer;
+                                if (!replacer) {
+                                    new Notice(
+                                        "Dice Roller: There was an issue modifying the file."
+                                    );
+                                    return;
+                                }
+                                const rep = showFormula
+                                    ? `${roller.inlineText} **${replacer}**`
+                                    : `${replacer}`;
+
+                                splitContent = splitContent
+                                    .join("\n")
+                                    .replace(`\`${full}\``, rep)
+                                    .split("\n");
+
+                                fileContent.splice(
+                                    info.lineStart,
+                                    info.lineEnd - info.lineStart + 1,
+                                    ...splitContent
+                                );
+                                resolve();
+                            });
+                        })
+                    );
+
+                    await roller.roll();
+
+                    continue;
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+            if (!/^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/.test(node.innerText))
+                continue;
+            try {
+                let [, content] = node.innerText.match(
+                    /^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/
+                );
+
+                //build result map;
+                const roller = await this.getRoller(content, ctx.sourcePath);
+                const savedResult =
+                    this.data.results?.[path]?.[lineStart]?.[index] ?? null;
+                if (
+                    (this.data.persistResults &&
+                        !/dice\-/.test(node.innerText)) ||
+                    /dice\+/.test(node.innerText)
+                ) {
+                    this.persistingFiles.add(ctx.sourcePath);
+                    toPersist[index] = roller;
+                    roller.save = true;
+                }
+
+                let shouldRender = this.data.renderAllDice;
+                if (content.includes("|render")) {
+                    shouldRender = true;
+                }
+                if (content.includes("|norender")) {
+                    shouldRender = false;
+                }
+                const load = async () => {
+                    await roller.roll();
+
+                    if (roller.save && savedResult) {
+                        await roller.applyResult(savedResult);
+                    }
+                    if (roller instanceof StackRoller) {
+                        roller.shouldRender = shouldRender;
+                    }
+
+                    node.replaceWith(roller.containerEl);
+                };
+
+                if (roller.loaded) {
+                    await load();
+                } else {
+                    roller.on("loaded", async () => {
+                        await load();
+                    });
+                }
+
+                if (!this.fileMap.has(file)) {
+                    this.fileMap.set(file, []);
+                }
+                this.fileMap.set(file, [...this.fileMap.get(file), roller]);
+
+                const view =
+                    this.app.workspace.getActiveViewOfType(MarkdownView);
+                if (
+                    view &&
+                    this.fileMap.has(file) &&
+                    this.fileMap.get(file).length === 1
+                ) {
+                    const self = this;
+
+                    let unregisterOnUnloadFile = around(view, {
+                        onUnloadFile: function (next) {
+                            return async function (unloaded: TFile) {
+                                if (unloaded == file) {
+                                    self.fileMap.delete(file);
+                                    unregisterOnUnloadFile();
+                                }
+
+                                return await next.call(this, unloaded);
+                            };
+                        }
+                    });
+                    view.register(unregisterOnUnloadFile);
+                    view.register(() => this.fileMap.delete(file));
+                }
+            } catch (e) {
+                console.error(e);
+                new Notice(
+                    `There was an error parsing the dice string: ${node.innerText}.\n\n${e}`,
+                    5000
+                );
+                continue;
+            }
+        }
+
+        if (replacementFound && modPromises.length) {
+            await Promise.all(modPromises);
+            await this.app.vault.modify(file, fileContent.join("\n"));
+        }
+
+        if (path in this.data.results) {
+            this.data.results[path][lineStart] = {};
+        }
+
+        //this needs to be asynchronous
+        if (Object.entries(toPersist).length) {
+            const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+            if (view) {
+                const self = this;
+                let unregisterOnUnloadFile = around(view, {
+                    onUnloadFile: function (next) {
+                        return async function (unloaded: TFile) {
+                            if ((unloaded = file)) {
+                                if (self.persistingFiles.has(path)) {
+                                    self.persistingFiles.delete(path);
+                                    self.data.results[path] = {};
+                                }
+
+                                for (let index in toPersist) {
+                                    const roller = toPersist[index];
+                                    const newLineStart =
+                                        ctx.getSectionInfo(el)?.lineStart;
+
+                                    if (newLineStart == null) continue;
+
+                                    const result = {
+                                        [newLineStart]: {
+                                            ...(self.data.results[path]?.[
+                                                newLineStart
+                                            ] ?? {}),
+                                            [index]: roller.toResult()
+                                        }
+                                    };
+
+                                    self.data.results[path] = {
+                                        ...(self.data.results[path] ?? {}),
+                                        ...result
+                                    };
+
+                                    await self.saveSettings();
+                                }
+                            }
+                            unregisterOnUnloadFile();
+                            return await next.call(this, unloaded);
+                        };
+                    }
+                });
+                view.register(unregisterOnUnloadFile);
+                view.register(async () => {
+                    if (this.persistingFiles.has(path)) {
+                        this.persistingFiles.delete(path);
+                        this.data.results[path] = {};
+                    }
+                    for (let index in toPersist) {
+                        const roller = toPersist[index];
+                        const newLineStart = ctx.getSectionInfo(el)?.lineStart;
+
+                        if (newLineStart == null) continue;
+
+                        const result = {
+                            [newLineStart]: {
+                                ...(this.data.results[path]?.[newLineStart] ??
+                                    {}),
+                                [index]: roller.toResult()
+                            }
+                        };
+
+                        this.data.results[path] = {
+                            ...(this.data.results[path] ?? {}),
+                            ...result
+                        };
+
+                        await this.saveSettings();
+                    }
+                });
+            }
+        }
     }
 
     get canUseDataview() {
