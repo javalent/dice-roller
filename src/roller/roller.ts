@@ -138,21 +138,10 @@ export abstract class GenericFileRoller<T> extends GenericRoller<T> {
             throw new Error("Could not load file.");
 
         await this.load();
-        this.registerFileWatcher();
     }
     abstract load(): Promise<void>;
     abstract getOptions(): Promise<void>;
     watch: boolean = true;
-    registerFileWatcher() {
-        this.plugin.registerEvent(
-            this.plugin.app.vault.on("modify", async (file) => {
-                if (!this.watch) return;
-                if (this.save) return;
-                if (file !== this.file) return;
-                await this.getOptions();
-            })
-        );
-    }
 }
 
 export class ArrayRoller extends BareRoller {
