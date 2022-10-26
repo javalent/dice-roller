@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.8.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.7.2...8.8.0) (2022-10-26)
+
+
+### Features
+
+* adds dice sorting (close [#143](https://github.com/valentine195/obsidian-dice-roller/issues/143)) ([5f47ed7](https://github.com/valentine195/obsidian-dice-roller/commit/5f47ed78c45b2375a32ebb613646eb3b7f070c8a))
+
+
+### Bug Fixes
+
+* removes bold from mod when show formula is on (close [#119](https://github.com/valentine195/obsidian-dice-roller/issues/119)) ([828a8bb](https://github.com/valentine195/obsidian-dice-roller/commit/828a8bb148011e51f38ce1c50c1ab23e68eeb710))
+* removes file watcher causing massive memory leak (close [#117](https://github.com/valentine195/obsidian-dice-roller/issues/117)) ([deb0f1e](https://github.com/valentine195/obsidian-dice-roller/commit/deb0f1eea8a148af8e96984ad3b9f24fede07f37))
+
 ### [8.7.2](https://github.com/valentine195/obsidian-dice-roller/compare/8.7.1...8.7.2) (2022-10-25)
 
 
