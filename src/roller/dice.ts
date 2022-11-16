@@ -673,6 +673,8 @@ export class StackRoller extends GenericRoller<number> {
             this.expectedValue = ExpectedValue.Average;
         } else if (evt.getModifierState("Control")) {
             this.expectedValue = ExpectedValue.None;
+        }else if (evt.getModifierState("Shift")) {
+            await this.plugin.renderRoll(this);
         }
         if (window.getSelection()?.isCollapsed) {
             await this.roll();
