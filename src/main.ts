@@ -325,7 +325,8 @@ export default class DiceRollerPlugin extends Plugin {
         const lineStart = ctx.getSectionInfo(el)?.lineStart;
         const file = this.app.vault.getAbstractFileByPath(ctx.sourcePath);
 
-        if (!file || !(file instanceof TFile)) return;
+        if ((!file || !(file instanceof TFile)) && path != "STATBLOCK_RENDERER")
+            return;
 
         const toPersist: Record<number, BasicRoller> = {};
 
@@ -334,8 +335,14 @@ export default class DiceRollerPlugin extends Plugin {
         const modPromises: Promise<void>[] = [];
         for (let index = 0; index < nodeList.length; index++) {
             const node = nodeList.item(index);
+            console.log("🚀 ~ file: main.ts:338 ~ node", node);
 
-            if (/^dice\-mod:\s*([\s\S]+)\s*?/.test(node.innerText) && info) {
+            if (
+                file &&
+                file instanceof TFile &&
+                /^dice\-mod:\s*([\s\S]+)\s*?/.test(node.innerText) &&
+                info
+            ) {
                 try {
                     if (!replacementFound) {
                         fileContent = (
@@ -453,7 +460,7 @@ export default class DiceRollerPlugin extends Plugin {
                         await load();
                     });
                 }
-
+                if (!file || !(file instanceof TFile)) return;
                 if (!this.fileMap.has(file)) {
                     this.fileMap.set(file, []);
                 }
@@ -492,7 +499,7 @@ export default class DiceRollerPlugin extends Plugin {
                 continue;
             }
         }
-
+        if (!file || !(file instanceof TFile)) return;
         if (replacementFound && modPromises.length) {
             await Promise.all(modPromises);
             await this.app.vault.modify(file, fileContent.join("\n"));
