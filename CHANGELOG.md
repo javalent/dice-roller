@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.8.1](https://github.com/valentine195/obsidian-dice-roller/compare/8.8.0...8.8.1) (2023-01-11)
+
+
+### Bug Fixes
+
+* fixes issue rendering in initiative tracker view ([f6be201](https://github.com/valentine195/obsidian-dice-roller/commit/f6be201d5ba45434e6946cb703edd846c568d2aa))
+
 ## [8.8.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.7.2...8.8.0) (2022-10-26)
 
 
