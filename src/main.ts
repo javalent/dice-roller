@@ -335,7 +335,6 @@ export default class DiceRollerPlugin extends Plugin {
         const modPromises: Promise<void>[] = [];
         for (let index = 0; index < nodeList.length; index++) {
             const node = nodeList.item(index);
-            console.log("🚀 ~ file: main.ts:338 ~ node", node);
 
             if (
                 file &&
@@ -460,7 +459,7 @@ export default class DiceRollerPlugin extends Plugin {
                         await load();
                     });
                 }
-                if (!file || !(file instanceof TFile)) return;
+                if (!file || !(file instanceof TFile)) continue;
                 if (!this.fileMap.has(file)) {
                     this.fileMap.set(file, []);
                 }
