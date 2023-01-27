@@ -253,12 +253,11 @@ export default class DiceRollerPlugin extends Plugin {
         this.addCommand({
             id: "open-view",
             name: "Open Dice View",
-            checkCallback: (checking) => {
+            callback: () => {
                 if (!this.view) {
-                    if (!checking) {
-                        this.addDiceView();
-                    }
-                    return true;
+                    this.addDiceView();
+                } else {
+                    this.app.workspace.revealLeaf(this.view.leaf);
                 }
             }
         });
