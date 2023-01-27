@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.8.3](https://github.com/valentine195/obsidian-dice-roller/compare/8.8.2...8.8.3) (2023-01-27)
+
+
+### Bug Fixes
+
+* Open Dice View reveals view if open ([844ecf5](https://github.com/valentine195/obsidian-dice-roller/commit/844ecf5c05c81e08ee08b824f1cefb0be2cf4ab5))
+
 ### [8.8.2](https://github.com/valentine195/obsidian-dice-roller/compare/8.8.1...8.8.2) (2023-01-12)
 
 
