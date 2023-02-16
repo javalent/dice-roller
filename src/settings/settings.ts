@@ -3,10 +3,12 @@ import {
     ButtonComponent,
     Notice,
     PluginSettingTab,
+    setIcon,
     Setting,
     TextComponent
 } from "obsidian";
 import { Round } from "src/types";
+import { ICON_DEFINITION } from "src/utils/constants";
 import type DiceRoller from "../main";
 import { DEFAULT_SETTINGS } from "../main";
 
@@ -109,6 +111,31 @@ export default class SettingTab extends PluginSettingTab {
                 t.setValue(this.plugin.data.displayFormulaForMod);
                 t.onChange(async (v) => {
                     this.plugin.data.displayFormulaForMod = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+        new Setting(containerEl)
+            .setName("Display Formula in Parentheses After")
+            .setDesc(
+                createFragment((e) => {
+                    e.createSpan({
+                        text: "For example,  "
+                    });
+                    e.createEl("code", { text: "`dice: 1d6`" });
+                    e.createSpan({ text: " will become " });
+                    const parent = e.createSpan("dice-roller");
+                    parent.createSpan({ cls: "dice-roller-result", text: "3" });
+                    setIcon(
+                        parent.createSpan("dice-roller-button"),
+                        ICON_DEFINITION
+                    );
+                    e.createSpan({ text: " (1d6). This only affects Dice Rollers." });
+                })
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.displayFormulaAfter);
+                t.onChange(async (v) => {
+                    this.plugin.data.displayFormulaAfter = v;
                     await this.plugin.saveSettings();
                 });
             });

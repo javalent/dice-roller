@@ -2,6 +2,7 @@
     position: relative;
     display: inline-flex;
     align-items: flex-start;
+    gap: 0.25rem;
     cursor: pointer;
 
     margin: 0 0.25em 0 0;
@@ -20,7 +21,11 @@
     display: inline-block;
     position: relative;
     font-size: inherit;
-    margin-left: 0.25em;
+}
+.dice-roller > .dice-roller-formula {
+    display: inline-block;
+    position: relative;
+    font-size: inherit;
 }
 
 .dice-roller.has-embed .dice-roller-result {
@@ -70,8 +75,9 @@
 
 .dice-roller.has-embed
     .internal-embed
-    *:last-child:not(svg):not(.dice-content-copy):not(.markdown-embed
-        .dice-roller):not(.dice-roller-result > .embedded-table-result *) {
+    *:last-child:not(svg):not(.dice-content-copy):not(
+        .markdown-embed .dice-roller
+    ):not(.dice-roller-result > .embedded-table-result *) {
     margin-bottom: 15px;
 }
 

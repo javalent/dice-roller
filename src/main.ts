@@ -132,6 +132,7 @@ interface DiceRollerSettings {
     displayResultsInline: boolean;
     displayLookupRoll: boolean;
     displayFormulaForMod: boolean;
+    displayFormulaAfter: boolean;
     formulas: Record<string, string>;
     persistResults: boolean;
 
@@ -163,6 +164,7 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     customFormulas: [],
     displayFormulaForMod: true,
     displayResultsInline: false,
+    displayFormulaAfter: false,
     displayLookupRoll: true,
     formulas: {},
     persistResults: false,
@@ -744,6 +746,7 @@ export default class DiceRollerPlugin extends Plugin {
 
         let showDice = content.includes("|nodice") ? false : icon;
         let showFormula = this.data.displayResultsInline;
+        let showParens = this.data.displayFormulaAfter;
         let expectedValue: ExpectedValue = ExpectedValue.Roll;
         let fixedText: string = "";
         const regextext = /\|text\((.*)\)/;
@@ -764,6 +767,12 @@ export default class DiceRollerPlugin extends Plugin {
             let [, text] = content.match(regextext) ?? [null, ""];
             fixedText = text;
         }
+        if (content.includes("|paren")) {
+            showParens = true;
+        }
+        if (content.includes("|noparen")) {
+            showParens = false;
+        }
         content = decode(
             //remove flags...
             content
@@ -772,6 +781,8 @@ export default class DiceRollerPlugin extends Plugin {
                 .replace("|norender", "")
                 .replace("|noform", "")
                 .replace("|form", "")
+                .replace("|noparen", "")
+                .replace("|paren", "")
                 .replace("|avg", "")
                 .replace("|none", "")
                 .replace(regextext, "")
@@ -793,7 +804,8 @@ export default class DiceRollerPlugin extends Plugin {
                     lexemes,
                     showDice,
                     fixedText,
-                    expectedValue
+                    expectedValue,
+                    showParens
                 );
                 roller.showFormula = showFormula;
                 return roller;
@@ -856,7 +868,8 @@ export default class DiceRollerPlugin extends Plugin {
     getRollerSync(
         content: string,
         source: string,
-        icon = this.data.showDice
+        icon = this.data.showDice,
+        displayFormulaAfter?: boolean
     ): BasicRoller {
         content = content.replace(/\\\|/g, "|");
 
@@ -910,6 +923,10 @@ export default class DiceRollerPlugin extends Plugin {
 
         const type = this.getTypeFromLexemes(lexemes);
 
+        if (displayFormulaAfter == undefined) {
+            displayFormulaAfter = this.data.displayFormulaAfter;
+        }
+
         switch (type) {
             case "dice": {
                 const roller = new StackRoller(
@@ -918,7 +935,8 @@ export default class DiceRollerPlugin extends Plugin {
                     lexemes,
                     showDice,
                     fixedText,
-                    expectedValue
+                    expectedValue,
+                    displayFormulaAfter
                 );
                 roller.shouldRender = shouldRender;
                 roller.showFormula = showFormula;

@@ -84,21 +84,26 @@ export class DiceRoller {
             this.static = true;
             this.modifiersAllowed = false;
         }
-        let [, rolls, min = null, max = 1] = this.dice.match(
+        let [, rolls, minStr = null, maxStr = 1] = this.dice.match(
             /(\-?\d+)[dD]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?/
         ) || [, 1, null, 1];
 
         this.multiplier = rolls < 0 ? -1 : 1;
-
+        let min = isNaN(Number(minStr)) ? null : Number(minStr);
+        let max: number;
         this.rolls = Math.abs(Number(rolls)) || 1;
-        if (Number(max) < 0 && !min) {
-            min = -1;
-        }
-        if (max === "%") max = 100;
-        if (max === "F") {
+
+        if (maxStr === "%") {
+            max = 100;
+        } else if (maxStr === "F") {
             max = 1;
             min = -1;
             this.fudge = true;
+        } else {
+            max = Number(maxStr);
+        }
+        if (Number(max) < 0 && !min) {
+            min = -1;
         }
         if (Number(max) < Number(min)) {
             [max, min] = [min, max];
@@ -695,9 +700,18 @@ export class StackRoller extends GenericRoller<number> {
         public lexemes: LexicalToken[],
         showDice = plugin.data.showDice,
         fixedText: string,
-        expectedValue: ExpectedValue
+        expectedValue: ExpectedValue,
+        displayFormulaAfter = plugin.data.displayFormulaAfter
     ) {
         super(plugin, original, lexemes, showDice);
+
+        if (displayFormulaAfter) {
+            this.containerEl.createSpan({
+                cls: "dice-roller-formula",
+                text: `(${original})`
+            });
+        }
+
         this.fixedText = fixedText;
         this.expectedValue = expectedValue;
         this.displayFixedText = this.fixedText !== "";
