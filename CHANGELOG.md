@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.9.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.8.3...8.9.0) (2023-02-16)
+
+
+### Features
+
+* adds ability to display formula after result ([a5d3cd7](https://github.com/valentine195/obsidian-dice-roller/commit/a5d3cd7066ee0a5cedfc28a0dd3f3f0607460c65))
+
 ### [8.8.3](https://github.com/valentine195/obsidian-dice-roller/compare/8.8.2...8.8.3) (2023-01-27)
 
 

@@ -1,7 +1,7 @@
 {
     "id": "obsidian-dice-roller",
     "name": "Dice Roller",
-    "version": "8.8.3",
+    "version": "8.9.0",
     "minAppVersion": "0.12.15",
     "description": "Inline dice rolling for Obsidian.md",
     "author": "Jeremy Valentine",
