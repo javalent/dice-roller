@@ -1,4 +1,4 @@
-import { MarkdownRenderer, Notice, Pos,TFile } from "obsidian";
+import { MarkdownRenderer, Notice, Pos, TFile } from "obsidian";
 
 import { TABLE_REGEX } from "src/utils/constants";
 import { LinkRoller, StackRoller, TagRoller } from ".";
@@ -23,16 +23,15 @@ export class TableRoller extends GenericFileRoller<string> {
     getPath() {
         const { groups } = this.lexeme.value.match(TABLE_REGEX);
 
-        const { diceRoll="1", link, block, header } = groups;
+        const { diceRoll = "1", link, block, header } = groups;
         if (!link || !block) throw new Error("Could not parse link.");
 
         // For backward compatiblity: xd transformed into x (instead of xd100)
         const matches = diceRoll.match(/(\d*?)[Dd]$/);
         if (matches) {
-            const [, nbRolls = "1", ] = matches;
+            const [, nbRolls = "1"] = matches;
             this.rollsFormula = nbRolls;
-        }
-        else {
+        } else {
             this.rollsFormula = diceRoll;
         }
         this.rolls = 1;
@@ -171,23 +170,31 @@ export class TableRoller extends GenericFileRoller<string> {
 
         if (this.rollsFormula) {
             try {
-                const roller = await this.plugin.getRoller(this.rollsFormula, this.source);
+                const roller = await this.plugin.getRoller(
+                    this.rollsFormula,
+                    this.source
+                );
                 if (!(roller instanceof StackRoller)) {
-                    this.prettyTooltip = "TableRoller only supports dice rolls to select multiple elements.";
+                    this.prettyTooltip =
+                        "TableRoller only supports dice rolls to select multiple elements.";
                     new Notice(this.prettyTooltip);
-                    return("ERROR");
+                    return "ERROR";
                 }
                 const rollsRoller = roller as StackRoller;
                 await rollsRoller.roll();
                 this.rolls = rollsRoller.result;
                 if (!rollsRoller.isStatic) {
-                    formula = formula.replace(this.rollsFormula, `${this.rollsFormula.trim()} --> ${rollsRoller.resultText} > `);
+                    formula = formula.replace(
+                        this.rollsFormula,
+                        `${this.rollsFormula.trim()} --> ${
+                            rollsRoller.resultText
+                        } > `
+                    );
                 }
-            }
-            catch(error) {
+            } catch (error) {
                 this.prettyTooltip = `TableRoller: '${this.rollsFormula}' is not a valid dice roll.`;
                 new Notice(this.prettyTooltip);
-                return("ERROR");
+                return "ERROR";
             }
         }
 
@@ -239,12 +246,11 @@ export class TableRoller extends GenericFileRoller<string> {
 
         if (subTooltips.length == 0) {
             this.combinedTooltip = formula;
-        }
-        else if (subTooltips.length == 1) {
+        } else if (subTooltips.length == 1) {
             this.combinedTooltip = formula + " " + subTooltips.join("");
-        }
-        else {
-            this.combinedTooltip = formula + " ==> (" + subTooltips.join(" ||") + ")";
+        } else {
+            this.combinedTooltip =
+                formula + " ==> (" + subTooltips.join(" ||") + ")";
         }
 
         this.prettyTooltip = this.prettify(this.combinedTooltip);
@@ -305,13 +311,16 @@ export class TableRoller extends GenericFileRoller<string> {
 
             /** Check for Lookup Table */
             if (
-                Object.keys(table.columns).length === 2 &&
-                /dice:\s*([\s\S]+)\s*?/.test(Object.keys(table.columns)[0])
+                table.columns.size === 2 &&
+                /dice:\s*([\s\S]+)\s*?/.test(
+                    Array.from(table.columns.keys())[0]
+                )
             ) {
                 const roller = await this.plugin.getRoller(
-                    Object.keys(table.columns)[0].split(":").pop(),
+                    Array.from(table.columns.keys())[0].split(":").pop(),
                     this.source
                 );
+                console.log("🚀 ~ file: table.ts:315 ~ roller:", roller);
                 if (roller instanceof StackRoller) {
                     this.lookupRoller = roller;
                     // TODO: useless roll I think
@@ -336,8 +345,16 @@ export class TableRoller extends GenericFileRoller<string> {
                     this.isLookup = true;
                 }
             }
-            if (this.header && table.columns[this.header]) {
-                this.options = table.columns[this.header];
+            /** Check for 2d Rolling */
+            if (this.header === "xy" && !table.columns.has("xy")) {
+                this.options = [];
+                for (const column of Array.from(table.columns.values()).slice(
+                    1
+                )) {
+                    this.options.push(...column);
+                }
+            } else if (this.header && table.columns.has(this.header)) {
+                this.options = table.columns.get(this.header);
             } else {
                 if (this.header) {
                     throw new Error(
@@ -402,7 +419,7 @@ function extract(content: string) {
         }
     }
     return {
-        columns: Object.fromEntries(ret),
+        columns: new Map(ret),
         rows: rows
     };
 }

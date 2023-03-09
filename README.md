@@ -386,14 +386,13 @@ The plugin will read the table and return a random result.
 
 To return multiple elements, use a [dice formula](#dice-rollers) before the wikilink:
 
-- `` `dice: X[[Note^block-id]]` ``
+-   `` `dice: X[[Note^block-id]]` ``
 
-- `` `dice: 1d4+1[[Note^block-id]]` ``
+-   `` `dice: 1d4+1[[Note^block-id]]` ``
 
-- `` `dice: Xd[[Note^block-id]]` ``
+-   `` `dice: Xd[[Note^block-id]]` ``
 
 Note that, for backward compatibility reasons, `d` is interpreted as a `d1` and not as a `d100` like in regular dice formulas.
-
 
 Once in preview mode, you may <kbd>Ctrl</kbd> - click on the result to open the block reference in a new pane.
 
@@ -448,6 +447,10 @@ Example:
 
 `dice: [[ThisNote^encounter]]`
 ```
+
+## 2d Table Rollers
+
+Adding `|xy` to the end of a table roller will return a random table cell (not row) from the table, _unless there is a column named xy_.
 
 # List Rollers
 
