@@ -392,7 +392,10 @@ export default class DiceRollerPlugin extends Plugin {
 
                                 splitContent = splitContent
                                     .join("\n")
-                                    .replace(`\`${full}\``, rep)
+                                    .replace(
+                                        `\`${full}\``,
+                                        rep.replace(/([\*\[\]])/g, "\\$1")
+                                    )
                                     .split("\n");
 
                                 fileContent.splice(
