@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.10.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.9.1...8.10.0) (2023-03-09)
+
+
+### Features
+
+* adds xy table lookup ([21f0643](https://github.com/valentine195/obsidian-dice-roller/commit/21f06434d43748daf3fa46f3ad1d8743564dc0ce))
+
 ### [8.9.1](https://github.com/valentine195/obsidian-dice-roller/compare/8.9.0...8.9.1) (2023-03-09)
 
 
