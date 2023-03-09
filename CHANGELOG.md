@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.9.1](https://github.com/valentine195/obsidian-dice-roller/compare/8.9.0...8.9.1) (2023-03-09)
+
+
+### Bug Fixes
+
+* Escapes special characters in dice mod output ([06c33cc](https://github.com/valentine195/obsidian-dice-roller/commit/06c33cc33ff573b3facbf83c237461e3a922d6cc))
+
 ## [8.9.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.8.3...8.9.0) (2023-02-16)
 
 
