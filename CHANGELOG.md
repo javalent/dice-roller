@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.10.1](https://github.com/valentine195/obsidian-dice-roller/compare/8.10.0...8.10.1) (2023-03-10)
+
+
+### Bug Fixes
+
+* adds synchronous stack roller rolls ([87928c6](https://github.com/valentine195/obsidian-dice-roller/commit/87928c6ef82960f0013d1a2a3f80d3bd52904eca))
+
 ## [8.10.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.9.1...8.10.0) (2023-03-09)
 
 
