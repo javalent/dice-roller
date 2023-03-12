@@ -32,7 +32,42 @@ export function blockid(len: number) {
     return `dice-${nanoid(4)}`;
 }
 
-export class SectionRoller extends GenericFileRoller<RollerCache> {
+abstract class GenericEmbeddedRoller<T> extends GenericFileRoller<T> {
+    copy: HTMLDivElement;
+    getEmbedClass() {
+        return this.plugin.data.displayAsEmbed ? "markdown-embed" : "";
+    }
+    constructor(
+        public plugin: DiceRollerPlugin,
+        public original: string,
+        public lexeme: LexicalToken,
+        source: string,
+        public inline: boolean = true,
+        showDice = plugin.data.showDice
+    ) {
+        super(plugin, original, lexeme, source, showDice);
+        if (this.plugin.data.displayAsEmbed) {
+            this.containerEl.addClasses(["has-embed", "markdown-embed"]);
+            this.resultEl.addClass("internal-embed");
+        }
+        this.resultEl.setAttrs({ src: source });
+        this.copy = this.containerEl.createDiv({
+            cls: "dice-content-copy dice-roller-button no-show",
+            attr: { "aria-label": "Copy Contents" }
+        });
+        this.copy.addEventListener("click", (evt) => {
+            evt.stopPropagation();
+            navigator.clipboard
+                .writeText(this.results.join("\n"))
+                .then(async () => {
+                    new Notice("Result copied to clipboard.");
+                });
+        });
+        setIcon(this.copy, COPY_DEFINITION);
+    }
+}
+
+export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
     result: RollerCache;
     get replacer() {
         const blockID = this.getBlockId(this.result);
@@ -52,26 +87,10 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
         public original: string,
         public lexeme: LexicalToken,
         source: string,
-        private inline: boolean = true,
+        public inline: boolean = true,
         showDice = plugin.data.showDice
     ) {
         super(plugin, original, lexeme, source, showDice);
-        this.containerEl.addClasses(["has-embed", "markdown-embed"]);
-        this.resultEl.addClass("internal-embed");
-        this.resultEl.setAttrs({ src: source });
-        this.copy = this.containerEl.createDiv({
-            cls: "dice-content-copy dice-roller-button no-show",
-            attr: { "aria-label": "Copy Contents" }
-        });
-        this.copy.addEventListener("click", (evt) => {
-            evt.stopPropagation();
-            navigator.clipboard
-                .writeText(this.displayFromCache(...this.results).trim())
-                .then(async () => {
-                    new Notice("Result copied to clipboard.");
-                });
-        });
-        setIcon(this.copy, COPY_DEFINITION);
     }
     get tooltip() {
         return `${this.original}\n${this.path}`;
@@ -107,7 +126,7 @@ export class SectionRoller extends GenericFileRoller<RollerCache> {
                 }
             };
             const ret = this.resultEl.createDiv({
-                cls: "markdown-embed"
+                cls: this.getEmbedClass()
             });
             if (!this.plugin.data.displayResultsInline) {
                 const type = "type" in result ? result.type : "List Item";
@@ -323,7 +342,9 @@ export class TagRoller extends GenericRoller<SectionRoller> {
             );
         }
 
-        this.containerEl.addClasses(["has-embed", "markdown-embed"]);
+        if (plugin.data.displayAsEmbed) {
+            this.containerEl.addClasses(["has-embed", "markdown-embed"]);
+        }
 
         const {
             roll = 1,
@@ -628,7 +649,7 @@ export class LinkRoller extends GenericRoller<TFile> {
     }
 }
 
-export class LineRoller extends GenericFileRoller<string> {
+export class LineRoller extends GenericEmbeddedRoller<string> {
     get replacer() {
         return this.result;
     }
@@ -636,33 +657,16 @@ export class LineRoller extends GenericFileRoller<string> {
     results: string[];
     types: string[];
     content: string;
-    copy: HTMLDivElement;
 
     constructor(
         public plugin: DiceRollerPlugin,
         public original: string,
         public lexeme: LexicalToken,
         source: string,
-        private inline: boolean = true,
+        inline: boolean = true,
         showDice = plugin.data.showDice
     ) {
         super(plugin, original, lexeme, source, showDice);
-        this.containerEl.addClasses(["has-embed", "markdown-embed"]);
-        this.resultEl.addClass("internal-embed");
-        this.resultEl.setAttrs({ src: source });
-        this.copy = this.containerEl.createDiv({
-            cls: "dice-content-copy dice-roller-button no-show",
-            attr: { "aria-label": "Copy Contents" }
-        });
-        this.copy.addEventListener("click", (evt) => {
-            evt.stopPropagation();
-            navigator.clipboard
-                .writeText(this.results.join("\n"))
-                .then(async () => {
-                    new Notice("Result copied to clipboard.");
-                });
-        });
-        setIcon(this.copy, COPY_DEFINITION);
     }
     get tooltip() {
         return `${this.original}\n${this.path}`;
@@ -697,8 +701,9 @@ export class LineRoller extends GenericFileRoller<string> {
                     return;
                 }
             };
+
             const ret = this.resultEl.createDiv({
-                cls: "markdown-embed"
+                cls: this.getEmbedClass()
             });
             if (!result) {
                 ret.createDiv({

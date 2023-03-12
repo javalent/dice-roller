@@ -129,7 +129,9 @@ export default class SettingTab extends PluginSettingTab {
                         parent.createSpan("dice-roller-button"),
                         ICON_DEFINITION
                     );
-                    e.createSpan({ text: " (1d6). This only affects Dice Rollers." });
+                    e.createSpan({
+                        text: " (1d6). This only affects Dice Rollers."
+                    });
                 })
             )
             .addToggle((t) => {
@@ -215,6 +217,18 @@ export default class SettingTab extends PluginSettingTab {
                 t.setValue(this.plugin.data.copyContentButton);
                 t.onChange(async (v) => {
                     this.plugin.data.copyContentButton = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+        new Setting(containerEl)
+            .setName("Display As Embeds")
+            .setDesc(
+                "Sections returned from Section & Tag Rollers will display as embedded fields."
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.displayAsEmbed);
+                t.onChange(async (v) => {
+                    this.plugin.data.displayAsEmbed = v;
                     await this.plugin.saveSettings();
                 });
             });

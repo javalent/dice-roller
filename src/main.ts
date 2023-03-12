@@ -154,6 +154,8 @@ interface DiceRollerSettings {
     showLeafOnStartup: boolean;
     customFormulas: string[];
 
+    displayAsEmbed: boolean;
+
     round: keyof typeof Round;
 }
 
@@ -178,6 +180,7 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     textColor: "#ffffff",
     showLeafOnStartup: true,
     showDice: true,
+    displayAsEmbed: true,
     round: Round.None
 };
 
