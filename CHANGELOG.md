@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.11.1](https://github.com/valentine195/obsidian-dice-roller/compare/8.11.0...8.11.1) (2023-03-12)
+
+
+### Bug Fixes
+
+* Fixes getRoller not rendering (close [#150](https://github.com/valentine195/obsidian-dice-roller/issues/150)) ([e6385fa](https://github.com/valentine195/obsidian-dice-roller/commit/e6385faaa3826a118f6acbdcaa7a1cfbd10ef45d))
+
 ## [8.11.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.10.1...8.11.0) (2023-03-12)
 
 
