@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.11.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.10.1...8.11.0) (2023-03-12)
+
+
+### Features
+
+* Can turn off embed styling for section rollers (close [#161](https://github.com/valentine195/obsidian-dice-roller/issues/161)) ([be9cdcf](https://github.com/valentine195/obsidian-dice-roller/commit/be9cdcf9ee3a420a6157dffc4e68b327f5ea27e6))
+* On  demand dice roll rendering with Shfit Click ([018fdbf](https://github.com/valentine195/obsidian-dice-roller/commit/018fdbf8f51b3ab9d6e72fc3a178ef9850485003))
+
+
+### Bug Fixes
+
+* fixes double modifier application when rendering (close [#164](https://github.com/valentine195/obsidian-dice-roller/issues/164)) ([199439d](https://github.com/valentine195/obsidian-dice-roller/commit/199439d8c28c5513a351917d4b0d7d2bbf2bf924))
+
 ### [8.10.1](https://github.com/valentine195/obsidian-dice-roller/compare/8.10.0...8.10.1) (2023-03-10)
 
 
