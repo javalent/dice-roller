@@ -939,6 +939,7 @@ export class StackRoller extends GenericRoller<number> {
     async roll() {
         let index = 0;
         this.stunted = "";
+        this.stackCopy = [];
         for (const dice of this.lexemes) {
             switch (dice.type) {
                 case "+":
@@ -1146,7 +1147,9 @@ export class StackRoller extends GenericRoller<number> {
     recalculate() {
         let stack = [];
         let result = 0;
-
+        if (!this.stackCopy.length) {
+            return this.roll();
+        }
         for (let item of this.stackCopy) {
             if (typeof item === "string") {
                 let b: DiceRoller = stack.pop(),
@@ -1164,18 +1167,21 @@ export class StackRoller extends GenericRoller<number> {
                 stack.push(new DiceRoller(`${r}`));
             } else {
                 stack.push(item);
-                if (item instanceof DiceRoller) {
+                if (
+                    item instanceof DiceRoller &&
+                    this.stackCopy.indexOf(item) != this.stackCopy.length - 1
+                ) {
                     item.applyModifiers();
                 }
             }
         }
-
         if (stack.length && stack[0] instanceof DiceRoller) {
             stack[0].applyModifiers();
             result += stack[0].result;
         }
 
         this.result = result;
+        this.stackCopy = [];
     }
 
     toResult() {

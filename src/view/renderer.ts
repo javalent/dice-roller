@@ -310,6 +310,7 @@ export default class DiceRenderer extends Component {
     getResultsForRoller(roller: DiceRoller) {
         const diceArray = this.current.get(roller);
 
+        //todo remove double loop
         const percentile = diceArray.filter(
             (d) => d instanceof D10Dice && d.isPercentile
         );
@@ -317,6 +318,32 @@ export default class DiceRenderer extends Component {
         for (let i = 0; i < percentile.length; i += 2) {
             chunked.push(percentile.slice(i, i + 2) as [Dice, Dice]);
         }
+        /* possibly... need to test
+        const resultsArr = [];
+        for (let i = 0; i < diceArray.length; i++) {
+            const dice = diceArray[i];
+            if (dice instanceof D10Dice && dice.isPercentile) {
+                let tens = dice.getUpsideValue();
+                let onesDice;
+                const next = diceArray[i + 1];
+                if (next && next instanceof D10Dice && next.isPercentile) {
+                    onesDice = next;
+                    i++;
+                }
+                if (!onesDice) resultsArr.push(tens);
+                let ones = onesDice.getUpsideValue();
+
+                if (tens === 10 && ones == 10) {
+                    resultsArr.push(100);
+                } else {
+                    if (ones == 10) ones = 0;
+                    if (tens == 10) tens = 0;
+                    resultsArr.push(tens * 10 + ones);
+                }
+            } else {
+                resultsArr.push(dice.getUpsideValue());
+            }
+        } */
 
         let results = [
             ...diceArray

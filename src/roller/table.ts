@@ -320,7 +320,6 @@ export class TableRoller extends GenericFileRoller<string> {
                     Array.from(table.columns.keys())[0].split(":").pop(),
                     this.source
                 );
-                console.log("🚀 ~ file: table.ts:315 ~ roller:", roller);
                 if (roller instanceof StackRoller) {
                     this.lookupRoller = roller;
                     // TODO: useless roll I think
