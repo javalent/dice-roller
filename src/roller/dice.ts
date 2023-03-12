@@ -936,7 +936,7 @@ export class StackRoller extends GenericRoller<number> {
         this.hasRunOnce = true;
         return this.result;
     }
-    async roll() {
+    async roll(render?: boolean) {
         let index = 0;
         this.stunted = "";
         this.stackCopy = [];
@@ -1120,7 +1120,7 @@ export class StackRoller extends GenericRoller<number> {
                 }
             }
         }
-        if (this.shouldRender && this.hasRunOnce) {
+        if (render || (this.shouldRender && this.hasRunOnce)) {
             await this.plugin.renderRoll(this);
             new Notice(`${this.tooltip}\n\nResult: ${this.result}`);
         } else {
