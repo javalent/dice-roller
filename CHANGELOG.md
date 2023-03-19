@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.12.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.11.1...8.12.0) (2023-03-19)
+
+
+### Features
+
+* Adds unique modifier ([8e41412](https://github.com/valentine195/obsidian-dice-roller/commit/8e41412416a2c64e7557e54217bdfb84a9731d44))
+
 ### [8.11.1](https://github.com/valentine195/obsidian-dice-roller/compare/8.11.0...8.11.1) (2023-03-12)
 
 
