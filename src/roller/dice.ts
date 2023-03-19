@@ -115,19 +115,7 @@ export class DiceRoller {
 
         this.conditions = this.lexeme.conditions ?? [];
 
-        this.results = new Map(
-            [...this.roll()].map((n, i) => {
-                return [
-                    i,
-                    {
-                        usable: true,
-                        value: n,
-                        display: `${n}`,
-                        modifiers: new Set()
-                    }
-                ];
-            })
-        );
+        this.roll();
     }
     keepLow(drop: number = 1) {
         if (!this.modifiersAllowed) {
@@ -204,10 +192,7 @@ export class DiceRoller {
             i++;
             toReroll.map(([, roll]) => {
                 roll.modifiers.add("r");
-                roll.value = this.getRandomBetween(
-                    this.faces.min,
-                    this.faces.max
-                );
+                roll.value = this.getValue();
             });
         }
 
@@ -220,10 +205,6 @@ export class DiceRoller {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
-        /* if (this.conditions?.length) {
-            new Notice("Modifiers are not permitted on conditioned dice.");
-            return;
-        } */
 
         /**
          * Build Conditional
@@ -239,21 +220,20 @@ export class DiceRoller {
         /**
          * Find values that pass the conditional
          */
-        let i = 0,
-            toExplode = [...this.results].filter(([, { value }]) =>
-                this.checkCondition(value, conditionals)
-            );
+        let toExplode = [...this.results].filter(([, { value }]) =>
+            this.checkCondition(value, conditionals)
+        );
 
         toExplode.forEach(([index, value]) => {
-            let newRoll = this.getRandomBetween(this.faces.min, this.faces.max);
-            i++;
+            let newRoll = this.getValue();
+            let i = 0;
             value.modifiers.add("!");
             value.value += newRoll;
             value.display = `${value.value}`;
             this.results.set(index, value);
             while (i < times && this.checkCondition(newRoll, conditionals)) {
                 i++;
-                newRoll = this.getRandomBetween(this.faces.min, this.faces.max);
+                newRoll = this.getValue();
                 value.value += newRoll;
                 value.display = `${value.value}`;
                 this.results.set(index, value);
@@ -305,7 +285,7 @@ export class DiceRoller {
                 let previous = this.results.get(key + inserted + i);
                 previous.modifiers.add("!");
 
-                newRoll = this.getRandomBetween(this.faces.min, this.faces.max);
+                newRoll = this.getValue();
 
                 /** Insert the new roll into the results map */
                 _insertIntoMap(this.results, key + inserted + i + 1, {
@@ -324,10 +304,12 @@ export class DiceRoller {
         if (this.static) {
             return [Number(this.dice)];
         }
-        return [...Array(this.rolls)].map(
-            () =>
-                this.multiplier *
-                this.getRandomBetween(this.faces.min, this.faces.max)
+        return [...Array(this.rolls)].map(() => this.getValue());
+    }
+    getValue() {
+        return (
+            this.multiplier *
+            this.getRandomBetween(this.faces.min, this.faces.max)
         );
     }
     setResults(results: number[]) {
@@ -344,27 +326,22 @@ export class DiceRoller {
                 ];
             })
         );
+        this.updateResultArray();
     }
     applyModifiers() {
+        //uniques need to run first otherwise its a total headache
+        /* if (this.modifiers.has("u")) {
+            this.applyModifier("u", this.modifiers.get("u"));
+            this.modifiers.delete("u");
+        } */
         for (let [type, modifier] of this.modifiers) {
+            /* if (type === "u") continue; */
             this.applyModifier(type, modifier);
         }
     }
     roll() {
         const roll = this._roll();
-        this.results = new Map(
-            [...roll].map((n, i) => {
-                return [
-                    i,
-                    {
-                        usable: true,
-                        value: n,
-                        display: `${n}`,
-                        modifiers: new Set()
-                    }
-                ];
-            })
-        );
+        this.setResults(roll);
         this.applyModifiers();
         if (this.conditions?.length) this.applyConditions();
 
@@ -393,6 +370,9 @@ export class DiceRoller {
             }
         }
     }
+    updateResultArray() {
+        this.resultArray = [...this.results.values()].map((v) => v.value);
+    }
     applyModifier(type: string, modifier: Modifier) {
         switch (type) {
             case "sort": {
@@ -410,6 +390,7 @@ export class DiceRoller {
                 this.results = new Map(
                     [...this.results.keys()].map((k) => [k, values[k]])
                 );
+                this.updateResultArray();
                 break;
             }
             case "kh": {
@@ -432,11 +413,43 @@ export class DiceRoller {
                 this.reroll(modifier.data, modifier.conditionals);
                 break;
             }
+            case "u": {
+                this.makeUnique();
+                break;
+            }
             case "condition": {
             }
         }
     }
 
+    makeUnique() {
+        let resultValues = [...this.results.values()];
+        if (
+            this.faces.min == this.faces.max ||
+            new Set(resultValues.map((v) => v.value)).size == this.results.size
+        )
+            return;
+        let attempts = 0;
+        while (
+            new Set(resultValues.map((v) => v.value)).size !=
+                this.results.size &&
+            attempts < 100
+        ) {
+            for (const result of resultValues) {
+                let dupe = resultValues.find(
+                    (v) => v.value == result.value && v != result
+                );
+                if (dupe) {
+                    dupe.value = this.getValue();
+                    dupe.display = `${dupe.value}`;
+                    dupe.modifiers.add("u");
+                }
+            }
+
+            resultValues = [...this.results.values()];
+            attempts++;
+        }
+    }
     checkCondition(value: number, conditions: Conditional[]): boolean | number {
         if (!conditions || !conditions.length) return value;
         return conditions.some(({ operator, comparer }) => {
@@ -739,188 +752,8 @@ export class StackRoller extends GenericRoller<number> {
     dice: DiceRoller[] = [];
     hasRunOnce = false;
     rollSync() {
-        let index = 0;
         this.stunted = "";
-        for (const dice of this.lexemes) {
-            switch (dice.type) {
-                case "+":
-                case "-":
-                case "*":
-                case "/":
-                case "^":
-                case "math":
-                    let b = this.stack.pop(),
-                        a = this.stack.pop();
-                    if (!a) {
-                        if (dice.value === "-") {
-                            b = new DiceRoller(`-${b.dice}`, b.lexeme);
-                        }
-                        this.stackCopy.push(dice.value);
-                        this.stack.push(b);
-                        continue;
-                    }
-
-                    b.roll();
-                    if (b instanceof StuntRoller) {
-                        if (b.doubles) {
-                            this.stunted = ` - ${
-                                b.results.get(0).value
-                            } Stunt Points`;
-                        }
-                    }
-
-                    a.roll();
-                    if (a instanceof StuntRoller) {
-                        if (a.doubles) {
-                            this.stunted = ` - ${
-                                a.results.get(0).value
-                            } Stunt Points`;
-                        }
-                    }
-                    const result = this.operators[dice.value](
-                        a.result,
-                        b.result
-                    );
-
-                    this.stackCopy.push(dice.value);
-                    this.stack.push(new DiceRoller(`${result}`, dice));
-                    break;
-                case "kh": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = dice.value ? Number(dice.value) : 1;
-
-                    diceInstance.modifiers.set("kh", {
-                        data,
-                        conditionals: [],
-                        value: dice.text
-                    });
-                    break;
-                }
-                case "dl": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = dice.value ? Number(dice.value) : 1;
-
-                    data = diceInstance.results.size - data;
-
-                    diceInstance.modifiers.set("kh", {
-                        data,
-                        conditionals: [],
-                        value: dice.text
-                    });
-                    break;
-                }
-                case "kl": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = dice.value ? Number(dice.value) : 1;
-
-                    diceInstance.modifiers.set("kl", {
-                        data,
-                        conditionals: [],
-                        value: dice.text
-                    });
-                    break;
-                }
-                case "dh": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = dice.value ? Number(dice.value) : 1;
-
-                    data = diceInstance.results.size - data;
-
-                    diceInstance.modifiers.set("kl", {
-                        data,
-                        conditionals: [],
-                        value: dice.text
-                    });
-                    break;
-                }
-                case "!": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = Number(dice.value) || 1;
-
-                    diceInstance.modifiers.set("!", {
-                        data,
-                        conditionals: dice.conditions ?? [],
-                        value: dice.text
-                    });
-
-                    break;
-                }
-                case "!!": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = Number(dice.value) || 1;
-
-                    diceInstance.modifiers.set("!!", {
-                        data,
-                        conditionals: dice.conditions ?? [],
-                        value: dice.text
-                    });
-
-                    break;
-                }
-                case "r": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = Number(dice.value) || 1;
-
-                    diceInstance.modifiers.set("r", {
-                        data,
-                        conditionals: dice.conditions ?? [],
-                        value: dice.text
-                    });
-                    break;
-                }
-                case "sort": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = Number(dice.value);
-
-                    diceInstance.modifiers.set("sort", {
-                        data,
-                        conditionals: dice.conditions ?? [],
-                        value: dice.value
-                    });
-                    break;
-                }
-                case "dice": {
-                    if (
-                        dice.parenedDice &&
-                        /^d/.test(dice.value) &&
-                        this.stack.length
-                    ) {
-                        const previous = this.stack.pop();
-                        dice.value = `${previous.result}${dice.value}`;
-                        this.dice[index] = new DiceRoller(dice.value, dice);
-                    }
-                    if (!this.dice[index]) {
-                        this.dice[index] = new DiceRoller(dice.value, dice);
-                    }
-
-                    this.stack.push(this.dice[index]);
-                    this.stackCopy.push(this.dice[index]);
-                    index++;
-                    break;
-                }
-                case "stunt": {
-                    if (!this.dice[index]) {
-                        this.dice[index] = new StuntRoller(dice.value, dice);
-                    }
-
-                    this.stack.push(this.dice[index]);
-                    this.stackCopy.push(this.dice[index]);
-                    index++;
-                    break;
-                }
-
-                case "%": {
-                    if (!this.dice[index]) {
-                        this.dice[index] = new PercentRoller(dice.value, dice);
-                    }
-
-                    this.stack.push(this.dice[index]);
-                    this.stackCopy.push(this.dice[index]);
-                    index++;
-                    break;
-                }
-            }
-        }
+        this.parseLexemes();
         const final = this.stack.pop();
         final.roll();
         if (final instanceof StuntRoller) {
@@ -937,189 +770,9 @@ export class StackRoller extends GenericRoller<number> {
         return this.result;
     }
     async roll(render?: boolean) {
-        let index = 0;
         this.stunted = "";
         this.stackCopy = [];
-        for (const dice of this.lexemes) {
-            switch (dice.type) {
-                case "+":
-                case "-":
-                case "*":
-                case "/":
-                case "^":
-                case "math":
-                    let b = this.stack.pop(),
-                        a = this.stack.pop();
-                    if (!a) {
-                        if (dice.value === "-") {
-                            b = new DiceRoller(`-${b.dice}`, b.lexeme);
-                        }
-                        this.stackCopy.push(dice.value);
-                        this.stack.push(b);
-                        continue;
-                    }
-
-                    b.roll();
-                    if (b instanceof StuntRoller) {
-                        if (b.doubles) {
-                            this.stunted = ` - ${
-                                b.results.get(0).value
-                            } Stunt Points`;
-                        }
-                    }
-
-                    a.roll();
-                    if (a instanceof StuntRoller) {
-                        if (a.doubles) {
-                            this.stunted = ` - ${
-                                a.results.get(0).value
-                            } Stunt Points`;
-                        }
-                    }
-                    const result = this.operators[dice.value](
-                        a.result,
-                        b.result
-                    );
-
-                    this.stackCopy.push(dice.value);
-                    this.stack.push(new DiceRoller(`${result}`, dice));
-                    break;
-                case "kh": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = dice.value ? Number(dice.value) : 1;
-
-                    diceInstance.modifiers.set("kh", {
-                        data,
-                        conditionals: [],
-                        value: dice.text
-                    });
-                    break;
-                }
-                case "dl": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = dice.value ? Number(dice.value) : 1;
-
-                    data = diceInstance.results.size - data;
-
-                    diceInstance.modifiers.set("kh", {
-                        data,
-                        conditionals: [],
-                        value: dice.text
-                    });
-                    break;
-                }
-                case "kl": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = dice.value ? Number(dice.value) : 1;
-
-                    diceInstance.modifiers.set("kl", {
-                        data,
-                        conditionals: [],
-                        value: dice.text
-                    });
-                    break;
-                }
-                case "dh": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = dice.value ? Number(dice.value) : 1;
-
-                    data = diceInstance.results.size - data;
-
-                    diceInstance.modifiers.set("kl", {
-                        data,
-                        conditionals: [],
-                        value: dice.text
-                    });
-                    break;
-                }
-                case "!": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = Number(dice.value) || 1;
-
-                    diceInstance.modifiers.set("!", {
-                        data,
-                        conditionals: dice.conditions ?? [],
-                        value: dice.text
-                    });
-
-                    break;
-                }
-                case "!!": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = Number(dice.value) || 1;
-
-                    diceInstance.modifiers.set("!!", {
-                        data,
-                        conditionals: dice.conditions ?? [],
-                        value: dice.text
-                    });
-
-                    break;
-                }
-                case "r": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = Number(dice.value) || 1;
-
-                    diceInstance.modifiers.set("r", {
-                        data,
-                        conditionals: dice.conditions ?? [],
-                        value: dice.text
-                    });
-                    break;
-                }
-                case "sort": {
-                    let diceInstance = this.dice[index - 1];
-                    let data = Number(dice.value);
-
-                    diceInstance.modifiers.set("sort", {
-                        data,
-                        conditionals: dice.conditions ?? [],
-                        value: dice.value
-                    });
-                    break;
-                }
-                case "dice": {
-                    if (
-                        dice.parenedDice &&
-                        /^d/.test(dice.value) &&
-                        this.stack.length
-                    ) {
-                        const previous = this.stack.pop();
-                        dice.value = `${previous.result}${dice.value}`;
-                        this.dice[index] = new DiceRoller(dice.value, dice);
-                    }
-                    if (!this.dice[index]) {
-                        this.dice[index] = new DiceRoller(dice.value, dice);
-                    }
-
-                    this.stack.push(this.dice[index]);
-                    this.stackCopy.push(this.dice[index]);
-                    index++;
-                    break;
-                }
-                case "stunt": {
-                    if (!this.dice[index]) {
-                        this.dice[index] = new StuntRoller(dice.value, dice);
-                    }
-
-                    this.stack.push(this.dice[index]);
-                    this.stackCopy.push(this.dice[index]);
-                    index++;
-                    break;
-                }
-
-                case "%": {
-                    if (!this.dice[index]) {
-                        this.dice[index] = new PercentRoller(dice.value, dice);
-                    }
-
-                    this.stack.push(this.dice[index]);
-                    this.stackCopy.push(this.dice[index]);
-                    index++;
-                    break;
-                }
-            }
-        }
+        this.parseLexemes();
         if (render || (this.shouldRender && this.hasRunOnce)) {
             await this.plugin.renderRoll(this);
             new Notice(`${this.tooltip}\n\nResult: ${this.result}`);
@@ -1142,6 +795,201 @@ export class StackRoller extends GenericRoller<number> {
         this.trigger("new-result");
         this.hasRunOnce = true;
         return this.result;
+    }
+
+    parseLexemes() {
+        let index = 0;
+        for (const dice of this.lexemes) {
+            switch (dice.type) {
+                case "+":
+                case "-":
+                case "*":
+                case "/":
+                case "^":
+                case "math":
+                    let b = this.stack.pop(),
+                        a = this.stack.pop();
+                    if (!a) {
+                        if (dice.value === "-") {
+                            b = new DiceRoller(`-${b.dice}`, b.lexeme);
+                        }
+                        this.stackCopy.push(dice.value);
+                        this.stack.push(b);
+                        continue;
+                    }
+
+                    b.roll();
+                    if (b instanceof StuntRoller) {
+                        if (b.doubles) {
+                            this.stunted = ` - ${
+                                b.results.get(0).value
+                            } Stunt Points`;
+                        }
+                    }
+
+                    a.roll();
+                    if (a instanceof StuntRoller) {
+                        if (a.doubles) {
+                            this.stunted = ` - ${
+                                a.results.get(0).value
+                            } Stunt Points`;
+                        }
+                    }
+                    const result = this.operators[dice.value](
+                        a.result,
+                        b.result
+                    );
+
+                    this.stackCopy.push(dice.value);
+                    this.stack.push(new DiceRoller(`${result}`, dice));
+                    break;
+                case "u": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = dice.value ? Number(dice.value) : 1;
+
+                    diceInstance.modifiers.set("u", {
+                        data,
+                        conditionals: [],
+                        value: dice.text
+                    });
+                    break;
+                }
+                case "kh": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = dice.value ? Number(dice.value) : 1;
+
+                    diceInstance.modifiers.set("kh", {
+                        data,
+                        conditionals: [],
+                        value: dice.text
+                    });
+                    break;
+                }
+                case "dl": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = dice.value ? Number(dice.value) : 1;
+
+                    data = diceInstance.results.size - data;
+
+                    diceInstance.modifiers.set("kh", {
+                        data,
+                        conditionals: [],
+                        value: dice.text
+                    });
+                    break;
+                }
+                case "kl": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = dice.value ? Number(dice.value) : 1;
+
+                    diceInstance.modifiers.set("kl", {
+                        data,
+                        conditionals: [],
+                        value: dice.text
+                    });
+                    break;
+                }
+                case "dh": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = dice.value ? Number(dice.value) : 1;
+
+                    data = diceInstance.results.size - data;
+
+                    diceInstance.modifiers.set("kl", {
+                        data,
+                        conditionals: [],
+                        value: dice.text
+                    });
+                    break;
+                }
+                case "!": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = Number(dice.value) || 1;
+
+                    diceInstance.modifiers.set("!", {
+                        data,
+                        conditionals: dice.conditions ?? [],
+                        value: dice.text
+                    });
+
+                    break;
+                }
+                case "!!": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = Number(dice.value) || 1;
+
+                    diceInstance.modifiers.set("!!", {
+                        data,
+                        conditionals: dice.conditions ?? [],
+                        value: dice.text
+                    });
+
+                    break;
+                }
+                case "r": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = Number(dice.value) || 1;
+
+                    diceInstance.modifiers.set("r", {
+                        data,
+                        conditionals: dice.conditions ?? [],
+                        value: dice.text
+                    });
+                    break;
+                }
+                case "sort": {
+                    let diceInstance = this.dice[index - 1];
+                    let data = Number(dice.value);
+
+                    diceInstance.modifiers.set("sort", {
+                        data,
+                        conditionals: dice.conditions ?? [],
+                        value: dice.value
+                    });
+                    break;
+                }
+                case "dice": {
+                    if (
+                        dice.parenedDice &&
+                        /^d/.test(dice.value) &&
+                        this.stack.length
+                    ) {
+                        const previous = this.stack.pop();
+                        dice.value = `${previous.result}${dice.value}`;
+                        this.dice[index] = new DiceRoller(dice.value, dice);
+                    }
+                    if (!this.dice[index]) {
+                        this.dice[index] = new DiceRoller(dice.value, dice);
+                    }
+
+                    this.stack.push(this.dice[index]);
+                    this.stackCopy.push(this.dice[index]);
+                    index++;
+                    break;
+                }
+                case "stunt": {
+                    if (!this.dice[index]) {
+                        this.dice[index] = new StuntRoller(dice.value, dice);
+                    }
+
+                    this.stack.push(this.dice[index]);
+                    this.stackCopy.push(this.dice[index]);
+                    index++;
+                    break;
+                }
+
+                case "%": {
+                    if (!this.dice[index]) {
+                        this.dice[index] = new PercentRoller(dice.value, dice);
+                    }
+
+                    this.stack.push(this.dice[index]);
+                    this.stackCopy.push(this.dice[index]);
+                    index++;
+                    break;
+                }
+            }
+        }
     }
 
     recalculate() {

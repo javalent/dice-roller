@@ -57,6 +57,7 @@ export default class Lexer {
             match: /r(?:i|\d+)?/u,
             value: this.clampInfinite
         },
+        u: /u/u,
         stunt: /1[Dd]S/u,
         "%": /\d+[Dd]\d+%/u,
         dice: [

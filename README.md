@@ -89,6 +89,7 @@ If a modifier has a parameter, it will default to 1 if not provided.
 | Explode & Combine | `!!{n}`, `!!i` | Same as explode, but exploded dice are summed in the display instead of being shown individually.  |
 | Re-roll           | `r{n}`, `ri`   | Re-roll a minimum dice `{n}` times. If `i` is provided, will re-roll "infinitely" (capped at 100). |
 | Sort              | `s(a)`, `sd`   | Sort results ascending or descending.                                                              |
+| Make Unique       | `u`            | Dice will be rerolled until all results are unique.                                                |
 
 ### Min/Max
 
