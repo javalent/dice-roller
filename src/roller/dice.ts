@@ -425,7 +425,7 @@ export class DiceRoller {
     makeUnique() {
         let resultValues = [...this.results.values()];
         if (
-            this.faces.min == this.faces.max ||
+            this.faces.max - this.faces.min + 1 < this.rolls ||
             new Set(resultValues.map((v) => v.value)).size == this.results.size
         )
             return;
