@@ -38,6 +38,7 @@ import {
 import { EditorSelection, Range, EditorState } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
 import {
+    TFile,
     editorEditorField,
     editorLivePreviewField,
     editorViewField
@@ -126,9 +127,18 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                 );
                 const roller = plugin.getRollerSync(content, currentFile.path);
 
+                const widget = new InlineWidget(
+                    original,
+                    roller,
+                    view,
+                    plugin,
+                    currentFile
+                );
+
+                plugin.addToFileMap(currentFile, roller);
                 widgets.push(
                     Decoration.replace({
-                        widget: new InlineWidget(original, roller, view),
+                        widget,
                         inclusive: false,
                         block: false
                     }).range(start - 1, end + 1)
@@ -138,11 +148,13 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
     }
     return Decoration.set(widgets, true);
 }
-class InlineWidget extends WidgetType {
+export class InlineWidget extends WidgetType {
     constructor(
         readonly rawQuery: string,
-        private roller: BasicRoller,
-        private view: EditorView
+        public roller: BasicRoller,
+        private view: EditorView,
+        private plugin: DiceRollerPlugin,
+        private file: TFile
     ) {
         super();
     }
@@ -153,6 +165,7 @@ class InlineWidget extends WidgetType {
         if (other.rawQuery === this.rawQuery) {
             return true;
         }
+        this.plugin.fileMap.get(this.file)?.remove(other.roller);
         return false;
     }
 

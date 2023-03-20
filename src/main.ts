@@ -5,7 +5,8 @@ import {
     addIcon,
     MarkdownView,
     TFile,
-    WorkspaceLeaf
+    WorkspaceLeaf,
+    editorLivePreviewField
 } from "obsidian";
 
 import { getAPI, Link } from "obsidian-dataview";
@@ -287,14 +288,18 @@ export default class DiceRollerPlugin extends Plugin {
                     this.app.workspace.getActiveViewOfType(MarkdownView);
                 if (
                     view &&
-                    view.getMode() === "preview" &&
+                    (view.getMode() === "preview" ||
+                        //@ts-ignore
+                        view.editor.cm.state.field(editorLivePreviewField)) &&
                     this.fileMap.has(view.file)
                 ) {
                     if (!checking) {
                         const dice = this.fileMap.get(view.file);
 
                         dice.forEach((roller) => {
-                            roller.roll();
+                            if (roller instanceof BasicRoller) {
+                                roller.roll();
+                            }
                         });
                     }
                     return true;
@@ -317,6 +322,13 @@ export default class DiceRollerPlugin extends Plugin {
         this.app.workspace.onLayoutReady(async () => {
             await this.registerDataviewInlineFields();
         });
+    }
+
+    addToFileMap(file: TFile, roller: BasicRoller) {
+        if (!this.fileMap.has(file)) {
+            this.fileMap.set(file, []);
+        }
+        this.fileMap.set(file, [...this.fileMap.get(file), roller]);
     }
 
     async postprocessor(el: HTMLElement, ctx: MarkdownPostProcessorContext) {
@@ -467,10 +479,7 @@ export default class DiceRollerPlugin extends Plugin {
                     });
                 }
                 if (!file || !(file instanceof TFile)) continue;
-                if (!this.fileMap.has(file)) {
-                    this.fileMap.set(file, []);
-                }
-                this.fileMap.set(file, [...this.fileMap.get(file), roller]);
+                this.addToFileMap(file, roller);
 
                 const view =
                     this.app.workspace.getActiveViewOfType(MarkdownView);
