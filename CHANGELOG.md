@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.12.1](https://github.com/valentine195/obsidian-dice-roller/compare/8.12.0...8.12.1) (2023-03-20)
+
+
+### Bug Fixes
+
+* Re-roll Dice command now works in LP (close [#171](https://github.com/valentine195/obsidian-dice-roller/issues/171)) ([4675203](https://github.com/valentine195/obsidian-dice-roller/commit/4675203142468c002d57f9a015de03fb6220ff01))
+
 ## [8.12.0](https://github.com/valentine195/obsidian-dice-roller/compare/8.11.1...8.12.0) (2023-03-19)
 
 
