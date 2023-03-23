@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.12.4](https://github.com/valentine195/obsidian-dice-roller/compare/8.12.3...8.12.4) (2023-03-23)
+
+
+### Bug Fixes
+
+* Dice View now respects the Show Formula setting ([c4c3560](https://github.com/valentine195/obsidian-dice-roller/commit/c4c3560c44a44c475f870fadd47e52ccde622651))
+
 ### [8.12.3](https://github.com/valentine195/obsidian-dice-roller/compare/8.12.2...8.12.3) (2023-03-20)
 
 
