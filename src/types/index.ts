@@ -1,5 +1,14 @@
 import { SectionCache } from "obsidian";
 
+export interface RollerOptions {
+    showDice?: boolean;
+    shouldRender?: boolean;
+    showFormula?: boolean;
+    expectedValue?: ExpectedValue;
+    text?: string;
+    showParens?: boolean;
+    formulaAfter?: boolean;
+}
 export interface SectionCacheWithFile extends SectionCache {
     file: string;
 }

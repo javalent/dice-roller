@@ -36,8 +36,9 @@ import { ArrayRoller, BasicRoller } from "./roller/roller";
 import DiceView, { VIEW_TYPE } from "./view/view";
 import DiceRenderer from "./view/renderer";
 import Lexer, { LexicalToken } from "./parser/lexer";
-import { Round, ExpectedValue } from "./types";
+import { Round, ExpectedValue, RollerOptions } from "./types";
 import { inlinePlugin } from "./live-preview";
+import API from "./api/api";
 /* import GenesysView, { GENESYS_VIEW_TYPE } from "./view/genesys"; */
 
 String.prototype.matchAll =
@@ -186,6 +187,8 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
 };
 
 export default class DiceRollerPlugin extends Plugin {
+    api = new API(this);
+
     data: DiceRollerSettings;
 
     fileMap: Map<TFile, BasicRoller[]> = new Map();
@@ -322,6 +325,7 @@ export default class DiceRollerPlugin extends Plugin {
         this.app.workspace.onLayoutReady(async () => {
             await this.registerDataviewInlineFields();
         });
+        this.app.workspace.trigger("dice-roller:loaded");
     }
 
     addToFileMap(file: TFile, roller: BasicRoller) {
@@ -752,21 +756,28 @@ export default class DiceRollerPlugin extends Plugin {
 
         return new RegExp(`(${fields.join("|")})`, "g");
     }
-    async getRoller(
+
+    getParametersForRoller(
         content: string,
-        source: string = "",
-        icon = this.data.showDice
-    ): Promise<BasicRoller> {
+        options: RollerOptions
+    ): { content: string } & RollerOptions {
         content = content.replace(/\\\|/g, "|");
 
-        let showDice = content.includes("|nodice") ? false : icon;
-        let shouldRender = this.data.renderAllDice;
-        let showFormula = this.data.displayResultsInline;
-        let showParens = this.data.displayFormulaAfter;
+        let showDice = options?.showDice ?? true;
+        let shouldRender = options?.shouldRender ?? this.data.renderAllDice;
+        let showFormula =
+            options?.showFormula ?? this.data.displayResultsInline;
+        let showParens = options?.showParens ?? this.data.displayFormulaAfter;
+        let expectedValue: ExpectedValue =
+            options?.expectedValue ?? ExpectedValue.Roll;
+        let text: string = options?.text ?? "";
 
-        let expectedValue: ExpectedValue = ExpectedValue.Roll;
-        let fixedText: string = "";
         const regextext = /\|text\((.*)\)/;
+
+        //Flags always take precedence.
+        if (content.includes("|nodice")) {
+            showDice = false;
+        }
         if (content.includes("|render")) {
             shouldRender = true;
         }
@@ -786,8 +797,8 @@ export default class DiceRollerPlugin extends Plugin {
             expectedValue = ExpectedValue.None;
         }
         if (content.includes("|text(")) {
-            let [, text] = content.match(regextext) ?? [null, ""];
-            fixedText = text;
+            let [, matched] = content.match(regextext) ?? [null, ""];
+            text = matched;
         }
         if (content.includes("|paren")) {
             showParens = true;
@@ -814,6 +825,32 @@ export default class DiceRollerPlugin extends Plugin {
             content = this.data.formulas[content];
         }
 
+        return {
+            content,
+            showDice,
+            showParens,
+            showFormula,
+            expectedValue,
+            shouldRender,
+            text
+        };
+    }
+
+    async getRoller(
+        raw: string,
+        source: string = "",
+        options: RollerOptions = API.RollerOptions(this)
+    ): Promise<BasicRoller> {
+        const {
+            content,
+            showDice,
+            showParens,
+            showFormula,
+            expectedValue,
+            shouldRender,
+            text
+        } = this.getParametersForRoller(raw, options);
+
         const lexemes = this.parse(content);
 
         const type = this.getTypeFromLexemes(lexemes);
@@ -825,7 +862,7 @@ export default class DiceRollerPlugin extends Plugin {
                     content,
                     lexemes,
                     showDice,
-                    fixedText,
+                    text,
                     expectedValue,
                     showParens
                 );
@@ -889,66 +926,23 @@ export default class DiceRollerPlugin extends Plugin {
     }
 
     getRollerSync(
-        content: string,
+        raw: string,
         source: string,
-        icon = this.data.showDice,
-        displayFormulaAfter?: boolean
+        options: RollerOptions = API.RollerOptions(this)
     ): BasicRoller {
-        content = content.replace(/\\\|/g, "|");
-
-        let showDice = content.includes("|nodice") ? false : icon;
-        let shouldRender = this.data.renderAllDice;
-        let showFormula = this.data.displayResultsInline;
-        let expectedValue: ExpectedValue = ExpectedValue.Roll;
-        let fixedText: string = "";
-        const regextext = /\|text\((.*)\)/;
-
-        if (content.includes("|render")) {
-            shouldRender = true;
-        }
-        if (content.includes("|norender")) {
-            shouldRender = false;
-        }
-        if (content.includes("|form")) {
-            showFormula = true;
-        }
-        if (content.includes("|noform")) {
-            showFormula = false;
-        }
-        if (content.includes("|avg")) {
-            expectedValue = ExpectedValue.Average;
-        }
-        if (content.includes("|none")) {
-            expectedValue = ExpectedValue.None;
-        }
-        if (content.includes("|text(")) {
-            let [, text] = content.match(regextext) ?? [null, ""];
-            fixedText = text;
-        }
-        content = decode(
-            //remove flags...
-            content
-                .replace("|nodice", "")
-                .replace("|render", "")
-                .replace("|norender", "")
-                .replace("|noform", "")
-                .replace("|form", "")
-                .replace("|avg", "")
-                .replace("|none", "")
-                .replace(regextext, "")
-        );
-
-        if (content in this.data.formulas) {
-            content = this.data.formulas[content];
-        }
+        const {
+            content,
+            showDice,
+            showParens,
+            showFormula,
+            expectedValue,
+            shouldRender,
+            text
+        } = this.getParametersForRoller(raw, options);
 
         const lexemes = this.parse(content);
 
         const type = this.getTypeFromLexemes(lexemes);
-
-        if (displayFormulaAfter == undefined) {
-            displayFormulaAfter = this.data.displayFormulaAfter;
-        }
 
         switch (type) {
             case "dice": {
@@ -957,9 +951,9 @@ export default class DiceRollerPlugin extends Plugin {
                     content,
                     lexemes,
                     showDice,
-                    fixedText,
+                    text,
                     expectedValue,
-                    displayFormulaAfter
+                    showParens
                 );
                 roller.shouldRender = shouldRender;
                 roller.showFormula = showFormula;
