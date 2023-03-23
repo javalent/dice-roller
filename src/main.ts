@@ -898,7 +898,7 @@ export default class DiceRollerPlugin extends Plugin {
 
         let showDice = content.includes("|nodice") ? false : icon;
         let shouldRender = this.data.renderAllDice;
-        let showFormula = false; //this.data.displayResultsInline;
+        let showFormula = this.data.displayResultsInline;
         let expectedValue: ExpectedValue = ExpectedValue.Roll;
         let fixedText: string = "";
         const regextext = /\|text\((.*)\)/;
