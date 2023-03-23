@@ -34,6 +34,7 @@ export function blockid(len: number) {
 
 abstract class GenericEmbeddedRoller<T> extends GenericFileRoller<T> {
     copy: HTMLDivElement;
+    abstract transformResultsToString(): string;
     getEmbedClass() {
         return this.plugin.data.displayAsEmbed ? "markdown-embed" : "";
     }
@@ -58,7 +59,7 @@ abstract class GenericEmbeddedRoller<T> extends GenericFileRoller<T> {
         this.copy.addEventListener("click", (evt) => {
             evt.stopPropagation();
             navigator.clipboard
-                .writeText(this.results.join("\n"))
+                .writeText(this.transformResultsToString())
                 .then(async () => {
                     new Notice("Result copied to clipboard.");
                 });
@@ -148,7 +149,6 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
                 this.source,
                 null
             );
-
             if (this.plugin.data.copyContentButton && this.results.length > 1) {
                 let copy = ret.createDiv({
                     cls: "dice-content-copy dice-roller-button",
@@ -182,6 +182,9 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
         }
 
         return res.join("\n\n");
+    }
+    transformResultsToString(): string {
+        return this.displayFromCache(...this.results);
     }
     getBlockId(cache: RollerCache) {
         const blocks = this.cache.blocks ?? {};
@@ -734,7 +737,9 @@ export class LineRoller extends GenericEmbeddedRoller<string> {
             }
         }
     }
-
+    transformResultsToString(): string {
+        return this.results.join("\n\n");
+    }
     async load() {
         await this.getOptions();
     }
