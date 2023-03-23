@@ -40,6 +40,7 @@ abstract class BareRoller extends Events {
         }
     });
     resultEl = this.containerEl.createSpan("dice-roller-result");
+    iconEl: HTMLSpanElement;
     setTooltip() {
         if (this.plugin.data.displayResultsInline) return;
         this.containerEl.setAttrs({
@@ -63,11 +64,11 @@ abstract class BareRoller extends Events {
     ) {
         super();
         if (showDice) {
-            const icon = this.containerEl.createSpan({
+            this.iconEl = this.containerEl.createSpan({
                 cls: "dice-roller-button"
             });
-            setIcon(icon, ICON_DEFINITION);
-            icon.onclick = this.onClick.bind(this);
+            setIcon(this.iconEl, ICON_DEFINITION);
+            this.iconEl.onclick = this.onClick.bind(this);
         } else {
             this.containerEl.addClass("no-icon");
         }

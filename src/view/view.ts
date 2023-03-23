@@ -247,6 +247,8 @@ export default class DiceView extends ItemView {
             new Notice("The Dice View only supports dice rolls.");
             return;
         }
+        roller.iconEl.detach();
+        roller.containerEl.onclick = null;
         await roller.roll();
         if (!roller.dice.length) {
             new Notice("Invalid formula.");
@@ -269,11 +271,7 @@ export default class DiceView extends ItemView {
 
         this.rollButton.setDisabled(false);
 
-        this.addResult({
-            result: roller.result,
-            original: roller.original,
-            resultText: roller.resultText
-        });
+        this.addResult(roller);
 
         this.dice = DiceView.DICE();
         this.add = null;
@@ -315,11 +313,7 @@ export default class DiceView extends ItemView {
         this.buildButtons();
         this.plugin.saveSettings();
     }
-    addResult(roller: {
-        result: number;
-        original: string;
-        resultText: string;
-    }) {
+    addResult(roller: StackRoller) {
         if (this.noResultsEl) {
             this.noResultsEl.detach();
         }
@@ -331,12 +325,13 @@ export default class DiceView extends ItemView {
         /* result.createSpan({
             text: roller.resultText
         }); */
-        result.createEl("strong", {
-            text: `${roller.result}`,
-            attr: {
-                "aria-label": roller.resultText
-            }
-        });
+        result
+            .createEl("strong", {
+                attr: {
+                    "aria-label": roller.resultText
+                }
+            })
+            .appendChild(roller.containerEl);
 
         const context = result.createDiv("result-context");
 

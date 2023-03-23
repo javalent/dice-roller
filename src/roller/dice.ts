@@ -1030,6 +1030,7 @@ export class StackRoller extends GenericRoller<number> {
 
         this.result = result;
         this.stackCopy = [];
+        this.render();
     }
 
     toResult() {
