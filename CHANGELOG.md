@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.12.5](https://github.com/valentine195/obsidian-dice-roller/compare/8.12.4...8.12.5) (2023-03-23)
+
+
+### Bug Fixes
+
+* fixes display formula setting not respected in LP ([34ab83b](https://github.com/valentine195/obsidian-dice-roller/commit/34ab83b6722c76104976a9a487ced1a13eee29a9))
+
 ### [8.12.4](https://github.com/valentine195/obsidian-dice-roller/compare/8.12.3...8.12.4) (2023-03-23)
 
 
