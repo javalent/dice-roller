@@ -631,7 +631,6 @@ export class StackRoller extends GenericRoller<number> {
                     const avg: number = roller.average();
                     var results = Array(roller.rolls).fill(avg);
                     roller.setResults(results);
-                    this.recalculate();
                 }
             } else {
                 this.expectedValue = ExpectedValue.Roll;
@@ -1029,7 +1028,6 @@ export class StackRoller extends GenericRoller<number> {
         }
 
         this.result = result;
-        this.stackCopy = [];
         this.render();
     }
 
