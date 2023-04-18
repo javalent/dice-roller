@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.13.6](https://github.com/valentine195/obsidian-dice-roller/compare/8.13.5...8.13.6) (2023-04-18)
+
+
+### Bug Fixes
+
+* fixes release action...maybe ([6b6ef8e](https://github.com/valentine195/obsidian-dice-roller/commit/6b6ef8eb823364ae1a83096d13025634015b8747))
+
 ## [8.13.5](https://github.com/valentine195/obsidian-dice-roller/compare/v8.13.4...8.13.5) (2023-04-18)
 
 
