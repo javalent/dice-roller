@@ -11,8 +11,7 @@
         "web:build": "webpack",
         "rollup:dev": "rollup --config rollup.config-dev.js -w",
         "rollup:build": "rollup --config rollup.config.js",
-        "push": "git push --follow-tags origin",
-        "release": "standard-version"
+        "push": "git push --follow-tags origin"
     },
     "standard-version": {
         "t": "",
