@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.13.4](https://github.com/valentine195/obsidian-dice-roller/compare/v8.13.3...v8.13.4) (2023-04-18)
+
+
+### Bug Fixes
+
+* adds npm types for use in overload ([3af9182](https://github.com/valentine195/obsidian-dice-roller/commit/3af9182283d7db5e3c8f9a332ce95740cfdc9405))
+
 ## [8.13.3](https://github.com/valentine195/obsidian-dice-roller/compare/8.13.2...v8.13.3) (2023-04-18)
 
 
