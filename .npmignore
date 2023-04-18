@@ -1,0 +1,3 @@
+**/*
+!@types/index.d.ts
+!@types/obsidian/obsidian.d.ts
