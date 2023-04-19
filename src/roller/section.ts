@@ -77,10 +77,8 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
         }
         return ``;
     }
-    results: RollerCache[];
     types: string[];
     content: string;
-    copy: HTMLDivElement;
     levels: string[];
 
     constructor(
@@ -208,9 +206,9 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
         return block[0];
     }
     getPath() {
-        const { groups } = this.lexeme.value.match(SECTION_REGEX);
+        const { groups } = this.lexeme.value.match(SECTION_REGEX) ?? {};
 
-        const { roll = 1, link, types } = groups;
+        const { roll = 1, link, types } = groups ?? {};
         if (!link) throw new Error("Could not parse link.");
 
         this.rolls = (roll && !isNaN(Number(roll)) && Number(roll)) ?? 1;
@@ -525,7 +523,7 @@ export class LinkRoller extends GenericRoller<TFile> {
     ) {
         super(plugin, original, [lexeme], showDice);
 
-        const { roll = 1, tag } = lexeme.value.match(TAG_REGEX).groups;
+        const { roll = 1, tag } = lexeme.value.match(TAG_REGEX)?.groups ?? {};
 
         this.tag = `#${tag}`;
         this.rolls = (roll && !isNaN(Number(roll)) && Number(roll)) ?? 1;
@@ -657,7 +655,6 @@ export class LineRoller extends GenericEmbeddedRoller<string> {
         return this.result;
     }
     result: string;
-    results: string[];
     types: string[];
     content: string;
 
@@ -744,9 +741,9 @@ export class LineRoller extends GenericEmbeddedRoller<string> {
         await this.getOptions();
     }
     getPath() {
-        const { groups } = this.lexeme.value.match(SECTION_REGEX);
+        const { groups } = this.lexeme.value.match(SECTION_REGEX) ?? {};
 
-        const { roll = 1, link, types } = groups;
+        const { roll = 1, link, types } = groups ?? {};
         if (!link) throw new Error("Could not parse link.");
 
         this.rolls = (roll && !isNaN(Number(roll)) && Number(roll)) ?? 1;

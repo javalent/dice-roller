@@ -11,7 +11,6 @@ class SubRollerResult {
 
 export class TableRoller extends GenericFileRoller<string> {
     content: string;
-    position: Pos;
     block: string;
     header: string;
     rollsFormula: string;
@@ -21,9 +20,9 @@ export class TableRoller extends GenericFileRoller<string> {
     combinedTooltip: string = "";
     prettyTooltip: string = "";
     getPath() {
-        const { groups } = this.lexeme.value.match(TABLE_REGEX);
+        const { groups } = this.lexeme.value.match(TABLE_REGEX) ?? {};
 
-        const { diceRoll = "1", link, block, header } = groups;
+        const { diceRoll = "1", link, block, header } = groups ?? {};
         if (!link || !block) throw new Error("Could not parse link.");
 
         // For backward compatiblity: xd transformed into x (instead of xd100)
@@ -299,10 +298,9 @@ export class TableRoller extends GenericFileRoller<string> {
         const section = this.cache.sections?.find(
             (s) => s.position == this.cache.blocks[this.block].position
         );
-        this.position = this.cache.blocks[this.block].position;
-        this.content = (
-            await this.plugin.app.vault.cachedRead(this.file)
-        )?.slice(this.position.start.offset, this.position.end.offset);
+        const position = this.cache.blocks[this.block].position;
+        const text = await this.plugin.app.vault.cachedRead(this.file);
+        this.content = text.slice(position.start.offset, position.end.offset);
 
         if (section && section.type === "list") {
             this.options = this.content.split("\n");
