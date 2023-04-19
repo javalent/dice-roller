@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.13.9](https://github.com/valentine195/obsidian-dice-roller/compare/8.13.8...8.13.9) (2023-04-19)
+
+
+### Bug Fixes
+
+* fixes position property losing pointer ([f1752ad](https://github.com/valentine195/obsidian-dice-roller/commit/f1752ad712dc66fff354adc312c5b930376a5198))
+
 ## [8.13.8](https://github.com/valentine195/obsidian-dice-roller/compare/8.13.7...8.13.8) (2023-04-18)
 
 
