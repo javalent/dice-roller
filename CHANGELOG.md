@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.13.11](https://github.com/javalent/dice-roller/compare/8.13.10...8.13.11) (2023-04-20)
+
+
+### Bug Fixes
+
+* fix module name ([9164e58](https://github.com/javalent/dice-roller/commit/9164e584fda0b12503c502dddf185c152acb2a63))
+* test overload upgrade ([e9aab68](https://github.com/javalent/dice-roller/commit/e9aab685dcb432fb7f47766d2e0b109620a27ad6))
+
 ## [8.13.10](https://github.com/valentine195/obsidian-dice-roller/compare/8.13.9...8.13.10) (2023-04-19)
 
 
