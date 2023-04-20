@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.13.12](https://github.com/javalent/dice-roller/compare/8.13.11...8.13.12) (2023-04-20)
+
+
+### Bug Fixes
+
+* inherit secrets ([48e3a9f](https://github.com/javalent/dice-roller/commit/48e3a9f5954696fcc1f867443188b2a8a119ee94))
+
 ## [8.13.11](https://github.com/javalent/dice-roller/compare/8.13.10...8.13.11) (2023-04-20)
 
 
