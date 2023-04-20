@@ -31,8 +31,8 @@ jobs:
         needs: release-please
         if: ${{ needs.release-please.outputs.release_created }}
         env:
-          upload_url: ${{ needs.release-please.outputs.upload_url }}
-          tag_name: ${{ needs.release-please.outputs.tag_name }}
+            upload_url: ${{ needs.release-please.outputs.upload_url }}
+            tag_name: ${{ needs.release-please.outputs.tag_name }}
         steps:
             - uses: actions/checkout@v2
             - name: Use Node.js
@@ -87,3 +87,12 @@ jobs:
                   asset_path: ./styles.css
                   asset_name: styles.css
                   asset_content_type: text/css
+
+    publish:
+        needs: release-please
+        if: ${{ needs.release-please.outputs.release_created }}
+        uses: javalent/workflows/.github/workflows/publish.yml@main
+
+    upgrade-overload:
+        needs: publish
+        uses: javalent/obsidian-overload/.github/workflows/upgrade.yml@main

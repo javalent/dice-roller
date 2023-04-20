@@ -31,5 +31,5 @@ export interface StackRoller extends BasicRoller {
 export default interface DiceRoller {
     getRoller(roll: string, source?: string): Promise<BasicRoller>;
     getRollerSync(roll: string, source?: string): BasicRoller;
-    getAPI(): DiceRollerAPI;
+    api: DiceRollerAPI;
 }
