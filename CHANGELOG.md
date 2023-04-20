@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.14.1](https://github.com/javalent/dice-roller/compare/8.14.0...8.14.1) (2023-04-20)
+
+
+### Bug Fixes
+
+* properly export types ([beb18d1](https://github.com/javalent/dice-roller/commit/beb18d17632f10ddb907c4b4961b8f7ca118369e))
+
 ## [8.14.0](https://github.com/javalent/dice-roller/compare/8.13.14...8.14.0) (2023-04-20)
 
 
