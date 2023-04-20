@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.14.0](https://github.com/javalent/dice-roller/compare/8.13.14...8.14.0) (2023-04-20)
+
+
+### Features
+
+* Upgrading obsidian-dice-roller to latest ([21e3d8d](https://github.com/javalent/dice-roller/commit/21e3d8d6aef5fc1e586350fc5ed3af38939b022e))
+
 ## [8.13.14](https://github.com/javalent/dice-roller/compare/8.13.13...8.13.14) (2023-04-20)
 
 
