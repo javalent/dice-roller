@@ -57,6 +57,6 @@
         "webpack-cli": "^4.8.0"
     },
     "dependencies": {
-        "obsidian-dice-roller": "^8.13.12"
+        "obsidian-dice-roller": "^8.13.14"
     }
 }
