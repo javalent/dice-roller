@@ -92,6 +92,7 @@ jobs:
         needs: release-please
         if: ${{ needs.release-please.outputs.release_created }}
         uses: javalent/workflows/.github/workflows/publish.yml@main
+        secrets: inherit
 
     upgrade-overload:
         needs: publish
