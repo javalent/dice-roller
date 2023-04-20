@@ -4,7 +4,7 @@ export interface DiceRollerAPI {
     getRoller(roll: string, source?: string): Promise<BasicRoller>;
 }
 
-export declare enum ExpectedValue {
+export const enum ExpectedValue {
     None = "None",
     Average = "Average",
     Roll = "Roll"
