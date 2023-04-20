@@ -96,3 +96,5 @@ jobs:
     upgrade-overload:
         needs: publish
         uses: javalent/obsidian-overload/.github/workflows/upgrade.yml@main
+        with:
+            module: obsidian-dice-roller
