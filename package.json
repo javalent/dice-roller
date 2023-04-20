@@ -55,5 +55,8 @@
         "typescript": "^4.0.3",
         "webpack": "^5.53.0",
         "webpack-cli": "^4.8.0"
+    },
+    "dependencies": {
+        "obsidian-dice-roller": "^8.13.12"
     }
 }
