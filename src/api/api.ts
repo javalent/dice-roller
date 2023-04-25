@@ -28,6 +28,36 @@ export default class API {
         return this.plugin.getRoller(roll, source, options);
     }
 
+    getRollerString(roll: string, source?: string): string {
+        if (!source) return roll;
+        const options =
+            this.sources.get(source) ?? API.RollerOptions(this.plugin);
+        if ("showDice" in options) {
+            roll += options.showDice ? "" : "|nodice";
+        }
+        if ("shouldRender" in options) {
+            roll += options.shouldRender ? "|render" : "|norender";
+        }
+        if ("showFormula" in options) {
+            roll += options.showFormula ? "|form" : "|noform";
+        }
+        if ("expectedValue" in options) {
+            if (options.expectedValue == ExpectedValue.Average) {
+                roll += "|avg";
+            }
+            if (options.expectedValue == ExpectedValue.None) {
+                roll += "|none";
+            }
+        }
+        if ("text" in options) {
+            roll += "|text(" + options.text + ")";
+        }
+        if ("showParens" in options) {
+            roll += options.showParens ? "|paren" : "|noparen";
+        }
+        return roll;
+    }
+
     static RollerOptions(plugin: DiceRollerPlugin): RollerOptions {
         return {
             showDice: plugin.data.showDice,

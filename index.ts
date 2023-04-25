@@ -2,6 +2,7 @@ export interface DiceRollerAPI {
     registerSource(source: string, options: RollerOptions): void;
     getRollerSync(roll: string, source?: string): BasicRoller;
     getRoller(roll: string, source?: string): Promise<BasicRoller>;
+    getRollerString(roll: string, source?: string): string;
 }
 
 export const enum ExpectedValue {
