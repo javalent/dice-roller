@@ -49,7 +49,7 @@ export default class API {
                 roll += "|none";
             }
         }
-        if ("text" in options) {
+        if ("text" in options && options.text) {
             roll += "|text(" + options.text + ")";
         }
         if ("showParens" in options) {
