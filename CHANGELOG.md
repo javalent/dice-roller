@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.14.4](https://github.com/javalent/dice-roller/compare/8.14.3...8.14.4) (2023-04-25)
+
+
+### Bug Fixes
+
+* fixes getRollerString text displays as null ([0339294](https://github.com/javalent/dice-roller/commit/0339294ab4d17730ffe1b327f0c654aabfbf4ec3))
+
 ## [8.14.3](https://github.com/javalent/dice-roller/compare/8.14.2...8.14.3) (2023-04-25)
 
 
