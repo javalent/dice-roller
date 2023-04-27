@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.14.5](https://github.com/javalent/dice-roller/compare/8.14.4...8.14.5) (2023-04-27)
+
+
+### Bug Fixes
+
+* dice-mod now respects rendering ([7a629fe](https://github.com/javalent/dice-roller/commit/7a629fe29ab22ba135827361aabd44788f82cca4))
+
 ## [8.14.4](https://github.com/javalent/dice-roller/compare/8.14.3...8.14.4) (2023-04-25)
 
 
