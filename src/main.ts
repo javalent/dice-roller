@@ -390,6 +390,9 @@ export default class DiceRollerPlugin extends Plugin {
                         content,
                         ctx.sourcePath
                     );
+                    if (roller instanceof StackRoller && roller.shouldRender) {
+                        roller.hasRunOnce = true;
+                    }
 
                     modPromises.push(
                         new Promise((resolve, reject) => {
