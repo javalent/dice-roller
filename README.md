@@ -1,5 +1,7 @@
 # Dice Roller
 
+> Warning: We are beginning a Readme transition to [Javalent's Plugins Documentation](https://plugins.javalent.com/home) in all Javalent repositories. Please bookmark this link and check it first before referring to this readme.
+
 Inline dice rolling for Obsidian.md.
 
 # Usage
@@ -17,7 +19,7 @@ The parser supports addition, subtraction, multiplication, division, and exponen
 There is full order-of-operations support, so it can even nested into parentheses!
 
 | Examples                                  |
-| ----------------------------------------- |
+|-------------------------------------------|
 | `` `dice: 1d2` ``                         |
 | `` `dice: 3d4 + 3` ``                     |
 | `` `dice: 1d12 + 1d10 + 5` ``             |
