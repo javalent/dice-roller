@@ -2,7 +2,7 @@ name: Documentation Report
 description: Request Documentation Update
 labels: Documentation
 title: "[Docu]: "
-assigness: Sigrunixia
+assignees: Sigrunixia
 body:
   - type: checkboxes
     id: investigation
