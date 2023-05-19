@@ -1,6 +1,8 @@
 name: Documentation Report
 description: Request Documentation Update
-labels: [ "type: Documentation" ]
+labels: Documentation
+title: "[Docu]: "
+assigness: Sigrunixia
 body:
   - type: checkboxes
     id: investigation
