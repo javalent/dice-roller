@@ -85,9 +85,9 @@ body:
   - type: input
     id: plugin-version
     attributes:
-      label: Fantasy Statblocks Version
-      description: Which Fantasy Statblocks version are you using?
-      placeholder: 3.6.3
+      label: Dice Roller Version
+      description: Which Dice Roller version are you using?
+      placeholder: x.x.x
     validations:
       required: true
 
