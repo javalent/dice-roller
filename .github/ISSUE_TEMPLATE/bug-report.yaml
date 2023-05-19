@@ -1,7 +1,8 @@
 name: Bug Report
 description: File a bug report
-labels: "Bug"
+labels: "bug"
 title: "[Bug]: "
+assignees: Valentine195
 body:
   - type: markdown
     attributes:
@@ -86,8 +87,8 @@ body:
   - type: input
     id: plugin-version
     attributes:
-      label: Dice Roller Version
-      description: Which Dice Roller version are you using?
+      label: Plugin Version
+      description: Which Plugin version are you using?
       placeholder: x.x.x
     validations:
       required: true
