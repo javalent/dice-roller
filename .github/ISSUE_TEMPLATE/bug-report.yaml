@@ -8,7 +8,7 @@ body:
     attributes:
       value: |
         ## Before you begin
-        Make sure to use the latest version of **Fantasy Statblocks**. 
+        Make sure to use the latest version of the plugin.
         If you face any issues after installing, updating, or reloading the plugin, try restarting Obsidian before reporting the bug.
         Also, please make sure you **read and understand the [guide for great bug reports](https://plugins.javalent.com/support/report-bug)**.
 
