@@ -1,5 +1,6 @@
 import {
     BlockCache,
+    Component,
     ListItemCache,
     MarkdownRenderer,
     Notice,
@@ -145,7 +146,7 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
                 this.displayFromCache(result),
                 ret.createDiv(),
                 this.source,
-                null
+                new Component()
             );
             if (this.plugin.data.copyContentButton && this.results.length > 1) {
                 let copy = ret.createDiv({
@@ -717,7 +718,7 @@ export class LineRoller extends GenericEmbeddedRoller<string> {
                 result,
                 ret.createDiv(),
                 this.source,
-                null
+                new Component()
             );
             if (this.plugin.data.copyContentButton && this.results.length > 1) {
                 let copy = ret.createDiv({

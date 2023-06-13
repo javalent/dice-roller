@@ -1,4 +1,4 @@
-import { MarkdownRenderer, Notice, Pos, TFile } from "obsidian";
+import { Component, MarkdownRenderer, Notice, Pos, TFile } from "obsidian";
 
 import { TABLE_REGEX } from "src/utils/constants";
 import { LinkRoller, StackRoller, TagRoller } from ".";
@@ -60,7 +60,7 @@ export class TableRoller extends GenericFileRoller<string> {
             result.join(""),
             div,
             this.source,
-            null
+            new Component()
         );
         const resultEl = this.resultEl.createSpan("embedded-table-result");
         if (
