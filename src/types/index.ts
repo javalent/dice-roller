@@ -1,4 +1,5 @@
 import { SectionCache } from "obsidian";
+import { LexicalToken } from "src/parser/lexer";
 
 export interface RollerOptions {
     showDice?: boolean;
@@ -22,8 +23,10 @@ export interface Lexeme {
 
 export interface Conditional {
     operator: string;
-    comparer: number;
+    comparer: string | number;
+    lexemes: LexicalToken[];
     value: string;
+    result?: number;
 }
 
 export type ResultMapInterface<T> = Map<number, ResultInterface<T>>;

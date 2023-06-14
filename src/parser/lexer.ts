@@ -20,7 +20,8 @@ export const MATH_REGEX = /[\(\^\+\-\*\/\)]/u;
 export const OMITTED_REGEX =
     /(?:\d+|\b)[Dd](?:\[?(?:-?\d+[ \t]?,)?[ \t]?(?:-?\d+|%|F)\]?|\b)/u;
 
-export const CONDITIONAL_REGEX = /(?:=|=!|<|>|<=|>=|=<|=>|-=|=-)\d+/u;
+export const CONDITIONAL_REGEX =
+    /(?:=|=!|<|>|<=|>=|=<|=>|-=|=-)(?:\d+(?:[Dd](?:\[?(?:-?\d+[ \t]?,)?[ \t]?(?:-?\d+|%|F)\]?|\b))?)/u;
 
 export interface LexicalToken extends moo.Token {
     conditions?: Conditional[];
@@ -137,11 +138,13 @@ export default class Lexer {
                 if (!previous.conditions) previous.conditions = [];
                 const [_, operator, comparer] =
                     token.value.match(
-                        /(?<operator>=|=!|<|>|<=|>=|=<|=>|\-=|=\-)(?<comparer>\d+)/
+                        /(?<operator>=|=!|<|>|<=|>=|=<|=>|\-=|=\-)(?<comparer>(\d+|\b)[Dd](?:\[?(?:-?\d+[ \t]?,)?[ \t]?(?:-?\d+|%|F)\]?|\b))/
                     ) ?? [];
+                const lexemes = this.parse(comparer);
                 previous.conditions.push({
                     operator,
-                    comparer: Number(comparer),
+                    comparer: comparer,
+                    lexemes,
                     value: token.value
                 });
             } else {

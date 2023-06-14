@@ -4,31 +4,19 @@ import { LexicalToken } from "src/parser/lexer";
 import { Lexeme } from "src/types";
 import { ICON_DEFINITION } from "src/utils/constants";
 
-export abstract class BaseRoller {
-    abstract get display(): string;
-    abstract get text(): string;
-    abstract get rolls(): number;
-    _getRandomBetween(min: number, max: number): number {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
+export abstract class Roller<T> extends Events {
+    abstract roll(): Promise<T> | T;
+    result: T;
+    getRandomBetween(min: number, max: number): number {
+        const randomBuffer = new Uint32Array(1);
+        crypto.getRandomValues(randomBuffer);
+        const rand = randomBuffer[0] / (0xffffffff + 1);
+        return Math.floor(rand * (max - min + 1)) + min;
     }
 }
 
-export abstract class Roller<T> {
-    display: string;
-    text: string;
-    result: T;
-    resultArray: T[];
+abstract class BareRoller<T> extends Roller<T> {
     rolls: number;
-    abstract roll: () => T[];
-    abstract element: (
-        parent?: HTMLElement
-    ) => Promise<HTMLElement> | HTMLElement;
-}
-
-abstract class BareRoller extends Events {
-    abstract roll(): Promise<any>;
-    rolls: number;
-    result: any;
     loaded: boolean = false;
     abstract build(): Promise<void>;
     abstract get tooltip(): string;
@@ -85,7 +73,7 @@ abstract class BareRoller extends Events {
     }
 }
 
-export abstract class BasicRoller extends BareRoller {
+export abstract class BasicRoller<T = any> extends BareRoller<T> {
     abstract replacer: string;
     save: boolean = false;
 
@@ -145,7 +133,7 @@ export abstract class GenericFileRoller<T> extends GenericRoller<T> {
     watch: boolean = true;
 }
 
-export class ArrayRoller extends BareRoller {
+export class ArrayRoller<T = any> extends BareRoller<T> {
     result: any;
     results: any[];
     get tooltip() {
