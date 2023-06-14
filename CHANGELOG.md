@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.15.0](https://github.com/javalent/dice-roller/compare/8.14.5...8.15.0) (2023-06-14)
+
+
+### Features
+
+* enables dice rollers to be specified in condition checks ([e6c8bc4](https://github.com/javalent/dice-roller/commit/e6c8bc410a84b2263deb18012e29205dab6c5fae))
+
+
+### Bug Fixes
+
+* fix renderMarkdown error ([1e91353](https://github.com/javalent/dice-roller/commit/1e91353622a80d50ad15cf5c41f8db2aacad107f))
+
 ## [8.14.5](https://github.com/javalent/dice-roller/compare/8.14.4...8.14.5) (2023-04-27)
 
 
