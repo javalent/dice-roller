@@ -2,7 +2,7 @@
 
 import * as moo from "moo";
 import DiceRollerPlugin from "src/main";
-import { Conditional, Lexeme } from "src/types";
+import { Conditional } from "src/types";
 import { Parser } from "./parser";
 
 export const TAG_REGEX =
@@ -23,9 +23,11 @@ export const OMITTED_REGEX =
 export const CONDITIONAL_REGEX =
     /(?:=|=!|<|>|<=|>=|=<|=>|-=|=-)(?:\d+(?:[Dd](?:\[?(?:-?\d+[ \t]?,)?[ \t]?(?:-?\d+|%|F)\]?|\b))?)/u;
 
-export interface LexicalToken extends moo.Token {
+export interface LexicalToken extends Partial<moo.Token> {
     conditions?: Conditional[];
     parenedDice?: boolean;
+    type: string;
+    value: string;
 }
 
 export default class Lexer {
@@ -148,27 +150,9 @@ export default class Lexer {
                     value: token.value
                 });
             } else {
-                clone.push(token);
+                clone.push(token as LexicalToken);
             }
         }
         return clone;
-    }
-    getTypeFromLexemes(lexemes: Lexeme[]) {
-        if (lexemes.some(({ type }) => type === "table")) {
-            return "table";
-        }
-        if (lexemes.some(({ type }) => type === "section")) {
-            return "section";
-        }
-        if (lexemes.some(({ type }) => type === "tag")) {
-            return "tag";
-        }
-        if (lexemes.some(({ type }) => type === "link")) {
-            return "link";
-        }
-        if (lexemes.some(({ type }) => type === "line")) {
-            return "line";
-        }
-        return "dice";
     }
 }

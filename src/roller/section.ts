@@ -11,7 +11,6 @@ import {
 } from "obsidian";
 import DiceRollerPlugin from "src/main";
 import { LexicalToken } from "src/parser/lexer";
-import { Lexeme } from "src/types";
 import { COPY_DEFINITION, SECTION_REGEX, TAG_REGEX } from "src/utils/constants";
 import { GenericFileRoller, GenericRoller } from "./roller";
 

@@ -13,13 +13,6 @@ export interface RollerOptions {
 export interface SectionCacheWithFile extends SectionCache {
     file: string;
 }
-export interface Lexeme {
-    original: string;
-    type: string;
-    data: string;
-    conditionals: Conditional[];
-    parenedDice?: boolean;
-}
 
 export interface Conditional {
     operator: string;

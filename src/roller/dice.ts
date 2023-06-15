@@ -180,7 +180,13 @@ export class DiceRoller {
             conditionals.push({
                 operator: "=",
                 comparer: this.faces.min,
-                lexemes: [],
+                lexemes: [
+                    {
+                        value: `${this.faces.min}`,
+                        text: `${this.faces.min}`,
+                        type: "dice"
+                    }
+                ],
                 value: ""
             });
         }
@@ -201,7 +207,9 @@ export class DiceRoller {
             i++;
             toReroll.map(([, roll]) => {
                 roll.modifiers.add("r");
-                roll.value = this.getValue();
+                const newValue = this.getValue();
+                roll.value = newValue;
+                roll.display = `${newValue}`;
             });
         }
 
@@ -222,7 +230,13 @@ export class DiceRoller {
             conditionals.push({
                 operator: "=",
                 comparer: this.faces.max,
-                lexemes: [],
+                lexemes: [
+                    {
+                        value: `${this.faces.max}`,
+                        text: `${this.faces.max}`,
+                        type: "dice"
+                    }
+                ],
                 value: ""
             });
         }
@@ -267,7 +281,13 @@ export class DiceRoller {
             conditionals.push({
                 operator: "=",
                 comparer: this.faces.max,
-                lexemes: [],
+                lexemes: [
+                    {
+                        value: `${this.faces.max}`,
+                        text: `${this.faces.max}`,
+                        type: "dice"
+                    }
+                ],
                 value: ""
             });
         }

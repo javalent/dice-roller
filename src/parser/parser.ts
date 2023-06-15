@@ -1,4 +1,3 @@
-import { Lexeme } from "src/types";
 import { LexicalToken } from "./lexer";
 
 export class Parser {
