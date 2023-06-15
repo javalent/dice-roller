@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.15.1](https://github.com/javalent/dice-roller/compare/8.15.0...8.15.1) (2023-06-15)
+
+
+### Bug Fixes
+
+* fixes reroll & explode not parsing ([d5db7fc](https://github.com/javalent/dice-roller/commit/d5db7fc01e0b475578d8908aaed5f78a23227ef5))
+
 ## [8.15.0](https://github.com/javalent/dice-roller/compare/8.14.5...8.15.0) (2023-06-14)
 
 
