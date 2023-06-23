@@ -404,39 +404,60 @@ export default class DiceRenderer extends Component {
 
                         let results = this.getResultsForRoller(roller);
                         if (!results) continue;
-
-                        /* if (
+                        let shouldRerender = false;
+                        if (
                             roller.modifiers.has("!") ||
                             roller.modifiers.has("!!")
                         ) {
+                            const modifier = roller.modifiers.has("!")
+                                ? "!"
+                                : "!!";
                             //check explode
                             const explode = dice.filter((d) => {
-                                if (!roller.conditions.length) {
-                                    roller.conditions.push({
-                                        operator: "=",
-                                        comparer: roller.faces.max,
-                                        value: ""
-                                    });
+                                if (
+                                    !roller.modifiers.get(modifier).conditionals
+                                        .length
+                                ) {
+                                    roller.modifiers
+                                        .get(modifier)
+                                        .conditionals.push({
+                                            operator: "=",
+                                            comparer: roller.faces.max,
+                                            value: "",
+                                            lexemes: [
+                                                {
+                                                    value: `${roller.faces.max}`,
+                                                    text: `${roller.faces.max}`,
+                                                    type: "dice"
+                                                }
+                                            ]
+                                        });
                                 }
                                 return (
                                     roller.checkCondition(
                                         d.result,
-                                        roller.conditions
+                                        roller.modifiers.get(modifier)
+                                            .conditionals
                                     ) && !d.exploded
                                 );
                             });
                             if (
                                 explode.length &&
-                                explode.length < roller.modifiers.get("!")!.data
+                                explode.length <=
+                                    roller.modifiers.get(modifier)!.data
                             ) {
                                 explode.forEach((dice) => {
                                     dice.exploded = true;
-                                    const vector = dice.body.position;
-                                    const newDice =
-                                        this.factory.getDiceForRoller(
-                                            roller,
-                                            vector
-                                        );
+                                    const vector = {
+                                        x: (Math.random() * 2 - 1) * this.WIDTH,
+                                        y:
+                                            -(Math.random() * 2 - 1) *
+                                            this.HEIGHT
+                                    };
+                                    const newDice = this.factory.cloneDice(
+                                        dice,
+                                        vector
+                                    );
                                     this.current.set(roller, [
                                         ...this.current.get(roller)!,
                                         ...newDice
@@ -446,27 +467,33 @@ export default class DiceRenderer extends Component {
                                         ...newDice.map((d) => d.geometry)
                                     );
                                 });
-                                this.animation = requestAnimationFrame(() =>
-                                    this.render()
-                                );
-                                return;
+                                shouldRerender = true;
                             }
-                        } */
+                        }
 
                         if (roller.modifiers.has("r")) {
                             //check reroll
+                            if (
+                                !roller.modifiers.get("r").conditionals.length
+                            ) {
+                                roller.modifiers.get("r").conditionals.push({
+                                    operator: "=",
+                                    comparer: roller.faces.min,
+                                    value: "",
+                                    lexemes: [
+                                        {
+                                            value: `${roller.faces.min}`,
+                                            text: `${roller.faces.min}`,
+                                            type: "dice"
+                                        }
+                                    ]
+                                });
+                            }
                             const reroll = dice.filter((d) => {
-                                if (!roller.conditions.length) {
-                                    roller.conditions.push({
-                                        operator: "=",
-                                        comparer: roller.faces.min,
-                                        value: ""
-                                    });
-                                }
                                 return (
                                     roller.checkCondition(
                                         d.result,
-                                        roller.conditions
+                                        roller.modifiers.get("r").conditionals
                                     ) &&
                                     d.rerolled < roller.modifiers.get("r")!.data
                                 );
@@ -485,11 +512,14 @@ export default class DiceRenderer extends Component {
                                     dice.set();
                                     dice.stopped = false;
                                 });
-                                this.animation = requestAnimationFrame(() =>
-                                    this.render()
-                                );
-                                return;
+                                shouldRerender = true;
                             }
+                        }
+                        if (shouldRerender) {
+                            this.animation = requestAnimationFrame(() =>
+                                this.render()
+                            );
+                            return;
                         }
                     }
 
@@ -888,6 +918,98 @@ class DiceFactory extends Component {
             }
         }
         return dice;
+    }
+    cloneDice(dice: Dice, vector: { x: number; y: number }): Dice[] {
+        switch (dice.sides) {
+            case 4: {
+                return [
+                    new D4Dice(
+                        this.width,
+                        this.height,
+                        this.clone("d4"),
+                        vector
+                    )
+                ];
+            }
+            case 1: {
+                return [
+                    new D6Dice(
+                        this.width,
+                        this.height,
+                        this.clone("fudge"),
+                        vector
+                    )
+                ];
+            }
+            case 6: {
+                return [
+                    new D6Dice(
+                        this.width,
+                        this.height,
+                        this.clone("d6"),
+                        vector
+                    )
+                ];
+            }
+            case 8: {
+                return [
+                    new D8Dice(
+                        this.width,
+                        this.height,
+                        this.clone("d8"),
+                        vector
+                    )
+                ];
+            }
+            case 10: {
+                return [
+                    new D10Dice(
+                        this.width,
+                        this.height,
+                        this.clone("d10"),
+                        vector
+                    )
+                ];
+            }
+            case 12: {
+                return [
+                    new D12Dice(
+                        this.width,
+                        this.height,
+                        this.clone("d12"),
+                        vector
+                    )
+                ];
+            }
+            case 20: {
+                return [
+                    new D20Dice(
+                        this.width,
+                        this.height,
+                        this.clone("d20"),
+                        vector
+                    )
+                ];
+            }
+            case 100: {
+                return [
+                    new D10Dice(
+                        this.width,
+                        this.height,
+                        this.clone("d100"),
+                        vector,
+                        true
+                    ),
+                    new D10Dice(
+                        this.width,
+                        this.height,
+                        this.clone("d10"),
+                        vector,
+                        true
+                    )
+                ];
+            }
+        }
     }
     getDice(stack: StackRoller, vector: { x: number; y: number }) {
         const map: Map<DiceRoller, Dice[]> = new Map();
