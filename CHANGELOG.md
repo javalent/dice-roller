@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.16.0](https://github.com/javalent/dice-roller/compare/8.15.1...8.16.0) (2023-06-23)
+
+
+### Features
+
+* enables exploding graphical dice ([1917329](https://github.com/javalent/dice-roller/commit/1917329abc5bad6efbe2b9d312f2c76cfa880ac8))
+
+
+### Bug Fixes
+
+* fixes reroll breaking when rendering dice ([19c00cf](https://github.com/javalent/dice-roller/commit/19c00cf9df1d2413312e96f3ba89ea72f4d3aebb))
+
 ## [8.15.1](https://github.com/javalent/dice-roller/compare/8.15.0...8.15.1) (2023-06-15)
 
 
