@@ -723,7 +723,7 @@ export default class DiceRollerPlugin extends Plugin {
 
         await this.renderer.start();
 
-        roller.recalculate();
+        roller.recalculate(false);
     }
     public async parseDice(content: string, source: string) {
         const roller = await this.getRoller(content, source);

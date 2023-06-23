@@ -262,7 +262,7 @@ export default class DiceView extends ItemView {
 
                 await this.renderer.start();
 
-                roller.recalculate();
+                roller.recalculate(false);
             }
         } catch (e) {
             new Notice("There was an error rendering the roll.");

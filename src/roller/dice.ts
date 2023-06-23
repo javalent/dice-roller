@@ -1263,7 +1263,7 @@ export class StackRoller extends GenericRoller<number> {
         }
     }
 
-    recalculate() {
+    recalculate(modify = false) {
         let stack = [];
         let result = 0;
         if (!this.stackCopy.length) {
@@ -1290,12 +1290,12 @@ export class StackRoller extends GenericRoller<number> {
                     item instanceof DiceRoller &&
                     this.stackCopy.indexOf(item) != this.stackCopy.length - 1
                 ) {
-                    item.applyModifiers();
+                    if (modify) item.applyModifiers();
                 }
             }
         }
         if (stack.length && stack[0] instanceof DiceRoller) {
-            stack[0].applyModifiers();
+            if (modify) stack[0].applyModifiers();
             result += stack[0].result;
         }
 
