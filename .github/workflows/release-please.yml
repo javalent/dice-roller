@@ -108,8 +108,8 @@ jobs:
              env:
                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
              with:
-                 name: Fantasy Statblocks
-                 repo: fantasy-statblocks
+                 name: Dice Roller
+                 repo: dice-roller
                  webhook-urls: ${{ secrets.TTRPG_WEBHOOK }}
     publish:
         needs: release-please
