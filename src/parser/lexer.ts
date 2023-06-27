@@ -140,7 +140,7 @@ export default class Lexer {
                 if (!previous.conditions) previous.conditions = [];
                 const [_, operator, comparer] =
                     token.value.match(
-                        /(?<operator>=|=!|<|>|<=|>=|=<|=>|\-=|=\-)(?<comparer>(\d+|\b)[Dd](?:\[?(?:-?\d+[ \t]?,)?[ \t]?(?:-?\d+|%|F)\]?|\b))/
+                        /(?<operator>=|=!|<|>|<=|>=|=<|=>|-=|=-)(?<comparer>\d+(?:[Dd](?:\[?(?:-?\d+[ \t]?,)?[ \t]?(?:-?\d+|%|F)\]?|\b))?)/
                     ) ?? [];
                 const lexemes = this.parse(comparer);
                 previous.conditions.push({
