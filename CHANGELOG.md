@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.16.1](https://github.com/javalent/dice-roller/compare/8.16.0...8.16.1) (2023-06-27)
+
+
+### Bug Fixes
+
+* fixes using integer as comparer in conditionals ([381ee58](https://github.com/javalent/dice-roller/commit/381ee58cee95711f8c942f712dee759c740e1404))
+
 ## [8.16.0](https://github.com/javalent/dice-roller/compare/8.15.1...8.16.0) (2023-06-23)
 
 
