@@ -1,7 +1,14 @@
-import { CachedMetadata, EventRef, Events, setIcon, TFile } from "obsidian";
+import {
+    CachedMetadata,
+    EventRef,
+    Events,
+    Notice,
+    setIcon,
+    TFile
+} from "obsidian";
 import DiceRollerPlugin from "src/main";
 import { LexicalToken } from "src/parser/lexer";
-import { ICON_DEFINITION } from "src/utils/constants";
+import { COPY_DEFINITION, ICON_DEFINITION } from "src/utils/constants";
 
 export abstract class Roller<T> extends Events {
     abstract roll(): Promise<T> | T;
@@ -132,6 +139,41 @@ export abstract class GenericFileRoller<T> extends GenericRoller<T> {
     watch: boolean = true;
 }
 
+export abstract class GenericEmbeddedRoller<T> extends GenericFileRoller<T> {
+    copy: HTMLDivElement;
+    abstract transformResultsToString(): string;
+    getEmbedClass() {
+        return this.plugin.data.displayAsEmbed ? "markdown-embed" : "";
+    }
+    constructor(
+        public plugin: DiceRollerPlugin,
+        public original: string,
+        public lexeme: LexicalToken,
+        source: string,
+        public inline: boolean = true,
+        showDice = plugin.data.showDice
+    ) {
+        super(plugin, original, lexeme, source, showDice);
+        if (this.plugin.data.displayAsEmbed) {
+            this.containerEl.addClasses(["has-embed", "markdown-embed"]);
+            this.resultEl.addClass("internal-embed");
+        }
+        this.resultEl.setAttrs({ src: source });
+        this.copy = this.containerEl.createDiv({
+            cls: "dice-content-copy dice-roller-button no-show",
+            attr: { "aria-label": "Copy Contents" }
+        });
+        this.copy.addEventListener("click", (evt) => {
+            evt.stopPropagation();
+            navigator.clipboard
+                .writeText(this.transformResultsToString())
+                .then(async () => {
+                    new Notice("Result copied to clipboard.");
+                });
+        });
+        setIcon(this.copy, COPY_DEFINITION);
+    }
+}
 export class ArrayRoller<T = any> extends BareRoller<T> {
     result: any;
     results: any[];

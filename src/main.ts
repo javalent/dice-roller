@@ -27,7 +27,8 @@ import {
     SectionRoller,
     TagRoller,
     LinkRoller,
-    LineRoller
+    LineRoller,
+    DataViewRoller
 } from "./roller";
 
 import SettingTab from "./settings/settings";
@@ -893,6 +894,21 @@ export default class DiceRollerPlugin extends Plugin {
                     showDice
                 );
             }
+            case "dataview": {
+                console.log("dataview");
+                if (!this.canUseDataview) {
+                    throw new Error(
+                        "Tags are only supported with the Dataview plugin installed."
+                    );
+                }
+                return new DataViewRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
+            }
             case "tag": {
                 if (!this.canUseDataview) {
                     throw new Error(
@@ -982,6 +998,20 @@ export default class DiceRollerPlugin extends Plugin {
                     showDice
                 );
             }
+            case "dataview": {
+                if (!this.canUseDataview) {
+                    throw new Error(
+                        "Tags are only supported with the Dataview plugin installed."
+                    );
+                }
+                return new DataViewRoller(
+                    this,
+                    content,
+                    lexemes[0],
+                    source,
+                    showDice
+                );
+            }
             case "tag": {
                 if (!this.canUseDataview) {
                     throw new Error(
@@ -1023,6 +1053,9 @@ export default class DiceRollerPlugin extends Plugin {
         }
         if (lexemes.some(({ type }) => type === "section")) {
             return "section";
+        }
+        if (lexemes.some(({ type }) => type === "dataview")) {
+            return "dataview";
         }
         if (lexemes.some(({ type }) => type === "tag")) {
             return "tag";

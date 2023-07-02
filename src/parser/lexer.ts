@@ -7,6 +7,10 @@ import { Parser } from "./parser";
 
 export const TAG_REGEX =
     /(?:\d+[Dd])?#(?:[\p{Letter}\p{Emoji_Presentation}\w/-]+)(?:\|(?:[+-]))?(?:\|(?:[^+-]+))?/u;
+
+export const DATAVIEW_REGEX =
+    /(?:\d+[Dd]?)?dv\((?:.+)\)(?:\|(?:[+-]))?(?:\|(?:[^+-]+))?/u;
+
 export const LINK_REGEX =
     /(?:\d+[Dd])?#(?:[\p{Letter}\p{Emoji_Presentation}\w/-]+)(?:\|(?:[+-]))?\|link/u;
 
@@ -38,6 +42,7 @@ export default class Lexer {
         section: SECTION_REGEX,
         link: LINK_REGEX,
         tag: TAG_REGEX,
+        dataview: DATAVIEW_REGEX,
 
         condition: CONDITIONAL_REGEX,
 
