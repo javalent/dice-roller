@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.17.0](https://github.com/javalent/dice-roller/compare/8.16.1...8.17.0) (2023-07-02)
+
+
+### Features
+
+* Enables rolling based on a Dataview query using `dice: dv(...)` ([315a884](https://github.com/javalent/dice-roller/commit/315a884c1319eed8db781e71a532523252a9f61b))
+
 ## [8.16.1](https://github.com/javalent/dice-roller/compare/8.16.0...8.16.1) (2023-06-27)
 
 
