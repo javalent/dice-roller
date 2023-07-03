@@ -238,16 +238,6 @@ export default class SettingTab extends PluginSettingTab {
         new Setting(containerEl).setHeading().setName("Tag Rollers");
 
         new Setting(containerEl)
-            .setName("Roll All Files for Tags")
-            .setDesc("Return a result for each file when rolling tags.")
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.returnAllTags);
-                t.onChange(async (v) => {
-                    this.plugin.data.returnAllTags = v;
-                    await this.plugin.saveSettings();
-                });
-            });
-        new Setting(containerEl)
             .setName("Always Return Links for Tags")
             .setDesc(
                 "Enables random link rolling with the link parameter. Override by specifying a section type."

@@ -129,7 +129,6 @@ declare global {
     }
 }
 interface DiceRollerSettings {
-    returnAllTags: boolean;
     rollLinksForTags: boolean;
     copyContentButton: boolean;
     displayResultsInline: boolean;
@@ -163,7 +162,6 @@ interface DiceRollerSettings {
 }
 
 export const DEFAULT_SETTINGS: DiceRollerSettings = {
-    returnAllTags: true,
     rollLinksForTags: false,
     copyContentButton: true,
     customFormulas: [],
@@ -895,7 +893,6 @@ export default class DiceRollerPlugin extends Plugin {
                 );
             }
             case "dataview": {
-                console.log("dataview");
                 if (!this.canUseDataview) {
                     throw new Error(
                         "Tags are only supported with the Dataview plugin installed."
@@ -916,15 +913,6 @@ export default class DiceRollerPlugin extends Plugin {
                     );
                 }
                 return new TagRoller(
-                    this,
-                    content,
-                    lexemes[0],
-                    source,
-                    showDice
-                );
-            }
-            case "link": {
-                return new LinkRoller(
                     this,
                     content,
                     lexemes[0],
@@ -1019,15 +1007,6 @@ export default class DiceRollerPlugin extends Plugin {
                     );
                 }
                 return new TagRoller(
-                    this,
-                    content,
-                    lexemes[0],
-                    source,
-                    showDice
-                );
-            }
-            case "link": {
-                return new LinkRoller(
                     this,
                     content,
                     lexemes[0],

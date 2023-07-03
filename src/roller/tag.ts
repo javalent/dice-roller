@@ -7,10 +7,10 @@ import { SectionRoller } from "./section";
 
 abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
     base: string;
+    isLink: boolean = false;
     abstract get query(): string;
     abstract regex: RegExp;
 
-    collapse: boolean;
     types: string;
     results: SectionRoller[];
 
@@ -43,25 +43,23 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
     }
 
     initialize() {
-        if (this.plugin.data.displayAsEmbed) {
-            this.containerEl.addClasses(["has-embed", "markdown-embed"]);
-        }
         const {
             roll = 1,
             query,
-            collapse,
             types
         } = this.lexeme.value.match(this.regex).groups;
 
         this.base = query;
-        this.collapse =
-            collapse === "-"
-                ? true
-                : collapse === "+"
-                ? false
-                : !this.plugin.data.returnAllTags;
         this.rolls = Number(roll);
         this.types = types;
+        if (this.types) {
+            this.isLink = this.types.includes("link");
+            this.types = this.types.replace("link", "");
+        }
+
+        if (!this.isLink && this.plugin.data.displayAsEmbed) {
+            this.containerEl.addClasses(["has-embed", "markdown-embed"]);
+        }
         this.getFiles();
     }
 
@@ -105,7 +103,7 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
         }
 
         const links = Array.from(files).map(
-            (file) => `${this.rolls}d[[${file}]]${this.typeText}`
+            (file) => `[[${file}]]${this.typeText}`
         );
 
         this.results = links.map((link) => {
@@ -132,26 +130,49 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
                 text: this.inlineText
             });
         }
-        if (this.collapse) {
-            this.chosen =
-                this.random ??
-                this.getRandomBetween(0, this.results.length - 1);
-            let section = this.results[this.chosen];
-            this.random = null;
-            const container = this.resultEl.createDiv();
-            container.createEl("h5", {
-                cls: "dice-file-name",
-                text: section.file.basename
-            });
-            container.appendChild(section.containerEl);
-        } else {
-            for (let section of this.results) {
+        const results: SectionRoller[] = [];
+        const clone = new Map(this.results.map((r, i) => [i, r]));
+        for (let i = 0; i < this.rolls; i++) {
+            if (!clone.size) continue;
+            const result = this.getRandomBetween(0, clone.size);
+            results.push(clone.get(result));
+            clone.delete(result);
+        }
+        for (let r = 0; r < results.length; r++) {
+            const result = results[r];
+            if (this.isLink) {
+                const link = this.resultEl.createEl("a", {
+                    cls: "internal-link",
+                    text: result.file.basename
+                });
+                link.onclick = async (evt) => {
+                    evt.stopPropagation();
+                    this.plugin.app.workspace.openLinkText(
+                        result.path,
+                        this.plugin.app.workspace.getActiveFile()?.path,
+                        evt.getModifierState("Control")
+                    );
+                };
+
+                link.onmouseenter = async (evt) => {
+                    this.plugin.app.workspace.trigger(
+                        "link-hover",
+                        this, //not sure
+                        link, //targetEl
+                        result.path, //linkText
+                        this.plugin.app.workspace.getActiveFile()?.path //source
+                    );
+                };
+                if (results.length > 1 && r != results.length - 1) {
+                    this.resultEl.createSpan({ text: ", " });
+                }
+            } else {
                 const container = this.resultEl.createDiv();
                 container.createEl("h5", {
                     cls: "dice-file-name",
-                    text: section.file.basename
+                    text: result.file.basename
                 });
-                container.appendChild(section.containerEl);
+                container.appendChild(result.containerEl);
             }
         }
     }
@@ -159,18 +180,18 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
         return new Promise((resolve, reject) => {
             if (this.loaded) {
                 this.results.forEach(async (section) => await section.roll());
+                this.result = this.results[0];
                 this.render();
                 this.trigger("new-result");
-                this.result = this.results[0];
                 resolve(this.result);
             } else {
                 this.on("loaded", () => {
                     this.results.forEach(
                         async (section) => await section.roll()
                     );
+                    this.result = this.results[0];
                     this.render();
                     this.trigger("new-result");
-                    this.result = this.results[0];
                     resolve(this.result);
                 });
             }
