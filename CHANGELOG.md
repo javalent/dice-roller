@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [9.0.0](https://github.com/javalent/dice-roller/compare/8.17.0...9.0.0) (2023-07-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* Tag Rollers & Dataview Rollers now return 1 result per file. Xd... will now return multiple files.
+
+### Features
+
+* Tag Rollers & Dataview Rollers now return 1 result per file. Xd... will now return multiple files. ([ce55930](https://github.com/javalent/dice-roller/commit/ce55930d771ac838c72687cb0e875930339a0a01))
+
 ## [8.17.0](https://github.com/javalent/dice-roller/compare/8.16.1...8.17.0) (2023-07-02)
 
 
