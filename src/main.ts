@@ -151,6 +151,7 @@ interface DiceRollerSettings {
     renderer: boolean;
     renderAllDice: boolean;
     renderTime: number;
+    colorfulDice: boolean,
     diceColor: string;
     textColor: string;
     showLeafOnStartup: boolean;
@@ -177,6 +178,7 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     renderer: false,
     renderAllDice: false,
     renderTime: 2000,
+    colorfulDice: false,
     diceColor: "#202020",
     textColor: "#ffffff",
     showLeafOnStartup: true,

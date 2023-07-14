@@ -760,10 +760,18 @@ class LocalWorld {
 class DiceFactory extends Component {
     dice: Record<string, DiceGeometry> = {};
     get colors() {
+        const diceColor = this.plugin.data.diceColor;
+        const textColor = this.plugin.data.textColor;
+
+        // If we want colorful dice then just use the default colors in the geometry
+        if (this.plugin.data.colorfulDice) {
+            return undefined
+        }
+
         return {
-            diceColor: this.plugin.data.diceColor,
-            textColor: this.plugin.data.textColor
-        };
+            diceColor,
+            textColor,
+        }
     }
     constructor(
         public width: number,

@@ -311,6 +311,21 @@ export default class SettingTab extends PluginSettingTab {
                     });
             });
 
+        new Setting(containerEl)
+            .setName("Use Colorful Dice")
+            .setDesc("Rendered dice will be varied colors based on the dice type. This will override manually set dice and text colors.")
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.colorfulDice);
+                t.onChange(async (v) => {
+                    this.plugin.data.colorfulDice = v;
+                    await this.plugin.saveSettings();
+
+                    this.plugin.app.workspace.trigger(
+                        "dice-roller:update-colors"
+                    );
+                });
+            });
+
         const diceColor = new Setting(containerEl)
             .setName("Dice Base Color")
             .setDesc("Rendered dice will be this color.");

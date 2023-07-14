@@ -450,7 +450,7 @@ class D20DiceGeometry extends DiceGeometry {
 
     mass = 400;
 
-    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
+    constructor(w: number, h: number, options = { diceColor: "#171120", textColor: "#FF0000"}) {
         super(w, h, options);
 
         let t = (1 + Math.sqrt(5)) / 2;
@@ -495,7 +495,7 @@ class D12DiceGeometry extends DiceGeometry {
     scaleFactor = 0.9;
     values = [...Array(12).keys()];
     margin = 1;
-    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
+    constructor(w: number, h: number, options = { diceColor: "#7339BE", textColor: "#FFFFFF" }) {
         super(w, h, options);
 
         let p = (1 + Math.sqrt(5)) / 2;
@@ -557,7 +557,7 @@ class D10DiceGeometry extends DiceGeometry {
     scaleFactor = 0.9;
     values = [...Array(10).keys()];
     margin = 1;
-    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
+    constructor(w: number, h: number, options = { diceColor: "#c74749", textColor: "#FFFFFF" }) {
         super(w, h, options);
         for (let i = 0, b = 0; i < 10; ++i, b += (Math.PI * 2) / 10) {
             this.vertices.push([
@@ -603,7 +603,7 @@ class D100DiceGeometry extends DiceGeometry {
     scaleFactor = 0.9;
     values = [...Array(10).keys()];
     margin = 1;
-    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
+    constructor(w: number, h: number, options = { diceColor: "#7a2c2d", textColor: "#FFFFFF" }) {
         super(w, h, options);
         for (let i = 0, b = 0; i < 10; ++i, b += (Math.PI * 2) / 10) {
             this.vertices.push([
@@ -644,6 +644,9 @@ class D8DiceGeometry extends DiceGeometry {
     scaleFactor = 1;
     values = [...Array(8).keys()];
     margin = 1.2;
+    constructor(w: number, h: number, options = { diceColor: "#5eb0c5", textColor: "#FFFFFF" }) {
+        super(w, h, options);
+    }
 }
 
 class D6DiceGeometry extends DiceGeometry {
@@ -673,6 +676,9 @@ class D6DiceGeometry extends DiceGeometry {
     sides = 6;
     margin = 1.0;
     values = [...Array(6).keys()];
+    constructor(w: number, h: number, options = { diceColor: "#d68316", textColor: "#FFFFFF" }) {
+        super(w, h, options);
+    }
 }
 class FudgeDiceGeometry extends DiceGeometry {
     mass = 300;
@@ -731,6 +737,10 @@ class D4DiceGeometry extends DiceGeometry {
     ];
     faceTexts = this.d4FaceTexts[0];
     values = [...Array(4).keys()];
+
+    constructor(w: number, h: number, options = { diceColor: "#93b139", textColor: "#FFFFFF" }) {
+        super(w, h, options);
+    }
 
     getMaterials() {
         let materials: MeshPhongMaterial[] = [];
