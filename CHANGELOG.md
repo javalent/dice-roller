@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [9.1.0](https://github.com/javalent/dice-roller/compare/9.0.0...9.1.0) (2023-07-15)
+
+
+### Features
+
+* Add colorful dice setting and default colors for standard rpg dice ([#228](https://github.com/javalent/dice-roller/issues/228)) ([4ff934a](https://github.com/javalent/dice-roller/commit/4ff934aa50cd87068093c6b890d0752c61a79912))
+
 ## [9.0.0](https://github.com/javalent/dice-roller/compare/8.17.0...9.0.0) (2023-07-03)
 
 
