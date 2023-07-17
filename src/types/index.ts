@@ -10,6 +10,7 @@ export interface RollerOptions {
     text?: string;
     showParens?: boolean;
     formulaAfter?: boolean;
+    signed?: boolean;
 }
 export interface SectionCacheWithFile extends SectionCache {
     file: string;

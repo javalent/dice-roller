@@ -2,8 +2,6 @@ import DiceRollerPlugin from "src/main";
 import { BasicRoller } from "src/roller/roller";
 import { ExpectedValue, RollerOptions, Round } from "src/types";
 
-const DEFAULT_ROLLER_OPTIONS: RollerOptions = {};
-
 export default class API {
     constructor(private plugin: DiceRollerPlugin) {}
     get renderer() {
@@ -74,6 +72,9 @@ export default class API {
                 }
             }
         }
+        if (options.signed) {
+            roll += "|signed";
+        }
         return roll;
     }
 
@@ -85,7 +86,8 @@ export default class API {
             showParens: plugin.data.displayFormulaAfter,
             expectedValue: ExpectedValue.Roll,
             round: plugin.data.round,
-            text: null
+            text: null,
+            signed: plugin.data.signed
         };
     }
 }

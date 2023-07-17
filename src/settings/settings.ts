@@ -171,6 +171,17 @@ export default class SettingTab extends PluginSettingTab {
                     });
             });
         new Setting(containerEl)
+            .setName("Show Signed Results")
+            .setDesc(
+                "Positive results will show a '+'. This setting has no effect on negative results."
+            )
+            .addToggle((d) => {
+                d.setValue(this.plugin.data.signed).onChange((v: boolean) => {
+                    this.plugin.data.signed = v;
+                    this.plugin.saveSettings();
+                });
+            });
+        new Setting(containerEl)
             .setName("Always Render Dice")
             .setDesc(
                 createFragment((e) => {

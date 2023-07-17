@@ -135,6 +135,7 @@ interface DiceRollerSettings {
     displayLookupRoll: boolean;
     displayFormulaForMod: boolean;
     displayFormulaAfter: boolean;
+    signed: boolean;
     formulas: Record<string, string>;
     persistResults: boolean;
 
@@ -169,6 +170,7 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     displayFormulaForMod: true,
     displayResultsInline: false,
     displayFormulaAfter: false,
+    signed: false,
     displayLookupRoll: true,
     formulas: {},
     persistResults: false,
@@ -776,6 +778,7 @@ export default class DiceRollerPlugin extends Plugin {
             options?.expectedValue ?? ExpectedValue.Roll;
         let text: string = options?.text ?? "";
         let round = options?.round ?? this.data.round;
+        let signed = options?.signed ?? this.data.signed;
 
         const regextext = /\|text\((.*)\)/;
 
@@ -824,6 +827,9 @@ export default class DiceRollerPlugin extends Plugin {
         if (content.includes("|floor")) {
             round = Round.Down;
         }
+        if (content.includes("|signed")) {
+            signed = true;
+        }
 
         content = decode(
             //remove flags...
@@ -841,6 +847,7 @@ export default class DiceRollerPlugin extends Plugin {
                 .replace("|noround", "")
                 .replace("|ceil", "")
                 .replace("|floor", "")
+                .replace("|signed", "")
                 .replace(regextext, "")
         );
 
@@ -856,7 +863,8 @@ export default class DiceRollerPlugin extends Plugin {
             expectedValue,
             shouldRender,
             text,
-            round
+            round,
+            signed
         };
     }
 
@@ -873,7 +881,8 @@ export default class DiceRollerPlugin extends Plugin {
             expectedValue,
             round,
             shouldRender,
-            text
+            text,
+            signed
         } = this.getParametersForRoller(raw, options);
 
         const lexemes = this.parse(content);
@@ -890,7 +899,8 @@ export default class DiceRollerPlugin extends Plugin {
                     text,
                     expectedValue,
                     showParens,
-                    round
+                    round,
+                    signed
                 );
                 roller.showFormula = showFormula;
                 roller.shouldRender = shouldRender;
@@ -968,7 +978,9 @@ export default class DiceRollerPlugin extends Plugin {
             showFormula,
             expectedValue,
             shouldRender,
-            text
+            text,
+            round,
+            signed
         } = this.getParametersForRoller(raw, options);
 
         const lexemes = this.parse(content);
@@ -984,7 +996,9 @@ export default class DiceRollerPlugin extends Plugin {
                     showDice,
                     text,
                     expectedValue,
-                    showParens
+                    showParens,
+                    round,
+                    signed
                 );
                 roller.shouldRender = shouldRender;
                 roller.showFormula = showFormula;

@@ -848,6 +848,7 @@ export class StackRoller extends GenericRoller<number> {
     displayFixedText: boolean = false;
     expectedValue: ExpectedValue;
     round: Round;
+    signed: boolean;
     get replacer() {
         return `${this.result}`;
     }
@@ -932,7 +933,13 @@ export class StackRoller extends GenericRoller<number> {
                 break;
             }
         }
-
+        let sign = this.signed && rounded > 0 ? "+" : "";
+        console.log(
+            "🚀 ~ file: dice.ts:937 ~ sign:",
+            sign,
+            this.signed,
+            rounded
+        );
         let result;
         if (this.expectedValue === ExpectedValue.None && !this.shouldRender) {
             if (this.showDice) {
@@ -944,7 +951,7 @@ export class StackRoller extends GenericRoller<number> {
                 result.unshift(this.original + " -> ");
             }
         } else {
-            result = [`${rounded}`];
+            result = [`${sign}${rounded}`];
             if (this.showFormula) {
                 result.unshift(this.inlineText);
             }
@@ -994,7 +1001,8 @@ export class StackRoller extends GenericRoller<number> {
         fixedText: string,
         expectedValue: ExpectedValue,
         displayFormulaAfter = plugin.data.displayFormulaAfter,
-        round = plugin.data.round
+        round = plugin.data.round,
+        signed = plugin.data.signed
     ) {
         super(plugin, original, lexemes, showDice);
 
@@ -1009,6 +1017,7 @@ export class StackRoller extends GenericRoller<number> {
         this.expectedValue = expectedValue;
         this.displayFixedText = this.fixedText !== "";
         this.round = round;
+        this.signed = signed;
         this.loaded = true;
         this.trigger("loaded");
     }
