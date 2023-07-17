@@ -1,4 +1,4 @@
-import { Component, Events } from "obsidian";
+import { Component, Events, debounce } from "obsidian";
 
 import { DiceRoller, StackRoller } from "src/roller";
 import DiceGeometry, {
@@ -765,13 +765,13 @@ class DiceFactory extends Component {
 
         // If we want colorful dice then just use the default colors in the geometry
         if (this.plugin.data.colorfulDice) {
-            return undefined
+            return undefined;
         }
 
         return {
             diceColor,
-            textColor,
-        }
+            textColor
+        };
     }
     constructor(
         public width: number,
@@ -781,10 +781,10 @@ class DiceFactory extends Component {
         super();
         this.buildDice();
     }
-    updateColors() {
+    updateDice = debounce(() => {
         this.dispose();
         this.buildDice();
-    }
+    }, 1000);
     onunload() {
         this.dispose();
     }
@@ -1038,72 +1038,86 @@ class DiceFactory extends Component {
         this.dice.d100 = new D100DiceGeometry(
             this.width,
             this.height,
-            this.colors
+            this.colors,
+            this.plugin.data.scaler
         ).create();
         this.dice.d20 = new D20DiceGeometry(
             this.width,
             this.height,
-            this.colors
+            this.colors,
+            this.plugin.data.scaler
         ).create();
         this.dice.d12 = new D12DiceGeometry(
             this.width,
             this.height,
-            this.colors
+            this.colors,
+            this.plugin.data.scaler
         ).create();
         this.dice.d10 = new D10DiceGeometry(
             this.width,
             this.height,
-            this.colors
+            this.colors,
+            this.plugin.data.scaler
         ).create();
         this.dice.d8 = new D8DiceGeometry(
             this.width,
             this.height,
-            this.colors
+            this.colors,
+            this.plugin.data.scaler
         ).create();
         this.dice.d6 = new D6DiceGeometry(
             this.width,
             this.height,
-            this.colors
+            this.colors,
+            this.plugin.data.scaler
         ).create();
         this.dice.d4 = new D4DiceGeometry(
             this.width,
             this.height,
-            this.colors
+            this.colors,
+            this.plugin.data.scaler
         ).create();
         this.dice.fudge = new FudgeDiceGeometry(
             this.width,
             this.height,
-            this.colors
+            this.colors,
+            this.plugin.data.scaler
         ).create();
         this.dice.boost = new GenesysBoostDiceGeometry(
             this.width,
             this.height,
-            this.colors
+            this.colors,
+            this.plugin.data.scaler
         ).create();
         this.dice.ability = new GenesysAbilityDiceGeometry(
             this.width,
             this.height,
-            this.colors
+            this.colors,
+            this.plugin.data.scaler
         ).create();
         this.dice.difficulty = new GenesysDifficultyDiceGeometry(
             this.width,
             this.height,
-            this.colors
+            this.colors,
+            this.plugin.data.scaler
         ).create();
         this.dice.challenge = new GenesysChallengeDiceGeometry(
             this.width,
             this.height,
-            this.colors
+            this.colors,
+            this.plugin.data.scaler
         ).create();
         this.dice.proficiency = new GenesysProficiencyDiceGeometry(
             this.width,
             this.height,
-            this.colors
+            this.colors,
+            this.plugin.data.scaler
         ).create();
         this.dice.setback = new GenesysSetbackDiceGeometry(
             this.width,
             this.height,
-            this.colors
+            this.colors,
+            this.plugin.data.scaler
         ).create();
     }
 }

@@ -334,9 +334,23 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
 
                     this.plugin.app.workspace.trigger(
-                        "dice-roller:update-colors"
+                        "dice-roller:update-dice"
                     );
                 });
+            });
+        new Setting(containerEl)
+            .setName("Adjust Dice Scale")
+            .setDesc("Control the size of rendered dice.")
+            .addSlider((s) => {
+                s.setLimits(0.5, 1.5, 0.1)
+                    .setValue(this.plugin.data.scaler)
+                    .onChange((v) => {
+                        this.plugin.data.scaler = v;
+                        this.plugin.app.workspace.trigger(
+                            "dice-roller:update-dice"
+                        );
+                        this.plugin.saveSettings();
+                    });
             });
 
         const diceColor = new Setting(containerEl)
@@ -358,7 +372,7 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
 
                     this.plugin.app.workspace.trigger(
-                        "dice-roller:update-colors"
+                        "dice-roller:update-dice"
                     );
                 };
             }
@@ -382,7 +396,7 @@ export default class SettingTab extends PluginSettingTab {
                     this.plugin.data.textColor = color;
                     await this.plugin.saveSettings();
                     this.plugin.app.workspace.trigger(
-                        "dice-roller:update-colors"
+                        "dice-roller:update-dice"
                     );
                 };
             }

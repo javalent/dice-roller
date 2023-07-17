@@ -934,12 +934,6 @@ export class StackRoller extends GenericRoller<number> {
             }
         }
         let sign = this.signed && rounded > 0 ? "+" : "";
-        console.log(
-            "🚀 ~ file: dice.ts:937 ~ sign:",
-            sign,
-            this.signed,
-            rounded
-        );
         let result;
         if (this.expectedValue === ExpectedValue.None && !this.shouldRender) {
             if (this.showDice) {

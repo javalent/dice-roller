@@ -3,7 +3,7 @@ import { EventRef } from "obsidian";
 //expose dataview plugin for tags
 declare module "obsidian" {
     interface Workspace {
-        on(name: "dice-roller:update-colors", callback: () => void): EventRef;
+        on(name: "dice-roller:update-dice", callback: () => void): EventRef;
         on(
             name: "dice-roller:render-dice",
             callback: (roll: string) => void

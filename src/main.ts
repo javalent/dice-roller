@@ -104,7 +104,7 @@ declare module "obsidian" {
         };
     }
     interface Workspace {
-        on(name: "dice-roller:update-colors", callback: () => void): EventRef;
+        on(name: "dice-roller:update-dice", callback: () => void): EventRef;
         on(
             name: "dice-roller:render-dice",
             callback: (roll: string) => void
@@ -153,6 +153,7 @@ interface DiceRollerSettings {
     renderAllDice: boolean;
     renderTime: number;
     colorfulDice: boolean;
+    scaler: number;
     diceColor: string;
     textColor: string;
     showLeafOnStartup: boolean;
@@ -181,6 +182,7 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     renderAllDice: false,
     renderTime: 2000,
     colorfulDice: false,
+    scaler: 1,
     diceColor: "#202020",
     textColor: "#ffffff",
     showLeafOnStartup: true,
@@ -216,7 +218,13 @@ export default class DiceRollerPlugin extends Plugin {
         this.data = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 
         this.renderer = new DiceRenderer(this);
+        this.registerEvent(
+            this.app.workspace.on(
+                "dice-roller:update-dice",
 
+                () => this.renderer.factory.updateDice()
+            )
+        );
         this.addSettingTab(new SettingTab(this.app, this));
 
         this.registerView(
@@ -228,12 +236,6 @@ export default class DiceRollerPlugin extends Plugin {
             (leaf: WorkspaceLeaf) => new GenesysView(this, leaf)
         ); */
         this.app.workspace.onLayoutReady(() => this.addDiceView(true));
-
-        this.registerEvent(
-            this.app.workspace.on("dice-roller:update-colors", () => {
-                this.renderer.factory.updateColors();
-            })
-        );
 
         this.registerEvent(
             this.app.workspace.on("dice-roller:render-dice", async (roll) => {

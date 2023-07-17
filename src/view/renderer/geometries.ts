@@ -79,7 +79,8 @@ export default abstract class DiceGeometry {
         public options = {
             diceColor: "#202020",
             textColor: "#aaaaaa"
-        }
+        },
+        public scaler: number
     ) {
         this.options = {
             ...DEFAULT_DICE_OPTIONS,
@@ -101,7 +102,7 @@ export default abstract class DiceGeometry {
         }
     }
     get radius() {
-        return this.scale * this.scaleFactor;
+        return this.scale * this.scaleFactor * (this.scaler ?? 1);
     }
     get diceColor() {
         return this.options.diceColor;
@@ -450,8 +451,13 @@ class D20DiceGeometry extends DiceGeometry {
 
     mass = 400;
 
-    constructor(w: number, h: number, options = { diceColor: "#171120", textColor: "#FF0000"}) {
-        super(w, h, options);
+    constructor(
+        w: number,
+        h: number,
+        options = { diceColor: "#171120", textColor: "#FF0000" },
+        scaler: number
+    ) {
+        super(w, h, options, scaler);
 
         let t = (1 + Math.sqrt(5)) / 2;
         this.vertices = [
@@ -495,8 +501,13 @@ class D12DiceGeometry extends DiceGeometry {
     scaleFactor = 0.9;
     values = [...Array(12).keys()];
     margin = 1;
-    constructor(w: number, h: number, options = { diceColor: "#7339BE", textColor: "#FFFFFF" }) {
-        super(w, h, options);
+    constructor(
+        w: number,
+        h: number,
+        options = { diceColor: "#7339BE", textColor: "#FFFFFF" },
+        scaler: number
+    ) {
+        super(w, h, options, scaler);
 
         let p = (1 + Math.sqrt(5)) / 2;
         let q = 1 / p;
@@ -557,8 +568,13 @@ class D10DiceGeometry extends DiceGeometry {
     scaleFactor = 0.9;
     values = [...Array(10).keys()];
     margin = 1;
-    constructor(w: number, h: number, options = { diceColor: "#c74749", textColor: "#FFFFFF" }) {
-        super(w, h, options);
+    constructor(
+        w: number,
+        h: number,
+        options = { diceColor: "#c74749", textColor: "#FFFFFF" },
+        scaler: number
+    ) {
+        super(w, h, options, scaler);
         for (let i = 0, b = 0; i < 10; ++i, b += (Math.PI * 2) / 10) {
             this.vertices.push([
                 Math.cos(b),
@@ -603,8 +619,13 @@ class D100DiceGeometry extends DiceGeometry {
     scaleFactor = 0.9;
     values = [...Array(10).keys()];
     margin = 1;
-    constructor(w: number, h: number, options = { diceColor: "#7a2c2d", textColor: "#FFFFFF" }) {
-        super(w, h, options);
+    constructor(
+        w: number,
+        h: number,
+        options = { diceColor: "#7a2c2d", textColor: "#FFFFFF" },
+        scaler: number
+    ) {
+        super(w, h, options, scaler);
         for (let i = 0, b = 0; i < 10; ++i, b += (Math.PI * 2) / 10) {
             this.vertices.push([
                 Math.cos(b),
@@ -644,8 +665,13 @@ class D8DiceGeometry extends DiceGeometry {
     scaleFactor = 1;
     values = [...Array(8).keys()];
     margin = 1.2;
-    constructor(w: number, h: number, options = { diceColor: "#5eb0c5", textColor: "#FFFFFF" }) {
-        super(w, h, options);
+    constructor(
+        w: number,
+        h: number,
+        options = { diceColor: "#5eb0c5", textColor: "#FFFFFF" },
+        scaler: number
+    ) {
+        super(w, h, options, scaler);
     }
 }
 
@@ -676,8 +702,13 @@ class D6DiceGeometry extends DiceGeometry {
     sides = 6;
     margin = 1.0;
     values = [...Array(6).keys()];
-    constructor(w: number, h: number, options = { diceColor: "#d68316", textColor: "#FFFFFF" }) {
-        super(w, h, options);
+    constructor(
+        w: number,
+        h: number,
+        options = { diceColor: "#d68316", textColor: "#FFFFFF" },
+        scaler: number
+    ) {
+        super(w, h, options, scaler);
     }
 }
 class FudgeDiceGeometry extends DiceGeometry {
@@ -738,8 +769,13 @@ class D4DiceGeometry extends DiceGeometry {
     faceTexts = this.d4FaceTexts[0];
     values = [...Array(4).keys()];
 
-    constructor(w: number, h: number, options = { diceColor: "#93b139", textColor: "#FFFFFF" }) {
-        super(w, h, options);
+    constructor(
+        w: number,
+        h: number,
+        options = { diceColor: "#93b139", textColor: "#FFFFFF" },
+        scaler: number
+    ) {
+        super(w, h, options, scaler);
     }
 
     getMaterials() {
@@ -830,8 +866,13 @@ abstract class GenesysD12DiceGeometry extends GenesysDice {
     scaleFactor = 0.9;
     values = [...Array(12).keys()];
     margin = 1;
-    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
-        super(w, h, options);
+    constructor(
+        w: number,
+        h: number,
+        options = DEFAULT_DICE_OPTIONS,
+        scaler: number
+    ) {
+        super(w, h, options, scaler);
 
         let p = (1 + Math.sqrt(5)) / 2;
         let q = 1 / p;
@@ -877,8 +918,13 @@ export class GenesysProficiencyDiceGeometry extends GenesysD12DiceGeometry {
         "s\ns",
         ""
     ];
-    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
-        super(w, h, options);
+    constructor(
+        w: number,
+        h: number,
+        options = DEFAULT_DICE_OPTIONS,
+        scaler: number
+    ) {
+        super(w, h, options, scaler);
         this.setColor({ diceColor: "#FEF035", textColor: "#000000" });
     }
 }
@@ -900,8 +946,13 @@ export class GenesysChallengeDiceGeometry extends GenesysD12DiceGeometry {
         "f\nf",
         ""
     ];
-    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
-        super(w, h, options);
+    constructor(
+        w: number,
+        h: number,
+        options = DEFAULT_DICE_OPTIONS,
+        scaler: number
+    ) {
+        super(w, h, options, scaler);
         this.setColor({ diceColor: "#751317", textColor: "#FFFFFF" });
     }
 }
@@ -937,15 +988,25 @@ abstract class GenesysD8DiceGeometry extends GenesysDice {
 
 export class GenesysAbilityDiceGeometry extends GenesysD8DiceGeometry {
     labels = ["", "", "s", "a", "s\na", "s\ns", "a", "s", "a\na", ""];
-    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
-        super(w, h, options);
+    constructor(
+        w: number,
+        h: number,
+        options = DEFAULT_DICE_OPTIONS,
+        scaler: number
+    ) {
+        super(w, h, options, scaler);
         this.setColor({ diceColor: "#46AC4E", textColor: "#000000" });
     }
 }
 export class GenesysDifficultyDiceGeometry extends GenesysD8DiceGeometry {
     labels = ["", "", "t", "f", "f\nt", "t", "", "t\nt", "f\nf", "t", ""];
-    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
-        super(w, h, options);
+    constructor(
+        w: number,
+        h: number,
+        options = DEFAULT_DICE_OPTIONS,
+        scaler: number
+    ) {
+        super(w, h, options, scaler);
         this.setColor({ diceColor: "#52287E", textColor: "#FFFFFF" });
     }
 }
@@ -981,15 +1042,25 @@ class GenesysD6DiceGeometry extends GenesysDice {
 
 export class GenesysBoostDiceGeometry extends GenesysD6DiceGeometry {
     labels = ["", "", "", "", "s", "s  \n  a", "a  \n  a", "a", "", ""];
-    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
-        super(w, h, options);
+    constructor(
+        w: number,
+        h: number,
+        options = DEFAULT_DICE_OPTIONS,
+        scaler: number
+    ) {
+        super(w, h, options, scaler);
         this.setColor({ diceColor: "#76CDDB", textColor: "#000000" });
     }
 }
 export class GenesysSetbackDiceGeometry extends GenesysD6DiceGeometry {
     labels = ["", "", "", "t", "f", "", ""];
-    constructor(w: number, h: number, options = DEFAULT_DICE_OPTIONS) {
-        super(w, h, options);
+    constructor(
+        w: number,
+        h: number,
+        options = DEFAULT_DICE_OPTIONS,
+        scaler: number
+    ) {
+        super(w, h, options, scaler);
         this.setColor({ diceColor: "#000000", textColor: "#FFFFFF" });
     }
 }

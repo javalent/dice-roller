@@ -84,12 +84,6 @@ export default class DiceView extends ItemView {
     constructor(public plugin: DiceRollerPlugin, public leaf: WorkspaceLeaf) {
         super(leaf);
         this.contentEl.addClass("dice-roller-view");
-
-        this.registerEvent(
-            this.plugin.app.workspace.on("dice-roller:update-colors", () => {
-                this.renderer.factory.updateColors();
-            })
-        );
     }
 
     async onOpen() {
