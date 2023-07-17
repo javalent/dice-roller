@@ -143,6 +143,9 @@ export default class DiceView extends ItemView {
                     this.stack = roller;
                 }
             };
+            button.extraSettingsEl.oncontextmenu = async () => {
+                this.roll(`1${type}`);
+            };
         }
 
         const advDis = this.gridEl.createDiv("advantage-disadvantage");
