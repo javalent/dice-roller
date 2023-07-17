@@ -847,6 +847,7 @@ export class StackRoller extends GenericRoller<number> {
     fixedText: string;
     displayFixedText: boolean = false;
     expectedValue: ExpectedValue;
+    round: Round;
     get replacer() {
         return `${this.result}`;
     }
@@ -913,7 +914,7 @@ export class StackRoller extends GenericRoller<number> {
 
         let rounded = this.result;
 
-        switch (this.plugin.data.round) {
+        switch (this.round) {
             case Round.None: {
                 rounded = Math.trunc(rounded * 100) / 100;
                 break;
@@ -992,7 +993,8 @@ export class StackRoller extends GenericRoller<number> {
         showDice = plugin.data.showDice,
         fixedText: string,
         expectedValue: ExpectedValue,
-        displayFormulaAfter = plugin.data.displayFormulaAfter
+        displayFormulaAfter = plugin.data.displayFormulaAfter,
+        round = plugin.data.round
     ) {
         super(plugin, original, lexemes, showDice);
 
@@ -1006,6 +1008,7 @@ export class StackRoller extends GenericRoller<number> {
         this.fixedText = fixedText;
         this.expectedValue = expectedValue;
         this.displayFixedText = this.fixedText !== "";
+        this.round = round;
         this.loaded = true;
         this.trigger("loaded");
     }

@@ -1,6 +1,6 @@
 import DiceRollerPlugin from "src/main";
 import { BasicRoller } from "src/roller/roller";
-import { ExpectedValue, RollerOptions } from "src/types";
+import { ExpectedValue, RollerOptions, Round } from "src/types";
 
 const DEFAULT_ROLLER_OPTIONS: RollerOptions = {};
 
@@ -55,6 +55,25 @@ export default class API {
         if ("showParens" in options) {
             roll += options.showParens ? "|paren" : "|noparen";
         }
+        if ("round" in options) {
+            switch (options.round) {
+                case Round.Down: {
+                    roll += "|floor";
+                    break;
+                }
+                case Round.Up: {
+                    roll += "|ceil";
+                    break;
+                }
+                case Round.Normal: {
+                    roll += "|round";
+                    break;
+                }
+                case Round.None: {
+                    roll += "|noround";
+                }
+            }
+        }
         return roll;
     }
 
@@ -65,6 +84,7 @@ export default class API {
             showFormula: plugin.data.displayResultsInline,
             showParens: plugin.data.displayFormulaAfter,
             expectedValue: ExpectedValue.Roll,
+            round: plugin.data.round,
             text: null
         };
     }

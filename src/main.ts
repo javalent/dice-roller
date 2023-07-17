@@ -151,7 +151,7 @@ interface DiceRollerSettings {
     renderer: boolean;
     renderAllDice: boolean;
     renderTime: number;
-    colorfulDice: boolean,
+    colorfulDice: boolean;
     diceColor: string;
     textColor: string;
     showLeafOnStartup: boolean;
@@ -159,7 +159,7 @@ interface DiceRollerSettings {
 
     displayAsEmbed: boolean;
 
-    round: keyof typeof Round;
+    round: Round;
 }
 
 export const DEFAULT_SETTINGS: DiceRollerSettings = {
@@ -775,6 +775,7 @@ export default class DiceRollerPlugin extends Plugin {
         let expectedValue: ExpectedValue =
             options?.expectedValue ?? ExpectedValue.Roll;
         let text: string = options?.text ?? "";
+        let round = options?.round ?? this.data.round;
 
         const regextext = /\|text\((.*)\)/;
 
@@ -810,6 +811,20 @@ export default class DiceRollerPlugin extends Plugin {
         if (content.includes("|noparen")) {
             showParens = false;
         }
+
+        if (content.includes("|round")) {
+            round = Round.Normal;
+        }
+        if (content.includes("|noround")) {
+            round = Round.None;
+        }
+        if (content.includes("|ceil")) {
+            round = Round.Up;
+        }
+        if (content.includes("|floor")) {
+            round = Round.Down;
+        }
+
         content = decode(
             //remove flags...
             content
@@ -822,6 +837,10 @@ export default class DiceRollerPlugin extends Plugin {
                 .replace("|paren", "")
                 .replace("|avg", "")
                 .replace("|none", "")
+                .replace("|round", "")
+                .replace("|noround", "")
+                .replace("|ceil", "")
+                .replace("|floor", "")
                 .replace(regextext, "")
         );
 
@@ -836,7 +855,8 @@ export default class DiceRollerPlugin extends Plugin {
             showFormula,
             expectedValue,
             shouldRender,
-            text
+            text,
+            round
         };
     }
 
@@ -851,6 +871,7 @@ export default class DiceRollerPlugin extends Plugin {
             showParens,
             showFormula,
             expectedValue,
+            round,
             shouldRender,
             text
         } = this.getParametersForRoller(raw, options);
@@ -868,7 +889,8 @@ export default class DiceRollerPlugin extends Plugin {
                     showDice,
                     text,
                     expectedValue,
-                    showParens
+                    showParens,
+                    round
                 );
                 roller.showFormula = showFormula;
                 roller.shouldRender = shouldRender;

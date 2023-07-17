@@ -6,6 +6,7 @@ export interface RollerOptions {
     shouldRender?: boolean;
     showFormula?: boolean;
     expectedValue?: ExpectedValue;
+    round?: Round;
     text?: string;
     showParens?: boolean;
     formulaAfter?: boolean;

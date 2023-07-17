@@ -165,7 +165,7 @@ export default class SettingTab extends PluginSettingTab {
             .addDropdown((d) => {
                 d.addOptions(Round)
                     .setValue(this.plugin.data.round)
-                    .onChange((v: keyof typeof Round) => {
+                    .onChange((v: Round) => {
                         this.plugin.data.round = v;
                         this.plugin.saveSettings();
                     });
@@ -313,7 +313,9 @@ export default class SettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Use Colorful Dice")
-            .setDesc("Rendered dice will be varied colors based on the dice type. This will override manually set dice and text colors.")
+            .setDesc(
+                "Rendered dice will be varied colors based on the dice type. This will override manually set dice and text colors."
+            )
             .addToggle((t) => {
                 t.setValue(this.plugin.data.colorfulDice);
                 t.onChange(async (v) => {
