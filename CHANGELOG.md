@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [9.2.0](https://github.com/javalent/dice-roller/compare/9.1.0...9.2.0) (2023-07-17)
+
+
+### Features
+
+* Can now display '+' for positive results with `|signed` flag (close [#217](https://github.com/javalent/dice-roller/issues/217)) ([958ea0b](https://github.com/javalent/dice-roller/commit/958ea0b12aaa148d5b479a00397efe4d34fe0e8c))
+* Can now resize graphical dice within a range (0.5 -&gt; 1.5 times) (close [#156](https://github.com/javalent/dice-roller/issues/156)) ([a0d61ed](https://github.com/javalent/dice-roller/commit/a0d61edea92590bbcea6647fceb44423e5be67aa))
+* Can now specify flags to control rounding behavior (close [#218](https://github.com/javalent/dice-roller/issues/218)) ([e6045d9](https://github.com/javalent/dice-roller/commit/e6045d9ca624bbfca8acb773270b8bae5bc5eca3))
+* Right clicking dice in the dice view now quick rolls (close [#229](https://github.com/javalent/dice-roller/issues/229)) ([bc8bcc6](https://github.com/javalent/dice-roller/commit/bc8bcc6499b4ab3f9f0565a5f44806941b2c5841))
+
 ## [9.1.0](https://github.com/javalent/dice-roller/compare/9.0.0...9.1.0) (2023-07-15)
 
 
