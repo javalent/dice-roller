@@ -84,7 +84,7 @@ export default class API {
             shouldRender: plugin.data.renderAllDice,
             showFormula: plugin.data.displayResultsInline,
             showParens: plugin.data.displayFormulaAfter,
-            expectedValue: ExpectedValue.Roll,
+            expectedValue: plugin.data.initialDisplay,
             round: plugin.data.round,
             text: null,
             signed: plugin.data.signed
