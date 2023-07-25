@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [9.3.0](https://github.com/javalent/dice-roller/compare/9.2.0...9.3.0) (2023-07-25)
+
+
+### Features
+
+* add initial display options ([#234](https://github.com/javalent/dice-roller/issues/234)) ([b3d5c60](https://github.com/javalent/dice-roller/commit/b3d5c60f2ca1e6960c6d665b0f5db3556f727381))
+
 ## [9.2.0](https://github.com/javalent/dice-roller/compare/9.1.0...9.2.0) (2023-07-17)
 
 
