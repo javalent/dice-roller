@@ -993,7 +993,7 @@ export class StackRoller extends GenericRoller<number> {
         public lexemes: LexicalToken[],
         showDice = plugin.data.showDice,
         fixedText: string,
-        expectedValue: ExpectedValue,
+        expectedValue = plugin.data.initialDisplay,
         displayFormulaAfter = plugin.data.displayFormulaAfter,
         round = plugin.data.round,
         signed = plugin.data.signed
