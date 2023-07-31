@@ -304,6 +304,7 @@ I _believe_ that this is a list of block types defined in Obsidian, but use this
 | -------------------- |
 | `blockquote`         |
 | `break`              |
+| `callout`              |
 | `code`               |
 | `delete`             |
 | `emphasis`           |
