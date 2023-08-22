@@ -135,6 +135,7 @@ interface DiceRollerSettings {
     displayLookupRoll: boolean;
     displayFormulaForMod: boolean;
     displayFormulaAfter: boolean;
+    escapeDiceMod: boolean;
     signed: boolean;
     formulas: Record<string, string>;
     persistResults: boolean;
@@ -171,6 +172,7 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     displayFormulaForMod: true,
     displayResultsInline: false,
     displayFormulaAfter: false,
+    escapeDiceMod: true,
     signed: false,
     displayLookupRoll: true,
     formulas: {},
@@ -417,13 +419,15 @@ export default class DiceRollerPlugin extends Plugin {
                                     ? `${roller.inlineText} ${replacer}`
                                     : `${replacer}`;
 
-                                splitContent = splitContent
-                                    .join("\n")
-                                    .replace(
-                                        `\`${full}\``,
-                                        rep.replace(/([\*\[\]])/g, "\\$1")
-                                    )
-                                    .split("\n");
+                                if (this.data.escapeDiceMod) {
+                                    splitContent = splitContent
+                                        .join("\n")
+                                        .replace(
+                                            `\`${full}\``,
+                                            rep.replace(/([\*\[\]])/g, "\\$1")
+                                        )
+                                        .split("\n");
+                                }
 
                                 fileContent.splice(
                                     info.lineStart,

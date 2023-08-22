@@ -141,6 +141,24 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 });
             });
+        new Setting(containerEl)
+            .setName("Escape Markdown When Modifying")
+            .setDesc(
+                createFragment((e) => {
+                    e.createSpan({
+                        text: "Markdown characters will be escaped when using "
+                    });
+                    e.createEl("code", { text: "dice-mod" });
+                    e.createSpan({ text: "." });
+                })
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.escapeDiceMod);
+                t.onChange(async (v) => {
+                    this.plugin.data.escapeDiceMod = v;
+                    await this.plugin.saveSettings();
+                });
+            });
     }
     buildDice(containerEl: HTMLDivElement) {
         containerEl.empty();
