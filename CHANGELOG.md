@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [9.3.1](https://github.com/javalent/dice-roller/compare/9.3.0...9.3.1) (2023-08-22)
+
+
+### Bug Fixes
+
+* Allow markdown character escaping to be turned off ([e12eb7e](https://github.com/javalent/dice-roller/commit/e12eb7e72a90f7b47ba55c0da5dbcfe0d41567e0))
+
 ## [9.3.0](https://github.com/javalent/dice-roller/compare/9.2.0...9.3.0) (2023-07-25)
 
 
