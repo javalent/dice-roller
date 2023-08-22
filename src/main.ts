@@ -163,6 +163,8 @@ interface DiceRollerSettings {
     displayAsEmbed: boolean;
 
     round: Round;
+
+    initialDisplay: ExpectedValue;
 }
 
 export const DEFAULT_SETTINGS: DiceRollerSettings = {
@@ -190,7 +192,8 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     showLeafOnStartup: true,
     showDice: true,
     displayAsEmbed: true,
-    round: Round.None
+    round: Round.None,
+    initialDisplay: ExpectedValue.Roll
 };
 
 export default class DiceRollerPlugin extends Plugin {
@@ -781,7 +784,7 @@ export default class DiceRollerPlugin extends Plugin {
             options?.showFormula ?? this.data.displayResultsInline;
         let showParens = options?.showParens ?? this.data.displayFormulaAfter;
         let expectedValue: ExpectedValue =
-            options?.expectedValue ?? ExpectedValue.Roll;
+            options?.expectedValue ?? this.data.initialDisplay;
         let text: string = options?.text ?? "";
         let round = options?.round ?? this.data.round;
         let signed = options?.signed ?? this.data.signed;

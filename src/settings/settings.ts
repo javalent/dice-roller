@@ -7,7 +7,7 @@ import {
     Setting,
     TextComponent
 } from "obsidian";
-import { Round } from "src/types";
+import { Round, ExpectedValue } from "src/types";
 import { ICON_DEFINITION } from "src/utils/constants";
 import type DiceRoller from "../main";
 import { DEFAULT_SETTINGS } from "../main";
@@ -185,6 +185,18 @@ export default class SettingTab extends PluginSettingTab {
                     .setValue(this.plugin.data.round)
                     .onChange((v: Round) => {
                         this.plugin.data.round = v;
+                        this.plugin.saveSettings();
+                    });
+            });
+        new Setting(containerEl)
+            .setName("Auto Roll dice")
+            .setDesc("On initial display, should dice be rolled or displayed empty.")
+            .addDropdown((d) => {
+                d.addOption(ExpectedValue.None, "Empty")
+                 .addOption(ExpectedValue.Roll, "Rolled")
+                    .setValue(this.plugin.data.initialDisplay)
+                    .onChange((v: ExpectedValue) => {
+                        this.plugin.data.initialDisplay = v;
                         this.plugin.saveSettings();
                     });
             });
