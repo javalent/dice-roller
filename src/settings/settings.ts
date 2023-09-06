@@ -190,10 +190,12 @@ export default class SettingTab extends PluginSettingTab {
             });
         new Setting(containerEl)
             .setName("Auto Roll dice")
-            .setDesc("On initial display, should dice be rolled or displayed empty.")
+            .setDesc(
+                "On initial display, should dice be rolled or displayed empty."
+            )
             .addDropdown((d) => {
                 d.addOption(ExpectedValue.None, "Empty")
-                 .addOption(ExpectedValue.Roll, "Rolled")
+                    .addOption(ExpectedValue.Roll, "Rolled")
                     .setValue(this.plugin.data.initialDisplay)
                     .onChange((v: ExpectedValue) => {
                         this.plugin.data.initialDisplay = v;
@@ -225,6 +227,21 @@ export default class SettingTab extends PluginSettingTab {
             .addToggle((t) => {
                 t.setValue(this.plugin.data.renderAllDice).onChange((v) => {
                     this.plugin.data.renderAllDice = v;
+                    this.plugin.saveSettings();
+                });
+            });
+        new Setting(containerEl)
+            .setName("Add Rolls to Dice View")
+            .setDesc(
+                createFragment((e) => {
+                    e.createSpan({
+                        text: "Dice rolled in notes will be added to the Dice View's Results section."
+                    });
+                })
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.addToView).onChange((v) => {
+                    this.plugin.data.addToView = v;
                     this.plugin.saveSettings();
                 });
             });

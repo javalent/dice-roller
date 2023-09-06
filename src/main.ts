@@ -152,6 +152,7 @@ interface DiceRollerSettings {
     defaultFace: number;
     renderer: boolean;
     renderAllDice: boolean;
+    addToView: boolean;
     renderTime: number;
     colorfulDice: boolean;
     scaler: number;
@@ -184,6 +185,7 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     defaultFace: 100,
     renderer: false,
     renderAllDice: false,
+    addToView: false,
     renderTime: 2000,
     colorfulDice: false,
     scaler: 1,
@@ -400,8 +402,12 @@ export default class DiceRollerPlugin extends Plugin {
                         content,
                         ctx.sourcePath
                     );
-                    if (roller instanceof StackRoller && roller.shouldRender) {
-                        roller.hasRunOnce = true;
+                    if (roller instanceof StackRoller) {
+                        if (roller.shouldRender) roller.hasRunOnce = true;
+                        roller.on("new-result", () => {
+                            if (this.data.addToView)
+                                this.view?.addResult(roller);
+                        });
                     }
 
                     modPromises.push(
@@ -485,6 +491,10 @@ export default class DiceRollerPlugin extends Plugin {
                     }
                     if (roller instanceof StackRoller) {
                         roller.shouldRender = shouldRender;
+                        roller.on("new-result", () => {
+                            if (this.data.addToView)
+                                this.view?.addResult(roller);
+                        });
                     }
 
                     node.replaceWith(roller.containerEl);

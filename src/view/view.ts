@@ -328,7 +328,7 @@ export default class DiceView extends ItemView {
                     "aria-label": roller.resultText
                 }
             })
-            .appendChild(roller.containerEl);
+            .appendChild(roller.containerEl.cloneNode(true));
 
         const context = result.createDiv("result-context");
 
