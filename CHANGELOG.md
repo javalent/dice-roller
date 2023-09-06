@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [9.4.0](https://github.com/javalent/dice-roller/compare/9.3.1...9.4.0) (2023-09-06)
+
+
+### Features
+
+* new `Add to View` setting for Dice rollers. when enabled, all dice roller results will be added to the Dice View ([70a11c4](https://github.com/javalent/dice-roller/commit/70a11c4743b384e465d6736079218bbdd53736d9))
+
 ## [9.3.1](https://github.com/javalent/dice-roller/compare/9.3.0...9.3.1) (2023-08-22)
 
 
