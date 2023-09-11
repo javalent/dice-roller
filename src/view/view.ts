@@ -12,6 +12,8 @@ import {
 import DiceRollerPlugin from "src/main";
 import { StackRoller } from "src/roller";
 import { COPY_DEFINITION, ICON_DEFINITION } from "src/utils/constants";
+import { ExpectedValue, RollerOptions } from "../types";
+import API from "../api/api";
 
 export const VIEW_TYPE = "DICE_ROLLER_VIEW";
 
@@ -238,7 +240,11 @@ export default class DiceView extends ItemView {
             return;
         }
         this.rollButton.setDisabled(true);
-        const roller = await this.plugin.getRoller(formula, "view");
+        const opts: RollerOptions = {...API.RollerOptions(this.plugin)};
+        if (opts.expectedValue == ExpectedValue.None) {
+            opts.expectedValue = ExpectedValue.Roll;
+        }
+        const roller = await this.plugin.getRoller(formula, "view", opts);
 
         if (!(roller instanceof StackRoller)) {
             new Notice("The Dice View only supports dice rolls.");
