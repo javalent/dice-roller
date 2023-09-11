@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [9.4.1](https://github.com/javalent/dice-roller/compare/9.4.0...9.4.1) (2023-09-11)
+
+
+### Miscellaneous Chores
+
+* release 9.4.1 ([dd2eb18](https://github.com/javalent/dice-roller/commit/dd2eb18c39aaf93c7e5990f5ab8b905fc43b2496))
+
 ## [9.4.0](https://github.com/javalent/dice-roller/compare/9.3.1...9.4.0) (2023-09-06)
 
 
