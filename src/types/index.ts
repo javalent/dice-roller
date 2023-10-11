@@ -1,5 +1,6 @@
 import { SectionCache } from "obsidian";
 import { LexicalToken } from "src/parser/lexer";
+import { DiceShape } from "src/renderer/shapes";
 
 export interface RollerOptions {
     showDice?: boolean;

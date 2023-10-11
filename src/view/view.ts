@@ -77,12 +77,6 @@ export default class DiceView extends ItemView {
     formulaComponent: TextAreaComponent;
     resultEl: HTMLDivElement;
 
-    /* renderer = new DiceRenderer(this.plugin); */
-
-    get renderer() {
-        return this.plugin.renderer;
-    }
-
     constructor(public plugin: DiceRollerPlugin, public leaf: WorkspaceLeaf) {
         super(leaf);
         this.contentEl.addClass("dice-roller-view");
@@ -240,7 +234,7 @@ export default class DiceView extends ItemView {
             return;
         }
         this.rollButton.setDisabled(true);
-        const opts: RollerOptions = {...API.RollerOptions(this.plugin)};
+        const opts: RollerOptions = { ...API.RollerOptions(this.plugin) };
         if (opts.expectedValue == ExpectedValue.None) {
             opts.expectedValue = ExpectedValue.Roll;
         }
@@ -252,24 +246,10 @@ export default class DiceView extends ItemView {
         }
         roller.iconEl.detach();
         roller.containerEl.onclick = null;
-        await roller.roll();
+        await roller.roll(this.plugin.data.renderer);
         if (!roller.dice.length) {
             new Notice("Invalid formula.");
             return;
-        }
-
-        try {
-            if (this.plugin.data.renderer) {
-                this.addChild(this.renderer);
-                this.renderer.setDice(roller);
-
-                await this.renderer.start();
-
-                roller.recalculate(false);
-            }
-        } catch (e) {
-            new Notice("There was an error rendering the roll.");
-            console.error(e);
         }
 
         this.rollButton.setDisabled(false);
@@ -413,6 +393,5 @@ export default class DiceView extends ItemView {
     }
     async onClose() {
         await super.onClose();
-        this.renderer.unload();
     }
 }

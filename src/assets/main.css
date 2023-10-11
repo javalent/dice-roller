@@ -1,7 +1,7 @@
 .dice-roller {
     position: relative;
     display: inline-flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 0.25rem;
     cursor: pointer;
 
@@ -18,12 +18,12 @@
     font-weight: 700;
 }
 .dice-roller > .dice-roller-button {
-    display: inline-block;
+    display: inline-flex;
     position: relative;
     font-size: inherit;
 }
 .dice-roller > .dice-roller-formula {
-    display: inline-block;
+    display: inline-flex;
     position: relative;
     font-size: inherit;
 }
@@ -109,6 +109,8 @@
 
 .dice-roller-result {
     position: relative;
+    display: inline-flex;
+    align-items: center;
 }
 
 .dice-roller-result .embedded-table-result p {
@@ -170,4 +172,28 @@
     .formula-data
     .setting-item {
     border: 0;
+}
+
+.should-spin {
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    animation: rotation 1s ease infinite;
+}
+
+@keyframes rotation {
+    0% {
+        transform: scale(1) rotate(-60deg);
+    }
+    20% {
+        transform: /* scale(1.1)  */rotate(-90deg);
+    }
+    50% {
+        transform: /* scale(0.9)  */rotate(690deg);
+    }
+    100% {
+        transform: /* scale(1) */ rotate(660deg);
+    }
 }

@@ -19,7 +19,7 @@ interface DiceVector {
     axis: { x: number; y: number; z: number; w: number };
 }
 
-const DEFAULT_VECTOR = {
+export const DEFAULT_VECTOR = {
     pos: {
         x: 0 + 100 * Math.random(),
         y: 0 + 100 * Math.random(),
@@ -43,7 +43,7 @@ const DEFAULT_VECTOR = {
     }
 };
 
-export abstract class Dice {
+export abstract class DiceShape {
     scale = 50;
     abstract sides: number;
     abstract inertia: number;
@@ -68,7 +68,7 @@ export abstract class Dice {
     }
     generateVector(v: { x: number; y: number }): DiceVector {
         const dist = Math.sqrt(v.x * v.x + v.y * v.y);
-        const boost = (Math.random() + 3) * dist;
+        const boost = (Math.random() + 5) * dist;
         const vector = { x: v.x / dist, y: v.y / dist };
         const vec = this.makeRandomVector(vector);
         const pos = {
@@ -76,6 +76,7 @@ export abstract class Dice {
             y: this.h * (vec.y > 0 ? -1 : 1) * 0.9,
             z: Math.random() * 200 + 200
         };
+
         const projector = Math.abs(vec.x / vec.y);
         if (projector > 1.0) pos.y /= projector;
         else pos.x *= projector;
@@ -207,6 +208,7 @@ export abstract class Dice {
         this.body.wlambda = new Vec3();
 
         this.body.updateMassProperties();
+        return this;
     }
     updateMaterialsForValue(value: number) {}
     set() {
@@ -221,6 +223,13 @@ export abstract class Dice {
             this.body.quaternion.z,
             this.body.quaternion.w
         );
+    }
+    recreate(vector: { x: number; y: number }, width: number, height: number) {
+        this.w = width;
+        this.h = height;
+        this.vector = this.generateVector(vector);
+        this.stopped = false;
+        this.create();
     }
     create() {
         this.body.position.set(
@@ -248,10 +257,11 @@ export abstract class Dice {
         );
         this.body.linearDamping = 0.1;
         this.body.angularDamping = 0.1;
+        return this;
     }
 }
 
-export class D20Dice extends Dice {
+export class D20Dice extends DiceShape {
     sides = 20;
     inertia = 6;
     constructor(
@@ -268,7 +278,7 @@ export class D20Dice extends Dice {
     }
 }
 
-export class D12Dice extends Dice {
+export class D12Dice extends DiceShape {
     sides = 12;
     inertia = 8;
     constructor(
@@ -285,7 +295,7 @@ export class D12Dice extends Dice {
     }
 }
 
-export class D10Dice extends Dice {
+export class D10Dice extends DiceShape {
     sides = 10;
     inertia = 9;
     constructor(
@@ -303,7 +313,7 @@ export class D10Dice extends Dice {
     }
 }
 
-export class D8Dice extends Dice {
+export class D8Dice extends DiceShape {
     sides = 8;
     inertia = 10;
     constructor(
@@ -320,7 +330,7 @@ export class D8Dice extends Dice {
     }
 }
 
-export class D6Dice extends Dice {
+export class D6Dice extends DiceShape {
     sides = 6;
     inertia = 13;
     constructor(
@@ -340,7 +350,7 @@ export class D6Dice extends Dice {
         this.create();
     }
 }
-export class D4Dice extends Dice {
+export class D4Dice extends DiceShape {
     sides = 4;
     inertia = 5;
     constructor(

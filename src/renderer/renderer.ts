@@ -16,17 +16,17 @@ import DiceGeometry, {
     GenesysDifficultyDiceGeometry,
     GenesysProficiencyDiceGeometry,
     GenesysSetbackDiceGeometry
-} from "./renderer/geometries";
-import DiceRollerPlugin from "src/main";
+} from "./geometries";
+
 import {
-    Dice,
+    DiceShape,
     D10Dice,
     D4Dice,
     D6Dice,
     D8Dice,
     D12Dice,
     D20Dice
-} from "./renderer/shapes";
+} from "./shapes";
 
 /* import {
     WebGLRenderer,
@@ -50,21 +50,35 @@ import {
     Vec3,
     World
 } from "cannon-es";
-import { WebGLRenderer } from "three/src/renderers/WebGLRenderer";
-import { Scene } from "three/src/scenes/Scene";
-import { PerspectiveCamera } from "three/src/cameras/PerspectiveCamera";
-import { DirectionalLight } from "three/src/lights/DirectionalLight";
-import { AmbientLight } from "three/src/lights/AmbientLight";
-import { SpotLight } from "three/src/lights/SpotLight";
-import { PCFSoftShadowMap } from "three/src/constants";
-import { Vector3 } from "three/src/math/Vector3";
-import { ShadowMaterial } from "three/src/materials/ShadowMaterial";
-import { Mesh } from "three/src/objects/Mesh";
-import { PlaneGeometry } from "three/src/geometries/PlaneGeometry";
+import {
+    AmbientLight,
+    BufferGeometry,
+    DirectionalLight,
+    Mesh,
+    Object3D,
+    PCFSoftShadowMap,
+    PerspectiveCamera,
+    PlaneGeometry,
+    Scene,
+    ShadowMaterial,
+    SpotLight,
+    Material as ThreeMaterial,
+    Vector3,
+    WebGLRenderer
+} from "three";
+import { ResourceTracker } from "./resource";
+
+export type RendererData = {
+    diceColor: string;
+    textColor: string;
+    colorfulDice: boolean;
+    scaler: number;
+    renderTime: number;
+};
 
 export default class DiceRenderer extends Component {
     event = new Events();
-
+    tracker = new ResourceTracker();
     renderer: WebGLRenderer;
     scene: Scene;
     world: LocalWorld;
@@ -72,7 +86,7 @@ export default class DiceRenderer extends Component {
 
     container: HTMLElement = createDiv("renderer-container");
 
-    current: Map<DiceRoller, Dice[]>;
+    #current: Set<DiceShape[]> = new Set();
     directionalLight: DirectionalLight;
     ambientLight: AmbientLight;
 
@@ -85,6 +99,7 @@ export default class DiceRenderer extends Component {
 
     frame_rate = 1 / 60;
     stack: StackRoller;
+    loaded = false;
 
     get WIDTH() {
         return this.container.clientWidth / 2;
@@ -103,65 +118,119 @@ export default class DiceRenderer extends Component {
         return this.renderer.domElement;
     }
 
-    animating = false;
-
-    constructor(public plugin: DiceRollerPlugin) {
+    #animating = false;
+    setData(data: RendererData) {
+        this.data = data;
+        this.factory.width = this.WIDTH;
+        this.factory.height = this.HEIGHT;
+        this.factory.updateDice();
+    }
+    constructor(public data: RendererData) {
         super();
         this.renderer = new WebGLRenderer({
             alpha: true,
             antialias: true
         });
     }
-
-    setDice(stack: StackRoller) {
-        if (this.animating) {
-            this.unload();
-            this.load();
-        }
-        this.stack = stack;
-        this.current = this.factory.getDice(this.stack, {
-            x: (Math.random() * 2 - 1) * this.WIDTH,
-            y: -(Math.random() * 2 - 1) * this.HEIGHT
-        });
-        this.scene.add(
-            ...[...this.current.values()].flat().map((d) => d.geometry)
-        );
-        this.world.add(...[...this.current.values()].flat());
+    getDiceForRoller(roller: DiceRoller): DiceShape[] {
+        return this.factory.getDiceForRoller(roller, this.getVector());
     }
-    factory = new DiceFactory(this.WIDTH, this.HEIGHT, this.plugin);
+    /**
+     * Adding dice should start the rendering process immediately.
+     * The renderer should unload itself after all dice have finished rendering.
+     */
+    #finished: WeakMap<DiceShape[], () => void> = new WeakMap();
+    #executed: WeakMap<DiceShape[], boolean> = new WeakMap();
+    async addDice(dice: DiceShape[]): Promise<void> {
+        return new Promise((resolve) => {
+            if (!this.#animating) {
+                this.start();
+            }
+            for (const shape of dice) {
+                shape.recreate(this.getVector(), this.WIDTH, this.HEIGHT);
+                this.scene.add(this.tracker.track(shape.geometry));
+                this.world.add(shape);
+            }
+            this.#current.add(dice);
+            this.#finished.set(dice, () => {
+                resolve();
+            });
+            this.#executed.set(dice, false);
+        });
+    }
+    factory = new DiceFactory(this.WIDTH, this.HEIGHT, {
+        diceColor: this.data.diceColor,
+        textColor: this.data.textColor,
+        colorfulDice: this.data.colorfulDice,
+        scaler: this.data.scaler
+    });
+
     onload() {
+        this.loaded = true;
         this.addChild(this.factory);
 
         this.container.empty();
         this.container.style.opacity = `1`;
-        document.body.appendChild(this.container);
-
         this.renderer.shadowMap.enabled = this.shadows;
         this.renderer.shadowMap.type = PCFSoftShadowMap;
         this.container.appendChild(this.renderer.domElement);
+        document.body.appendChild(this.container);
+
         this.renderer.setClearColor(0x000000, 0);
 
         this.scene = new Scene();
 
         this.initScene();
+        this.initWorld();
 
         this.registerDomEvent(window, "resize", () => {
             this.initScene();
         });
-
-        this.initWorld();
     }
 
-    async start(): Promise<StackRoller> {
+    onunload() {
+        this.stop();
+        this.loaded = false;
+        cancelAnimationFrame(this.animation);
+
+        this.container.detach();
+        this.container.empty();
+        this.renderer.domElement.detach();
+        this.factory.dispose();
+        this.renderer.renderLists.dispose();
+        this.renderer.dispose();
+
+        this.tracker.dispose();
+
+        [...this.#current.values()].flat().forEach((dice) => {
+            this.world.world.removeBody(dice.body);
+        });
+        this.#current = new Set();
+
+        //causes white flash?
+        //this.renderer.forceContextLoss();
+    }
+
+    async start(): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            if (!this.current.size) reject();
-            this.event.on("throw-finished", (result) => {
-                resolve(result);
-            });
-            this.event.on("error", (e) => {
-                reject(e);
-            });
-            this.animating = true;
+            if (this.#animating) {
+                this.unload();
+            }
+            if (!this.loaded) {
+                this.load();
+            }
+            this.registerEvent(
+                this.event.on("throw-finished", () => {
+                    resolve();
+                })
+            );
+
+            this.registerEvent(
+                this.event.on("error", (e) => {
+                    reject(e);
+                })
+            );
+            this.#animating = true;
             this.extraFrames = DiceRenderer.DEFAULT_EXTRA_FRAMES;
             this.render();
         });
@@ -204,6 +273,7 @@ export default class DiceRenderer extends Component {
     setDimensions(dimensions?: { w: number; h: number }) {
         this.display.currentWidth = this.container.clientWidth / 2;
         this.display.currentHeight = this.container.clientHeight / 2;
+
         if (dimensions) {
             this.display.containerWidth = dimensions.w;
             this.display.containerHeight = dimensions.h;
@@ -233,6 +303,8 @@ export default class DiceRenderer extends Component {
 
         this.factory.width = this.display.currentWidth;
         this.factory.height = this.display.currentHeight;
+
+        this.factory.updateDice();
 
         this.cameraHeight.medium = this.cameraHeight.max / 1.5;
         this.cameraHeight.far = this.cameraHeight.max;
@@ -272,10 +344,10 @@ export default class DiceRenderer extends Component {
         this.light.shadow.bias = 0.001;
         this.light.shadow.mapSize.width = 1024;
         this.light.shadow.mapSize.height = 1024;
-        this.scene.add(this.light);
+        this.scene.add(this.tracker.track(this.light));
 
         this.ambientLight = new AmbientLight(0xffffff, 0.9);
-        this.scene.add(this.ambientLight);
+        this.scene.add(this.tracker.track(this.ambientLight));
     }
     initDesk() {
         if (this.desk) this.scene.remove(this.desk);
@@ -291,7 +363,7 @@ export default class DiceRenderer extends Component {
             shadowplane
         );
         this.desk.receiveShadow = this.shadows;
-        this.scene.add(this.desk);
+        this.scene.add(this.tracker.track(this.desk));
     }
     initScene() {
         this.setDimensions();
@@ -307,91 +379,114 @@ export default class DiceRenderer extends Component {
         this.world = new LocalWorld(this.WIDTH, this.HEIGHT);
         this.iterations = 0;
     }
-    getResultsForRoller(roller: DiceRoller) {
-        const diceArray = this.current.get(roller);
 
-        //todo remove double loop
-        const percentile = diceArray.filter(
-            (d) => d instanceof D10Dice && d.isPercentile
-        );
-        const chunked: Array<[Dice, Dice]> = [];
-        for (let i = 0; i < percentile.length; i += 2) {
-            chunked.push(percentile.slice(i, i + 2) as [Dice, Dice]);
-        }
-        /* possibly... need to test
-        const resultsArr = [];
-        for (let i = 0; i < diceArray.length; i++) {
-            const dice = diceArray[i];
-            if (dice instanceof D10Dice && dice.isPercentile) {
-                let tens = dice.getUpsideValue();
-                let onesDice;
-                const next = diceArray[i + 1];
-                if (next && next instanceof D10Dice && next.isPercentile) {
-                    onesDice = next;
-                    i++;
-                }
-                if (!onesDice) resultsArr.push(tens);
-                let ones = onesDice.getUpsideValue();
-
-                if (tens === 10 && ones == 10) {
-                    resultsArr.push(100);
-                } else {
-                    if (ones == 10) ones = 0;
-                    if (tens == 10) tens = 0;
-                    resultsArr.push(tens * 10 + ones);
-                }
-            } else {
-                resultsArr.push(dice.getUpsideValue());
-            }
-        } */
-
-        let results = [
-            ...diceArray
-                .filter((d) => !(d instanceof D10Dice && d.isPercentile))
-                .map((dice) => {
-                    return dice.getUpsideValue();
-                })
-                .filter((r) => r),
-            ...chunked
-                .map(([tensDice, onesDice]) => {
-                    let tens = tensDice.getUpsideValue();
-                    if (!onesDice) return tens;
-                    let ones = onesDice.getUpsideValue();
-
-                    if (tens === 10 && ones == 10) {
-                        return 100;
-                    } else {
-                        if (ones == 10) ones = 0;
-                        if (tens == 10) tens = 0;
-                        return tens * 10 + ones;
-                    }
-                })
-                .filter((r) => r)
-        ];
-        return results;
+    finishRender() {
+        this.event.trigger("throw-finished");
     }
-    returnResult() {
-        for (const roller of this.stack.dynamic) {
-            if (!this.current.has(roller)) {
-                continue;
+    #positions: WeakMap<DiceShape, Vec3> = new WeakMap();
+    throwFinished() {
+        let res = true;
+        if (this.iterations < 10 / this.frame_rate) {
+            for (const shapes of this.#current) {
+                let finished = true;
+                for (const dice of shapes) {
+                    if (dice.stopped === true) continue;
+
+                    /* const a = dice.body.angularVelocity,
+                        v = dice.body.velocity; */
+                    /* if (
+                            Math.abs(a.x) < threshold &&
+                            Math.abs(a.y) < threshold &&
+                            Math.abs(a.z) < threshold &&
+                            Math.abs(v.x) < threshold &&
+                            Math.abs(v.y) < threshold &&
+                            Math.abs(v.z) < threshold
+                        ) { */
+                    if (!this.#positions.has(dice)) {
+                        const pos = {
+                            x: dice.body.position.x,
+                            y: dice.body.position.y,
+                            z: dice.body.position.z
+                        };
+                        this.#positions.set(dice, pos as Vec3);
+                        finished = false;
+                        res = false;
+                        continue;
+                    }
+
+                    const previous = this.#positions.get(dice);
+                    const current = dice.body.position;
+                    const delta = Math.sqrt(
+                        Math.pow(current.x - previous.x, 2) +
+                            Math.pow(current.y - previous.y, 2) +
+                            Math.pow(current.z - previous.z, 2)
+                    );
+                    if (delta < 0.1) {
+                        if (dice.stopped) {
+                            if (this.iterations - dice.stopped > 5) {
+                                dice.stopped = true;
+                                continue;
+                            }
+                        } else {
+                            dice.stopped = this.iterations;
+                        }
+                        finished = false;
+                        res = false;
+                    } else {
+                        this.#positions.set(dice, {
+                            x: current.x,
+                            y: current.y,
+                            z: current.z
+                        } as Vec3);
+                        dice.stopped = false;
+                        finished = false;
+                        res = false;
+                    }
+                }
+                if (finished && this.#finished.has(shapes)) {
+                    this.#finished.get(shapes)();
+                    this.#finished.delete(shapes);
+                }
             }
-
-            let results = this.getResultsForRoller(roller);
-            if (!results) continue;
-
-            roller.setResults(results);
+        } else {
+            for (const shapes of this.#current) {
+                if (this.#finished.has(shapes)) {
+                    this.#finished.get(shapes)();
+                    this.#finished.delete(shapes);
+                }
+            }
         }
-        this.event.trigger("throw-finished", this.stack);
+        return res;
     }
     extraFrames = DiceRenderer.DEFAULT_EXTRA_FRAMES;
-    unrender(plugin = this) {
-        plugin.container.style.opacity = `0`;
-        plugin.registerInterval(
+    unrender() {
+        this.container.style.opacity = `0`;
+        cancelAnimationFrame(this.animation);
+        this.registerInterval(
             window.setTimeout(() => {
-                plugin.animating = false;
-                plugin.unload();
+                this.stop();
             }, 1000)
         );
+    }
+    stop() {
+        if (this.#animating) {
+            for (const dice of [...this.#current].flat()) {
+                dice.stopped = true;
+            }
+        }
+        this.#animating = false;
+        this.unload();
+    }
+    resizeRendererToDisplaySize() {
+        const canvas = this.renderer.domElement;
+        const pixelRatio = window.devicePixelRatio;
+        const width = (canvas.clientWidth * pixelRatio) | 0;
+        const height = (canvas.clientHeight * pixelRatio) | 0;
+        const needResize = canvas.width !== width || canvas.height !== height;
+        if (needResize) {
+            this.renderer.setSize(width, height, false);
+        }
+        return needResize;
     }
     render() {
         if (this.throwFinished()) {
@@ -399,135 +494,11 @@ export default class DiceRenderer extends Component {
                 this.extraFrames--;
             } else {
                 try {
-                    for (const [roller, dice] of this.current) {
-                        if (!roller.modifiers.size) continue;
-
-                        let results = this.getResultsForRoller(roller);
-                        if (!results) continue;
-                        let shouldRerender = false;
-                        if (
-                            roller.modifiers.has("!") ||
-                            roller.modifiers.has("!!")
-                        ) {
-                            const modifier = roller.modifiers.has("!")
-                                ? "!"
-                                : "!!";
-                            //check explode
-                            const explode = dice.filter((d) => {
-                                if (
-                                    !roller.modifiers.get(modifier).conditionals
-                                        .length
-                                ) {
-                                    roller.modifiers
-                                        .get(modifier)
-                                        .conditionals.push({
-                                            operator: "=",
-                                            comparer: roller.faces.max,
-                                            value: "",
-                                            lexemes: [
-                                                {
-                                                    value: `${roller.faces.max}`,
-                                                    text: `${roller.faces.max}`,
-                                                    type: "dice"
-                                                }
-                                            ]
-                                        });
-                                }
-                                return (
-                                    roller.checkCondition(
-                                        d.result,
-                                        roller.modifiers.get(modifier)
-                                            .conditionals
-                                    ) && !d.exploded
-                                );
-                            });
-                            if (
-                                explode.length &&
-                                explode.length <=
-                                    roller.modifiers.get(modifier)!.data
-                            ) {
-                                explode.forEach((dice) => {
-                                    dice.exploded = true;
-                                    const vector = {
-                                        x: (Math.random() * 2 - 1) * this.WIDTH,
-                                        y:
-                                            -(Math.random() * 2 - 1) *
-                                            this.HEIGHT
-                                    };
-                                    const newDice = this.factory.cloneDice(
-                                        dice,
-                                        vector
-                                    );
-                                    this.current.set(roller, [
-                                        ...this.current.get(roller)!,
-                                        ...newDice
-                                    ]);
-                                    this.world.add(...newDice);
-                                    this.scene.add(
-                                        ...newDice.map((d) => d.geometry)
-                                    );
-                                });
-                                shouldRerender = true;
-                            }
-                        }
-
-                        if (roller.modifiers.has("r")) {
-                            //check reroll
-                            if (
-                                !roller.modifiers.get("r").conditionals.length
-                            ) {
-                                roller.modifiers.get("r").conditionals.push({
-                                    operator: "=",
-                                    comparer: roller.faces.min,
-                                    value: "",
-                                    lexemes: [
-                                        {
-                                            value: `${roller.faces.min}`,
-                                            text: `${roller.faces.min}`,
-                                            type: "dice"
-                                        }
-                                    ]
-                                });
-                            }
-                            const reroll = dice.filter((d) => {
-                                return (
-                                    roller.checkCondition(
-                                        d.result,
-                                        roller.modifiers.get("r").conditionals
-                                    ) &&
-                                    d.rerolled < roller.modifiers.get("r")!.data
-                                );
-                            });
-                            if (reroll.length) {
-                                reroll.forEach((dice) => {
-                                    dice.rerolled++;
-                                    const vector = {
-                                        x: (Math.random() * 2 - 1) * this.WIDTH,
-                                        y:
-                                            -(Math.random() * 2 - 1) *
-                                            this.HEIGHT
-                                    };
-                                    dice.vector = dice.generateVector(vector);
-                                    dice.create();
-                                    dice.set();
-                                    dice.stopped = false;
-                                });
-                                shouldRerender = true;
-                            }
-                        }
-                        if (shouldRerender) {
-                            this.animation = requestAnimationFrame(() =>
-                                this.render()
-                            );
-                            return;
-                        }
-                    }
-
-                    this.returnResult();
-                    if (!this.plugin.data.renderTime) {
-                        const plugin = this;
+                    this.finishRender();
+                    if (!this.data.renderTime) {
+                        const renderer = this;
                         function unrender() {
-                            plugin.unrender(plugin);
+                            renderer.unload();
                             document.body.removeEventListener(
                                 "click",
                                 unrender
@@ -538,7 +509,7 @@ export default class DiceRenderer extends Component {
                         this.registerInterval(
                             window.setTimeout(
                                 () => this.unrender(),
-                                this.plugin.data.renderTime
+                                this.data.renderTime
                             )
                         );
                     }
@@ -551,104 +522,41 @@ export default class DiceRenderer extends Component {
         }
         this.animation = requestAnimationFrame(() => this.render());
 
+        if (this.resizeRendererToDisplaySize()) {
+            this.camera.aspect =
+                this.canvasEl.clientWidth / this.canvasEl.clientHeight;
+            this.camera.updateProjectionMatrix();
+        }
+
         this.world.step(this.frame_rate);
         this.iterations++;
-        this.current.forEach((dice) => {
-            dice.map((d) => d.set());
-        });
+        [...this.#current.values()].forEach((g) => g.forEach((d) => d.set()));
 
         this.renderer.render(this.scene, this.camera);
     }
-    dispose(...children: any[]) {
+    getVector() {
+        return {
+            x: (Math.random() * 2 - 1) * this.WIDTH,
+            y: -(Math.random() * 2 - 1) * this.HEIGHT
+        };
+    }
+    dispose(...children: Object3D[]) {
         children.forEach((child) => {
-            if ("dispose" in child) child.dispose();
             if (child.children) this.dispose(...child.children);
+
+            child.clear();
         });
-    }
-    detach() {}
-    onunload() {
-        cancelAnimationFrame(this.animation);
-
-        this.container.detach();
-        this.container.empty();
-        this.renderer.domElement.detach();
-        this.renderer.dispose();
-        this.factory.dispose();
-
-        this.ambientLight.dispose();
-        this.light.dispose();
-
-        this.scene.children.forEach((child) => this.dispose(child));
-
-        this.scene.remove(
-            this.scene,
-            ...this.scene.children,
-            ...[...this.current.values()].flat().map((d) => d.geometry)
-        );
-
-        this.current.forEach((arr) => {
-            arr.forEach((dice) => {
-                let materials = [
-                    ...(Array.isArray(dice.geometry.material)
-                        ? dice.geometry.material
-                        : [dice.geometry.material])
-                ];
-                materials.forEach((material) => material && material.dispose());
-                this.world.world.removeBody(dice.body);
-            });
-        });
-        this.current = new Map();
-
-        //causes white flash?
-        //this.renderer.forceContextLoss();
-    }
-
-    onThrowFinished() {}
-
-    throwFinished() {
-        let res = true;
-        const threshold = 4;
-        if (this.iterations < 10 / this.frame_rate) {
-            for (const diceArray of this.current.values()) {
-                /* const dice = this.current[i]; */
-                for (const dice of diceArray) {
-                    if (dice.stopped === true) continue;
-                    const a = dice.body.angularVelocity,
-                        v = dice.body.velocity;
-
-                    if (
-                        Math.abs(a.x) < threshold &&
-                        Math.abs(a.y) < threshold &&
-                        Math.abs(a.z) < threshold &&
-                        Math.abs(v.x) < threshold &&
-                        Math.abs(v.y) < threshold &&
-                        Math.abs(v.z) < threshold
-                    ) {
-                        if (dice.stopped) {
-                            if (this.iterations - dice.stopped > 3) {
-                                dice.stopped = true;
-                                continue;
-                            }
-                        } else {
-                            dice.stopped = this.iterations;
-                        }
-                        res = false;
-                    } else {
-                        dice.stopped = undefined;
-                        res = false;
-                    }
-                }
-            }
-        }
-        return res;
     }
 }
 
 class LocalWorld {
-    add(...dice: Dice[]) {
+    add(...dice: DiceShape[]) {
         dice.forEach((die) => {
             this.world.addBody(die.body);
         });
+    }
+    remove(...dice: DiceShape[]) {
+        dice.forEach((die) => this.world.removeBody(die.body));
     }
     lastCallTime: number;
     step(step: number = 1 / 60) {
@@ -661,7 +569,7 @@ class LocalWorld {
         }
         this.lastCallTime = time;
     }
-    world = new World({ gravity: new Vec3(0, 0, -9.82 * 400) });
+    world = new World({ gravity: new Vec3(0, 0, -9.82 * 200) });
     ground = this.getPlane();
     constructor(public WIDTH: number, public HEIGHT: number) {
         this.world.broadphase = new NaiveBroadphase();
@@ -760,11 +668,11 @@ class LocalWorld {
 class DiceFactory extends Component {
     dice: Record<string, DiceGeometry> = {};
     get colors() {
-        const diceColor = this.plugin.data.diceColor;
-        const textColor = this.plugin.data.textColor;
+        const diceColor = this.options.diceColor;
+        const textColor = this.options.textColor;
 
         // If we want colorful dice then just use the default colors in the geometry
-        if (this.plugin.data.colorfulDice) {
+        if (this.options.colorfulDice) {
             return undefined;
         }
 
@@ -776,7 +684,12 @@ class DiceFactory extends Component {
     constructor(
         public width: number,
         public height: number,
-        public plugin: DiceRollerPlugin
+        public options: {
+            diceColor: string;
+            textColor: string;
+            scaler: number;
+            colorfulDice: boolean;
+        }
     ) {
         super();
         this.buildDice();
@@ -784,7 +697,7 @@ class DiceFactory extends Component {
     updateDice = debounce(() => {
         this.dispose();
         this.buildDice();
-    }, 1000);
+    }, 200);
     onunload() {
         this.dispose();
     }
@@ -803,131 +716,94 @@ class DiceFactory extends Component {
         switch (roller.faces.max) {
             case 4: {
                 dice.push(
-                    ...new Array(roller.rolls)
-                        .fill(0)
-                        .map(
-                            (r) =>
-                                new D4Dice(
-                                    this.width,
-                                    this.height,
-                                    this.clone("d4"),
-                                    vector
-                                )
-                        )
+                    new D4Dice(
+                        this.width,
+                        this.height,
+                        this.clone("d4"),
+                        vector
+                    )
                 );
                 break;
             }
             case 1:
             case 6: {
                 dice.push(
-                    ...new Array(roller.rolls)
-                        .fill(0)
-                        .map(
-                            (r) =>
-                                new D6Dice(
-                                    this.width,
-                                    this.height,
-                                    roller.fudge
-                                        ? this.clone("fudge")
-                                        : this.clone("d6"),
-                                    vector
-                                )
-                        )
+                    new D6Dice(
+                        this.width,
+                        this.height,
+                        roller.fudge ? this.clone("fudge") : this.clone("d6"),
+                        vector
+                    )
                 );
                 break;
             }
             case 8: {
                 dice.push(
-                    ...new Array(roller.rolls)
-                        .fill(0)
-                        .map(
-                            (r) =>
-                                new D8Dice(
-                                    this.width,
-                                    this.height,
-                                    this.clone("d8"),
-                                    vector
-                                )
-                        )
+                    new D8Dice(
+                        this.width,
+                        this.height,
+                        this.clone("d8"),
+                        vector
+                    )
                 );
                 break;
             }
             case 10: {
                 dice.push(
-                    ...new Array(roller.rolls)
-                        .fill(0)
-                        .map(
-                            (r) =>
-                                new D10Dice(
-                                    this.width,
-                                    this.height,
-                                    this.clone("d10"),
-                                    vector
-                                )
-                        )
+                    new D10Dice(
+                        this.width,
+                        this.height,
+                        this.clone("d10"),
+                        vector
+                    )
                 );
                 break;
             }
             case 12: {
                 dice.push(
-                    ...new Array(roller.rolls)
-                        .fill(0)
-                        .map(
-                            (r) =>
-                                new D12Dice(
-                                    this.width,
-                                    this.height,
-                                    this.clone("d12"),
-                                    vector
-                                )
-                        )
+                    new D12Dice(
+                        this.width,
+                        this.height,
+                        this.clone("d12"),
+                        vector
+                    )
                 );
                 break;
             }
             case 20: {
                 dice.push(
-                    ...new Array(roller.rolls)
-                        .fill(0)
-                        .map(
-                            (r) =>
-                                new D20Dice(
-                                    this.width,
-                                    this.height,
-                                    this.clone("d20"),
-                                    vector
-                                )
-                        )
+                    new D20Dice(
+                        this.width,
+                        this.height,
+                        this.clone("d20"),
+                        vector
+                    )
                 );
                 break;
             }
             case 100: {
                 dice.push(
-                    ...new Array(roller.rolls)
-                        .fill(0)
-                        .map((r) => [
-                            new D10Dice(
-                                this.width,
-                                this.height,
-                                this.clone("d100"),
-                                vector,
-                                true
-                            ),
-                            new D10Dice(
-                                this.width,
-                                this.height,
-                                this.clone("d10"),
-                                vector,
-                                true
-                            )
-                        ])
-                        .flat()
+                    new D10Dice(
+                        this.width,
+                        this.height,
+                        this.clone("d100"),
+                        vector,
+                        true
+                    ),
+                    new D10Dice(
+                        this.width,
+                        this.height,
+                        this.clone("d10"),
+                        vector,
+                        true
+                    )
                 );
                 break;
             }
         }
         return dice;
     }
-    cloneDice(dice: Dice, vector: { x: number; y: number }): Dice[] {
+    cloneDice(dice: DiceShape, vector: { x: number; y: number }): DiceShape[] {
         switch (dice.sides) {
             case 4: {
                 return [
@@ -1020,7 +896,7 @@ class DiceFactory extends Component {
         }
     }
     getDice(stack: StackRoller, vector: { x: number; y: number }) {
-        const map: Map<DiceRoller, Dice[]> = new Map();
+        const map: Map<DiceRoller, DiceShape[]> = new Map();
 
         for (const roller of stack.dynamic) {
             const dice = this.getDiceForRoller(roller, vector);
@@ -1039,85 +915,85 @@ class DiceFactory extends Component {
             this.width,
             this.height,
             this.colors,
-            this.plugin.data.scaler
+            this.options.scaler
         ).create();
         this.dice.d20 = new D20DiceGeometry(
             this.width,
             this.height,
             this.colors,
-            this.plugin.data.scaler
+            this.options.scaler
         ).create();
         this.dice.d12 = new D12DiceGeometry(
             this.width,
             this.height,
             this.colors,
-            this.plugin.data.scaler
+            this.options.scaler
         ).create();
         this.dice.d10 = new D10DiceGeometry(
             this.width,
             this.height,
             this.colors,
-            this.plugin.data.scaler
+            this.options.scaler
         ).create();
         this.dice.d8 = new D8DiceGeometry(
             this.width,
             this.height,
             this.colors,
-            this.plugin.data.scaler
+            this.options.scaler
         ).create();
         this.dice.d6 = new D6DiceGeometry(
             this.width,
             this.height,
             this.colors,
-            this.plugin.data.scaler
+            this.options.scaler
         ).create();
         this.dice.d4 = new D4DiceGeometry(
             this.width,
             this.height,
             this.colors,
-            this.plugin.data.scaler
+            this.options.scaler
         ).create();
         this.dice.fudge = new FudgeDiceGeometry(
             this.width,
             this.height,
             this.colors,
-            this.plugin.data.scaler
+            this.options.scaler
         ).create();
         this.dice.boost = new GenesysBoostDiceGeometry(
             this.width,
             this.height,
             this.colors,
-            this.plugin.data.scaler
+            this.options.scaler
         ).create();
         this.dice.ability = new GenesysAbilityDiceGeometry(
             this.width,
             this.height,
             this.colors,
-            this.plugin.data.scaler
+            this.options.scaler
         ).create();
         this.dice.difficulty = new GenesysDifficultyDiceGeometry(
             this.width,
             this.height,
             this.colors,
-            this.plugin.data.scaler
+            this.options.scaler
         ).create();
         this.dice.challenge = new GenesysChallengeDiceGeometry(
             this.width,
             this.height,
             this.colors,
-            this.plugin.data.scaler
+            this.options.scaler
         ).create();
         this.dice.proficiency = new GenesysProficiencyDiceGeometry(
             this.width,
             this.height,
             this.colors,
-            this.plugin.data.scaler
+            this.options.scaler
         ).create();
         this.dice.setback = new GenesysSetbackDiceGeometry(
             this.width,
             this.height,
             this.colors,
-            this.plugin.data.scaler
+            this.options.scaler
         ).create();
     }
 }

@@ -1,4 +1,4 @@
-import { Notice } from "obsidian";
+import { Notice, setIcon } from "obsidian";
 import type DiceRollerPlugin from "src/main";
 import Lexer, { LexicalToken } from "src/parser/lexer";
 import {
@@ -10,6 +10,8 @@ import {
 } from "src/types";
 import { _insertIntoMap } from "src/utils/util";
 import { GenericRoller, Roller } from "./roller";
+import DiceRenderer from "src/renderer/renderer";
+import { D6Dice, DiceShape } from "src/renderer/shapes";
 
 interface Modifier {
     conditionals: Conditional[];
@@ -17,12 +19,74 @@ interface Modifier {
     value: string;
 }
 
+type ModifierType = "sort" | "kh" | "kl" | "!" | "!!" | "r" | "u";
+
 export class DiceRoller {
+    constructor(
+        dice: string | number,
+        public renderer: DiceRenderer | null,
+        public lexeme: Partial<LexicalToken> = {
+            value: `${dice}`,
+            conditions: [],
+            type: "dice"
+        }
+    ) {
+        if (!/(\-?\d+)[dD]?(\d+|%|\[\d+,\s?\d+\])?/.test(`${dice}`)) {
+            throw new Error("Non parseable dice string passed to DiceRoll.");
+        }
+        this.dice = `${dice}`.split(" ").join("");
+
+        if (/^-?\d+(?:\.\d+)?$/.test(this.dice)) {
+            this.static = true;
+            this.modifiersAllowed = false;
+        }
+        let [, rolls, minStr = null, maxStr = 1] = this.dice.match(
+            /(\-?\d+)[dD]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?/
+        ) || [, 1, null, 1];
+
+        rolls = Number(rolls);
+
+        this.multiplier = rolls < 0 ? -1 : 1;
+        let min = isNaN(Number(minStr)) ? null : Number(minStr);
+        let max: number;
+        this.rolls = Math.abs(Number(rolls)) || 1;
+
+        if (maxStr === "%") {
+            max = 100;
+        } else if (maxStr === "F") {
+            max = 1;
+            min = -1;
+            this.fudge = true;
+        } else {
+            max = Number(maxStr);
+        }
+        if (Number(max) < 0 && !min) {
+            min = -1;
+        }
+        if (Number(max) < Number(min)) {
+            [max, min] = [min, max];
+        }
+
+        this.faces = { max: max ? Number(max) : 1, min: min ? Number(min) : 1 };
+
+        this.conditions = this.lexeme.conditions ?? [];
+    }
     dice: string;
-    modifiers: Map<string, Modifier> = new Map();
+    modifiers: Map<ModifierType, Modifier> = new Map();
     rolls: number;
     faces: { min: number; max: number };
-    results: ResultMapInterface<number>;
+    results: ResultMapInterface<number> = new Map();
+    shapes: Map<number, DiceShape[]> = new Map();
+    getShapes(index?: number) {
+        if (this.shapes.has(index)) {
+            return this.shapes.get(index);
+        }
+        const shapes = this.renderer.getDiceForRoller(this);
+        if (index != undefined) {
+            this.shapes.set(index, shapes);
+        }
+        return shapes;
+    }
     resultArray: number[];
     modifiersAllowed: boolean = true;
     static: boolean = false;
@@ -75,56 +139,7 @@ export class DiceRoller {
             .join("");
         return `${conditionals}${modifiers}`;
     }
-    constructor(
-        dice: string | number,
-        public lexeme: Partial<LexicalToken> = {
-            value: `${dice}`,
-            conditions: [],
-            type: "dice"
-        }
-    ) {
-        if (!/(\-?\d+)[dD]?(\d+|%|\[\d+,\s?\d+\])?/.test(`${dice}`)) {
-            throw new Error("Non parseable dice string passed to DiceRoll.");
-        }
-        this.dice = `${dice}`.split(" ").join("");
 
-        if (/^-?\d+(?:\.\d+)?$/.test(this.dice)) {
-            this.static = true;
-            this.modifiersAllowed = false;
-        }
-        let [, rolls, minStr = null, maxStr = 1] = this.dice.match(
-            /(\-?\d+)[dD]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?/
-        ) || [, 1, null, 1];
-
-        rolls = Number(rolls);
-
-        this.multiplier = rolls < 0 ? -1 : 1;
-        let min = isNaN(Number(minStr)) ? null : Number(minStr);
-        let max: number;
-        this.rolls = Math.abs(Number(rolls)) || 1;
-
-        if (maxStr === "%") {
-            max = 100;
-        } else if (maxStr === "F") {
-            max = 1;
-            min = -1;
-            this.fudge = true;
-        } else {
-            max = Number(maxStr);
-        }
-        if (Number(max) < 0 && !min) {
-            min = -1;
-        }
-        if (Number(max) < Number(min)) {
-            [max, min] = [min, max];
-        }
-
-        this.faces = { max: max ? Number(max) : 1, min: min ? Number(min) : 1 };
-
-        this.conditions = this.lexeme.conditions ?? [];
-
-        this.roll();
-    }
     keepLow(drop: number = 1) {
         if (!this.modifiersAllowed) {
             new Notice("Modifiers are only allowed on dice rolls.");
@@ -145,6 +160,7 @@ export class DiceRoller {
                 this.results.set(index, { ...previous });
             });
     }
+
     keepHigh(drop: number = 1) {
         if (!this.modifiersAllowed) {
             new Notice("Modifiers are only allowed on dice rolls.");
@@ -164,15 +180,11 @@ export class DiceRoller {
                 this.results.set(index, { ...previous });
             });
     }
-    reroll(times: number, conditionals: Conditional[]) {
+    async reroll(times: number, conditionals: Conditional[]) {
         if (!this.modifiersAllowed) {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
-        /* if (this.conditions?.length) {
-            new Notice("Modifiers are not permitted on conditioned dice.");
-            return;
-        } */
         /**
          * Build Conditional
          */
@@ -205,74 +217,27 @@ export class DiceRoller {
             ).length > 0
         ) {
             i++;
-            toReroll.map(([, roll]) => {
-                roll.modifiers.add("r");
-                const newValue = this.getValue();
-                roll.value = newValue;
-                roll.display = `${newValue}`;
-            });
+            await Promise.all(
+                toReroll.map(async ([i, roll]) => {
+                    roll.modifiers.add("r");
+                    const shapes = this.getShapes(i);
+                    const newValue = await this.getValue(shapes);
+                    roll.value = newValue;
+                    roll.display = `${newValue}`;
+                })
+            );
         }
 
         toReroll.forEach(([index, value]) => {
             this.results.set(index, value);
         });
     }
-    explodeAndCombine(times: number, conditionals: Conditional[]) {
+
+    async explode(times: number, conditionals: Conditional[], combine = false) {
         if (!this.modifiersAllowed) {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
-
-        /**
-         * Build Conditional
-         */
-        if (!conditionals.length) {
-            conditionals.push({
-                operator: "=",
-                comparer: this.faces.max,
-                lexemes: [
-                    {
-                        value: `${this.faces.max}`,
-                        text: `${this.faces.max}`,
-                        type: "dice"
-                    }
-                ],
-                value: ""
-            });
-        }
-
-        /**
-         * Find values that pass the conditional
-         */
-        let toExplode = [...this.results].filter(([, { value }]) =>
-            this.checkCondition(value, conditionals)
-        );
-
-        toExplode.forEach(([index, value]) => {
-            let newRoll = this.getValue();
-            let i = 0;
-            value.modifiers.add("!");
-            value.value += newRoll;
-            value.display = `${value.value}`;
-            this.results.set(index, value);
-            while (i < times && this.checkCondition(newRoll, conditionals)) {
-                i++;
-                newRoll = this.getValue();
-                value.value += newRoll;
-                value.display = `${value.value}`;
-                this.results.set(index, value);
-            }
-        });
-    }
-    explode(times: number, conditionals: Conditional[]) {
-        if (!this.modifiersAllowed) {
-            new Notice("Modifiers are only allowed on dice rolls.");
-            return;
-        }
-        /* if (this.conditions?.length) {
-            new Notice("Modifiers are not permitted on conditioned dice.");
-            return;
-        } */
 
         /**
          * Build Conditional
@@ -303,83 +268,159 @@ export class DiceRoller {
         let inserted = 0;
 
         /** Loop through values that need to explode */
-        toExplode.forEach(([key, value]) => {
-            /** newRoll is the new value to check against the max face value */
-            let newRoll = value.value;
-            /** i tracks how many times this roll has been exploded */
-            let i = 0;
+        await Promise.all(
+            toExplode.map(async ([key, value]) => {
+                if (combine) {
+                    let newRoll = await this.getValue();
+                    let i = 0;
+                    value.modifiers.add("!");
+                    value.value += newRoll;
+                    value.display = `${value.value}`;
+                    this.results.set(key, value);
+                    while (
+                        i < times &&
+                        this.checkCondition(newRoll, conditionals)
+                    ) {
+                        i++;
+                        newRoll = await this.getValue();
+                        value.value += newRoll;
+                        value.display = `${value.value}`;
+                        this.results.set(key, value);
+                    }
+                } else {
+                    /** newRoll is the new value to check against the max face value */
+                    let newRoll = value.value;
+                    /** i tracks how many times this roll has been exploded */
+                    let i = 0;
 
-            /**
-             * Explode max rolls.
-             */
-            while (i < times && this.checkCondition(newRoll, conditionals)) {
-                let previous = this.results.get(key + inserted + i);
-                previous.modifiers.add("!");
+                    /**
+                     * Explode max rolls.
+                     */
+                    while (
+                        i < times &&
+                        this.checkCondition(newRoll, conditionals)
+                    ) {
+                        let previous = this.results.get(key + inserted + i);
+                        previous.modifiers.add("!");
+                        newRoll = await this.getValue();
 
-                newRoll = this.getValue();
-
-                /** Insert the new roll into the results map */
-                _insertIntoMap(this.results, key + inserted + i + 1, {
-                    usable: true,
-                    value: newRoll,
-                    display: `${newRoll}`,
-                    modifiers: new Set()
-                });
-                i++;
-            }
-            /** Update how many have been inserted. */
-            inserted += i;
-        });
+                        /** Insert the new roll into the results map */
+                        _insertIntoMap(
+                            this.results,
+                            key + inserted + i + 1,
+                            this.#getResultInterface(newRoll)
+                        );
+                        i++;
+                    }
+                    /** Update how many have been inserted. */
+                    inserted += i;
+                }
+            })
+        );
     }
-    _roll(): number[] {
-        if (this.static) {
-            return [Number(this.dice)];
+
+    async getValue(shapes?: DiceShape[]) {
+        if (this.shouldRender) {
+            const temp = shapes ?? this.renderer.getDiceForRoller(this) ?? [];
+            await this.renderer.addDice(temp);
+            return this.#resolveShapeValue(temp);
+        } else {
+            return this.getValueSync();
         }
-        return [...Array(this.rolls)].map(() => this.getValue());
     }
-    getValue() {
+    getValueSync() {
         return (
             this.multiplier *
             this.getRandomBetween(this.faces.min, this.faces.max)
         );
     }
-    setResults(results: number[]) {
-        this.results = new Map(
-            [...results].map((n, i) => {
-                return [
-                    i,
-                    {
-                        usable: true,
-                        value: n,
-                        display: `${n}`,
-                        modifiers: new Set()
-                    }
-                ];
+    #resolveShapeValue(shapes: DiceShape[] = []) {
+        if (!shapes.length) return this.getValueSync();
+        const values = shapes.map((v) => v.getUpsideValue());
+        if (this.faces.max === 100) {
+            let [tens, ones] = values;
+            if (tens === 10 && ones == 10) {
+                return 100;
+            }
+
+            if (ones == 10) ones = 0;
+            if (tens == 10) tens = 0;
+            return tens * 10 + ones;
+        }
+        return values.reduce((a, b) => a + b);
+    }
+    #getResultInterface(n = 0): ResultInterface<number> {
+        return {
+            usable: true,
+            value: n,
+            display: `${n}`,
+            modifiers: new Set()
+        };
+    }
+    async applyModifiers() {
+        await Promise.all(
+            [...this.modifiers.entries()].map(async ([type, modifier]) => {
+                if (type == "kh" || type == "kl") return;
+                await this.applyModifier(type, modifier);
             })
+        );
+        if (this.modifiers.has("kh")) {
+            await this.applyModifier("kh", this.modifiers.get("kh"));
+        }
+        if (this.modifiers.has("kl")) {
+            await this.applyModifier("kl", this.modifiers.get("kl"));
+        }
+    }
+
+    setResults(results: Map<number, number>) {
+        this.results = new Map(
+            [...results].map(([i, n]) => [i, this.#getResultInterface(n)])
         );
         this.updateResultArray();
     }
-    applyModifiers() {
-        //uniques need to run first otherwise its a total headache
-        /* if (this.modifiers.has("u")) {
-            this.applyModifier("u", this.modifiers.get("u"));
-            this.modifiers.delete("u");
-        } */
-        for (let [type, modifier] of this.modifiers) {
-            /* if (type === "u") continue; */
-            this.applyModifier(type, modifier);
-        }
-    }
-    roll() {
-        const roll = this._roll();
-        this.setResults(roll);
-        this.applyModifiers();
+    async setAndReturnResults(results: Map<number, number>) {
+        this.setResults(results);
+        await this.applyModifiers();
         if (this.conditions?.length) this.applyConditions();
+        return [...results.values()];
+    }
+    rollSync() {
+        const results = new Map();
+        for (let index = 0; index < this.rolls; index++) {
+            results.set(index, this.getValueSync());
+        }
+        return this.setAndReturnResults(results);
+    }
+    async roll(): Promise<number[]> {
+        this.results = new Map();
+        this.shapes = new Map();
+        const results = await this.#roll();
+        return this.setAndReturnResults(results);
+    }
+    async #roll() {
+        const results = new Map();
+        if (this.static) {
+            results.set(0, Number(this.dice));
+        } else {
+            const promises = [];
+            for (let index = 0; index < this.rolls; index++) {
+                promises.push(
+                    new Promise<void>(async (resolve) => {
+                        const value = await this.getValue(
+                            this.getShapes(index)
+                        );
+                        results.set(index, value);
+                        resolve();
+                    })
+                );
+            }
+            await Promise.all(promises);
+        }
 
-        return roll;
+        return results;
     }
     applyConditions() {
-        for (let [index, result] of this.results) {
+        for (const result of this.results.values()) {
             const negate = this.conditions.find(
                 ({ operator }) => operator === "-=" || operator === "=-"
             );
@@ -404,7 +445,7 @@ export class DiceRoller {
     updateResultArray() {
         this.resultArray = [...this.results.values()].map((v) => v.value);
     }
-    applyModifier(type: string, modifier: Modifier) {
+    async applyModifier(type: string, modifier: Modifier) {
         switch (type) {
             case "sort": {
                 let values: ResultInterface<number>[];
@@ -433,15 +474,15 @@ export class DiceRoller {
                 break;
             }
             case "!": {
-                this.explode(modifier.data, modifier.conditionals);
+                await this.explode(modifier.data, modifier.conditionals);
                 break;
             }
             case "!!": {
-                this.explodeAndCombine(modifier.data, modifier.conditionals);
+                await this.explode(modifier.data, modifier.conditionals, true);
                 break;
             }
             case "r": {
-                this.reroll(modifier.data, modifier.conditionals);
+                await this.reroll(modifier.data, modifier.conditionals);
                 break;
             }
             case "u": {
@@ -453,7 +494,7 @@ export class DiceRoller {
         }
     }
 
-    makeUnique() {
+    async makeUnique() {
         let resultValues = [...this.results.values()];
         if (
             this.faces.max - this.faces.min + 1 < this.rolls ||
@@ -471,7 +512,7 @@ export class DiceRoller {
                     (v) => v.value == result.value && v != result
                 );
                 if (dupe) {
-                    dupe.value = this.getValue();
+                    dupe.value = await this.getValue();
                     dupe.display = `${dupe.value}`;
                     dupe.modifiers.add("u");
                 }
@@ -530,11 +571,35 @@ export class DiceRoller {
     getRandomBetween(min: number, max: number): number {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
+
+    shouldRender = false;
+    getGeometries() {
+        return [...this.shapes.values()].flat();
+    }
+    async render(): Promise<void> {
+        this.shouldRender = true;
+        await this.roll();
+        this.shouldRender = false;
+        /* const results: Map<number, number> = new Map();
+        await Promise.all(
+            [...this.results.entries()].map(async ([i, result]) => {
+                result.value = await this.getValue(this.getShapes(i));
+                results.set(i, result.value);
+                return result;
+            })
+        );
+
+        await this.setAndReturnResults(results); */
+    }
 }
 
 class StuntRoller extends DiceRoller {
-    constructor(public dice: string, public lexeme: LexicalToken) {
-        super(`3d6`, lexeme);
+    constructor(
+        public dice: string,
+        renderer?: DiceRenderer,
+        lexeme?: LexicalToken
+    ) {
+        super(`3d6`, renderer, lexeme);
     }
     get doubles() {
         return (
@@ -572,13 +637,17 @@ class StuntRoller extends DiceRoller {
 
 export class PercentRoller extends DiceRoller {
     stack: DiceRoller[][] = [];
-    constructor(public dice: string, public lexeme: LexicalToken) {
-        super(dice, lexeme);
+    constructor(
+        public dice: string,
+        renderer?: DiceRenderer,
+        lexeme?: LexicalToken
+    ) {
+        super(dice, renderer, lexeme);
         const faces = `${this.faces.max}`.split("");
         for (let i = 0; i < this.rolls; i++) {
             const stack = [];
             for (const face of faces) {
-                const roller = new DiceRoller(`1d${face}`);
+                const roller = new DiceRoller(`1d${face}`, renderer);
                 stack.push(roller);
                 roller.roll();
             }
@@ -595,7 +664,7 @@ export class PercentRoller extends DiceRoller {
             .map((stack) => stack.map((v) => v.result).join(","))
             .join("|");
     }
-    roll() {
+    async roll() {
         if (!this.stack || !this.stack.length) return super.roll();
         this.stack.forEach((stack) => stack.map((dice) => dice.roll()));
         return [
@@ -637,7 +706,7 @@ class BasicStackRoller extends Roller<number> {
         this.stunted = "";
         this.parseLexemes();
         const final = this.stack.pop();
-        final.roll();
+        final.rollSync();
         if (final instanceof StuntRoller) {
             if (final.doubles) {
                 this.stunted = ` - ${final.results.get(0).value} Stunt Points`;
@@ -660,14 +729,14 @@ class BasicStackRoller extends Roller<number> {
                         a = this.stack.pop();
                     if (!a) {
                         if (dice.value === "-") {
-                            b = new DiceRoller(`-${b.dice}`, b.lexeme);
+                            b = new DiceRoller(`-${b.dice}`, null, b.lexeme);
                         }
                         this.stackCopy.push(dice.value);
                         this.stack.push(b);
                         continue;
                     }
 
-                    b.roll();
+                    b.rollSync();
                     if (b instanceof StuntRoller) {
                         if (b.doubles) {
                             this.stunted = ` - ${
@@ -676,7 +745,7 @@ class BasicStackRoller extends Roller<number> {
                         }
                     }
 
-                    a.roll();
+                    a.rollSync();
                     if (a instanceof StuntRoller) {
                         if (a.doubles) {
                             this.stunted = ` - ${
@@ -690,7 +759,7 @@ class BasicStackRoller extends Roller<number> {
                     );
 
                     this.stackCopy.push(dice.value);
-                    this.stack.push(new DiceRoller(`${result}`, dice));
+                    this.stack.push(new DiceRoller(`${result}`, null, dice));
                     break;
                 case "u": {
                     let diceInstance = this.dice[index - 1];
@@ -718,7 +787,7 @@ class BasicStackRoller extends Roller<number> {
                     let diceInstance = this.dice[index - 1];
                     let data = dice.value ? Number(dice.value) : 1;
 
-                    data = diceInstance.results.size - data;
+                    data = diceInstance.rolls - data;
 
                     diceInstance.modifiers.set("kh", {
                         data,
@@ -742,7 +811,7 @@ class BasicStackRoller extends Roller<number> {
                     let diceInstance = this.dice[index - 1];
                     let data = dice.value ? Number(dice.value) : 1;
 
-                    data = diceInstance.results.size - data;
+                    data = diceInstance.rolls - data;
 
                     diceInstance.modifiers.set("kl", {
                         data,
@@ -805,10 +874,18 @@ class BasicStackRoller extends Roller<number> {
                     ) {
                         const previous = this.stack.pop();
                         dice.value = `${previous.result}${dice.value}`;
-                        this.dice[index] = new DiceRoller(dice.value, dice);
+                        this.dice[index] = new DiceRoller(
+                            dice.value,
+                            null,
+                            dice
+                        );
                     }
                     if (!this.dice[index]) {
-                        this.dice[index] = new DiceRoller(dice.value, dice);
+                        this.dice[index] = new DiceRoller(
+                            dice.value,
+                            null,
+                            dice
+                        );
                     }
 
                     this.stack.push(this.dice[index]);
@@ -818,7 +895,11 @@ class BasicStackRoller extends Roller<number> {
                 }
                 case "stunt": {
                     if (!this.dice[index]) {
-                        this.dice[index] = new StuntRoller(dice.value, dice);
+                        this.dice[index] = new StuntRoller(
+                            dice.value,
+                            null,
+                            dice
+                        );
                     }
 
                     this.stack.push(this.dice[index]);
@@ -829,7 +910,11 @@ class BasicStackRoller extends Roller<number> {
 
                 case "%": {
                     if (!this.dice[index]) {
-                        this.dice[index] = new PercentRoller(dice.value, dice);
+                        this.dice[index] = new PercentRoller(
+                            dice.value,
+                            null,
+                            dice
+                        );
                     }
 
                     this.stack.push(this.dice[index]);
@@ -896,6 +981,7 @@ export class StackRoller extends GenericRoller<number> {
         return this.dynamic.every(avgAllowed);
     }
     async build() {
+        this.resultEl.empty();
         if (
             this.expectedValue === ExpectedValue.Average &&
             !this.shouldRender
@@ -903,7 +989,10 @@ export class StackRoller extends GenericRoller<number> {
             if (this.allowAverage()) {
                 for (let roller of this.dynamic) {
                     const avg: number = roller.average();
-                    var results = Array(roller.rolls).fill(avg);
+                    const results = new Map();
+                    for (let index = 0; index < roller.rolls; index++) {
+                        results.set(index, avg);
+                    }
                     roller.setResults(results);
                 }
             } else {
@@ -968,9 +1057,9 @@ export class StackRoller extends GenericRoller<number> {
             this.expectedValue = ExpectedValue.None;
         }
         if (evt.getModifierState("Shift")) {
-            await this.plugin.renderRoll(this);
-            this.render();
-            this.trigger("new-result");
+            await this.roll(true);
+            /* this.render();
+            this.trigger("new-result"); */
             this.hasRunOnce = true;
         } else if (window.getSelection()?.isCollapsed) {
             await this.roll();
@@ -991,6 +1080,7 @@ export class StackRoller extends GenericRoller<number> {
         public plugin: DiceRollerPlugin,
         public original: string,
         public lexemes: LexicalToken[],
+        public renderer: DiceRenderer,
         showDice = plugin.data.showDice,
         fixedText: string,
         expectedValue = plugin.data.initialDisplay,
@@ -1032,7 +1122,7 @@ export class StackRoller extends GenericRoller<number> {
         this.stunted = "";
         this.parseLexemes();
         const final = this.stack.pop();
-        final.roll();
+        final.rollSync();
         if (final instanceof StuntRoller) {
             if (final.doubles) {
                 this.stunted = ` - ${final.results.get(0).value} Stunt Points`;
@@ -1046,16 +1136,34 @@ export class StackRoller extends GenericRoller<number> {
         this.hasRunOnce = true;
         return this.result;
     }
+    setSpinner() {
+        this.resultEl.empty();
+        setIcon(this.resultEl.createDiv("should-spin"), "loader-2");
+    }
+    async renderDice() {
+        this.renderer.stop();
+        this.setSpinner();
+        /* if (!this.renderer.loaded) {
+            this.plugin.addChild(this.renderer);
+        } */
+        await Promise.all(
+            this.dice.map(async (d) => {
+                await d.render();
+            })
+        );
+
+        this.recalculate();
+        new Notice(`${this.tooltip}\n\nResult: ${this.result}`);
+    }
     async roll(render?: boolean) {
         this.stunted = "";
         this.stackCopy = [];
         this.parseLexemes();
         if (render || (this.shouldRender && this.hasRunOnce)) {
-            await this.plugin.renderRoll(this);
-            new Notice(`${this.tooltip}\n\nResult: ${this.result}`);
+            await this.renderDice();
         } else {
             const final = this.stack.pop();
-            final.roll();
+            await final.roll();
             if (final instanceof StuntRoller) {
                 if (final.doubles) {
                     this.stunted = ` - ${
@@ -1088,14 +1196,18 @@ export class StackRoller extends GenericRoller<number> {
                         a = this.stack.pop();
                     if (!a) {
                         if (dice.value === "-") {
-                            b = new DiceRoller(`-${b.dice}`, b.lexeme);
+                            b = new DiceRoller(
+                                `-${b.dice}`,
+                                this.renderer,
+                                b.lexeme
+                            );
                         }
                         this.stackCopy.push(dice.value);
                         this.stack.push(b);
                         continue;
                     }
 
-                    b.roll();
+                    b.rollSync();
                     if (b instanceof StuntRoller) {
                         if (b.doubles) {
                             this.stunted = ` - ${
@@ -1104,7 +1216,7 @@ export class StackRoller extends GenericRoller<number> {
                         }
                     }
 
-                    a.roll();
+                    a.rollSync();
                     if (a instanceof StuntRoller) {
                         if (a.doubles) {
                             this.stunted = ` - ${
@@ -1118,7 +1230,9 @@ export class StackRoller extends GenericRoller<number> {
                     );
 
                     this.stackCopy.push(dice.value);
-                    this.stack.push(new DiceRoller(`${result}`, dice));
+                    this.stack.push(
+                        new DiceRoller(`${result}`, this.renderer, dice)
+                    );
                     break;
                 case "u": {
                     let diceInstance = this.dice[index - 1];
@@ -1146,7 +1260,7 @@ export class StackRoller extends GenericRoller<number> {
                     let diceInstance = this.dice[index - 1];
                     let data = dice.value ? Number(dice.value) : 1;
 
-                    data = diceInstance.results.size - data;
+                    data = diceInstance.rolls - data;
 
                     diceInstance.modifiers.set("kh", {
                         data,
@@ -1170,7 +1284,7 @@ export class StackRoller extends GenericRoller<number> {
                     let diceInstance = this.dice[index - 1];
                     let data = dice.value ? Number(dice.value) : 1;
 
-                    data = diceInstance.results.size - data;
+                    data = diceInstance.rolls - data;
 
                     diceInstance.modifiers.set("kl", {
                         data,
@@ -1233,10 +1347,18 @@ export class StackRoller extends GenericRoller<number> {
                     ) {
                         const previous = this.stack.pop();
                         dice.value = `${previous.result}${dice.value}`;
-                        this.dice[index] = new DiceRoller(dice.value, dice);
+                        this.dice[index] = new DiceRoller(
+                            dice.value,
+                            this.renderer,
+                            dice
+                        );
                     }
                     if (!this.dice[index]) {
-                        this.dice[index] = new DiceRoller(dice.value, dice);
+                        this.dice[index] = new DiceRoller(
+                            dice.value,
+                            this.renderer,
+                            dice
+                        );
                     }
 
                     this.stack.push(this.dice[index]);
@@ -1246,7 +1368,11 @@ export class StackRoller extends GenericRoller<number> {
                 }
                 case "stunt": {
                     if (!this.dice[index]) {
-                        this.dice[index] = new StuntRoller(dice.value, dice);
+                        this.dice[index] = new StuntRoller(
+                            dice.value,
+                            this.renderer,
+                            dice
+                        );
                     }
 
                     this.stack.push(this.dice[index]);
@@ -1257,7 +1383,11 @@ export class StackRoller extends GenericRoller<number> {
 
                 case "%": {
                     if (!this.dice[index]) {
-                        this.dice[index] = new PercentRoller(dice.value, dice);
+                        this.dice[index] = new PercentRoller(
+                            dice.value,
+                            this.renderer,
+                            dice
+                        );
                     }
 
                     this.stack.push(this.dice[index]);
@@ -1282,14 +1412,18 @@ export class StackRoller extends GenericRoller<number> {
 
                 if (!a) {
                     if (item === "-") {
-                        b = new DiceRoller(`-${b.result}`, b.lexeme);
+                        b = new DiceRoller(
+                            `-${b.result}`,
+                            this.renderer,
+                            b.lexeme
+                        );
                     }
                     stack.push(b);
                     continue;
                 }
 
                 const r = this.operators[item](a.result, b.result);
-                stack.push(new DiceRoller(`${r}`));
+                stack.push(new DiceRoller(`${r}`, this.renderer));
             } else {
                 stack.push(item);
                 if (

@@ -35,7 +35,7 @@ import SettingTab from "./settings/settings";
 
 import { ArrayRoller, BasicRoller } from "./roller/roller";
 import DiceView, { VIEW_TYPE } from "./view/view";
-import DiceRenderer from "./view/renderer";
+import DiceRenderer, { RendererData } from "./renderer/renderer";
 import Lexer, { LexicalToken } from "./parser/lexer";
 import { Round, ExpectedValue, RollerOptions } from "./types";
 import { inlinePlugin } from "./live-preview";
@@ -104,7 +104,6 @@ declare module "obsidian" {
         };
     }
     interface Workspace {
-        on(name: "dice-roller:update-dice", callback: () => void): EventRef;
         on(
             name: "dice-roller:render-dice",
             callback: (roll: string) => void
@@ -220,18 +219,21 @@ export default class DiceRollerPlugin extends Plugin {
     persistingFiles: Set<string> = new Set();
     renderer: DiceRenderer;
 
+    getRendererData(): RendererData {
+        return {
+            diceColor: this.data.diceColor,
+            textColor: this.data.textColor,
+            colorfulDice: this.data.colorfulDice,
+            scaler: this.data.scaler,
+            renderTime: this.data.renderTime
+        };
+    }
     async onload() {
         console.log("DiceRoller plugin loaded");
         this.data = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 
-        this.renderer = new DiceRenderer(this);
-        this.registerEvent(
-            this.app.workspace.on(
-                "dice-roller:update-dice",
+        this.renderer = new DiceRenderer(this.getRendererData());
 
-                () => this.renderer.factory.updateDice()
-            )
-        );
         this.addSettingTab(new SettingTab(this.app, this));
 
         this.registerView(
@@ -242,7 +244,6 @@ export default class DiceRollerPlugin extends Plugin {
             GENESYS_VIEW_TYPE,
             (leaf: WorkspaceLeaf) => new GenesysView(this, leaf)
         ); */
-        this.app.workspace.onLayoutReady(() => this.addDiceView(true));
 
         this.registerEvent(
             this.app.workspace.on("dice-roller:render-dice", async (roll) => {
@@ -331,12 +332,14 @@ export default class DiceRollerPlugin extends Plugin {
         addIcon(COPY_DEFINITION, COPY_SVG);
 
         this.registerMarkdownPostProcessor(this.postprocessor.bind(this));
-
         this.registerEditorExtension([inlinePlugin(this)]);
 
         this.app.workspace.onLayoutReady(async () => {
+            this.addDiceView(true);
             await this.registerDataviewInlineFields();
+            /* this.addChild(this.renderer); */
         });
+
         this.app.workspace.trigger("dice-roller:loaded");
     }
 
@@ -736,7 +739,7 @@ export default class DiceRollerPlugin extends Plugin {
     }
 
     async renderRoll(roller: StackRoller) {
-        if (!(roller instanceof StackRoller) || !roller?.dice?.length) {
+        /* if (!(roller instanceof StackRoller) || !roller?.dice?.length) {
             new Notice(`This dice roll can't be rendered: ${roller.original}`);
             return;
         }
@@ -745,7 +748,7 @@ export default class DiceRollerPlugin extends Plugin {
 
         await this.renderer.start();
 
-        roller.recalculate(false);
+        roller.recalculate(false); */
     }
     public async parseDice(content: string, source: string) {
         const roller = await this.getRoller(content, source);
@@ -914,6 +917,7 @@ export default class DiceRollerPlugin extends Plugin {
                     this,
                     content,
                     lexemes,
+                    this.renderer,
                     showDice,
                     text,
                     expectedValue,
@@ -1012,6 +1016,7 @@ export default class DiceRollerPlugin extends Plugin {
                     this,
                     content,
                     lexemes,
+                    this.renderer,
                     showDice,
                     text,
                     expectedValue,

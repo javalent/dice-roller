@@ -355,6 +355,7 @@ export default class SettingTab extends PluginSettingTab {
                 t.onChange(async (v) => {
                     if ((v && Number(v) < 0) || isNaN(Number(v))) return;
                     this.plugin.data.renderTime = Number(v);
+                    this.plugin.renderer.setData(this.plugin.getRendererData());
                     await this.plugin.saveSettings();
                 });
             })
@@ -378,11 +379,8 @@ export default class SettingTab extends PluginSettingTab {
                 t.setValue(this.plugin.data.colorfulDice);
                 t.onChange(async (v) => {
                     this.plugin.data.colorfulDice = v;
+                    this.plugin.renderer.setData(this.plugin.getRendererData());
                     await this.plugin.saveSettings();
-
-                    this.plugin.app.workspace.trigger(
-                        "dice-roller:update-dice"
-                    );
                 });
             });
         new Setting(containerEl)
@@ -393,8 +391,8 @@ export default class SettingTab extends PluginSettingTab {
                     .setValue(this.plugin.data.scaler)
                     .onChange((v) => {
                         this.plugin.data.scaler = v;
-                        this.plugin.app.workspace.trigger(
-                            "dice-roller:update-dice"
+                        this.plugin.renderer.setData(
+                            this.plugin.getRendererData()
                         );
                         this.plugin.saveSettings();
                     });
@@ -415,12 +413,9 @@ export default class SettingTab extends PluginSettingTab {
                     let color = (target as HTMLInputElement).value;
 
                     this.plugin.data.diceColor = color;
+                    this.plugin.renderer.setData(this.plugin.getRendererData());
 
                     await this.plugin.saveSettings();
-
-                    this.plugin.app.workspace.trigger(
-                        "dice-roller:update-dice"
-                    );
                 };
             }
         );
@@ -441,10 +436,8 @@ export default class SettingTab extends PluginSettingTab {
 
                     if (!color) return;
                     this.plugin.data.textColor = color;
+                    this.plugin.renderer.setData(this.plugin.getRendererData());
                     await this.plugin.saveSettings();
-                    this.plugin.app.workspace.trigger(
-                        "dice-roller:update-dice"
-                    );
                 };
             }
         );
