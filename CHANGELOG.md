@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.1](https://github.com/javalent/dice-roller/compare/10.0.0...10.0.1) (2023-10-11)
+
+
+### Bug Fixes
+
+* fixes unique modifier not working in renderer ([4232ae5](https://github.com/javalent/dice-roller/commit/4232ae53b794c62f15e3d0e8551913971b5ad1aa))
+
 ## [10.0.0](https://github.com/javalent/dice-roller/compare/9.4.1...10.0.0) (2023-10-11)
 
 
