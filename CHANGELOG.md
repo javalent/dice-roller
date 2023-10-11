@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0](https://github.com/javalent/dice-roller/compare/9.4.1...10.0.0) (2023-10-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* Rewrote renderer to allow for all dice modifiers to pass through
+
+### Features
+
+* Enables custom dice values using `Xd[...]` syntax ([af5ccf1](https://github.com/javalent/dice-roller/commit/af5ccf13c2c517e2126830dac2328570cd505531))
+* Rewrote renderer to allow for all dice modifiers to pass through ([9be1207](https://github.com/javalent/dice-roller/commit/9be1207fc5b028532e7691bfdf5ee8239ad43b2c))
+
 ## [9.4.1](https://github.com/javalent/dice-roller/compare/9.4.0...9.4.1) (2023-09-11)
 
 
