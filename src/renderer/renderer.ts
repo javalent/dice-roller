@@ -384,6 +384,7 @@ export default class DiceRenderer extends Component {
         this.event.trigger("throw-finished");
     }
     #positions: WeakMap<DiceShape, Vec3> = new WeakMap();
+    static Threshold = 5;
     throwFinished() {
         let res = true;
         if (this.iterations < 10 / this.frame_rate) {
@@ -391,7 +392,6 @@ export default class DiceRenderer extends Component {
                 let finished = true;
                 for (const dice of shapes) {
                     if (dice.stopped === true) continue;
-
                     /* const a = dice.body.angularVelocity,
                         v = dice.body.velocity; */
                     /* if (
@@ -421,7 +421,13 @@ export default class DiceRenderer extends Component {
                             Math.pow(current.y - previous.y, 2) +
                             Math.pow(current.z - previous.z, 2)
                     );
-                    if (delta < 0.1) {
+                    const a = dice.body.angularVelocity;
+                    if (
+                        delta < 0.1 &&
+                        Math.abs(a.x) < DiceRenderer.Threshold &&
+                        Math.abs(a.y) < DiceRenderer.Threshold &&
+                        Math.abs(a.z) < DiceRenderer.Threshold
+                    ) {
                         if (dice.stopped) {
                             if (this.iterations - dice.stopped > 5) {
                                 dice.stopped = true;

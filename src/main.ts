@@ -215,7 +215,7 @@ export default class DiceRollerPlugin extends Plugin {
             return Math.pow(a, b);
         }
     };
-    parser = new Lexer(this);
+    parser: Lexer;
     persistingFiles: Set<string> = new Set();
     renderer: DiceRenderer;
 
@@ -233,6 +233,7 @@ export default class DiceRollerPlugin extends Plugin {
         this.data = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 
         this.renderer = new DiceRenderer(this.getRendererData());
+        this.parser = new Lexer(this.data.defaultRoll, this.data.defaultFace);
 
         this.addSettingTab(new SettingTab(this.app, this));
 
@@ -713,6 +714,7 @@ export default class DiceRollerPlugin extends Plugin {
             }
         });
 
+        this.parser.setInlineFields(this.inline);
         this.registerEvent(
             this.app.metadataCache.on(
                 "dataview:metadata-change",
@@ -732,6 +734,7 @@ export default class DiceRollerPlugin extends Plugin {
                                 continue;
                             this.inline.set(key, value);
                         }
+                        this.parser.setInlineFields(this.inline);
                     }
                 }
             )

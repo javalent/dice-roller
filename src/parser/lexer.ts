@@ -17,10 +17,10 @@ export const LINE_REGEX =
     /(?:\d+[Dd])?(?:\[.*\]\(|\[\[)(?:.+)(?:\)|\]\])\|line/u;
 export const MATH_REGEX = /[\(\^\+\-\*\/\)]/u;
 export const OMITTED_REGEX =
-    /(?:\d+|\b)[Dd](?:\[?(?:-?\d+[ \t]?,)?[ \t]?(?:-?\d+|%|F)\]?|\b)/u;
+    /(?:\d+|\b)[Dd](?:%|F|-?\d+|\[\d+(?:[ \t]*,[ \t]*\d+)+\]|\b)/u;
 
 export const CONDITIONAL_REGEX =
-    /(?:=|=!|<|>|<=|>=|=<|=>|-=|=-)(?:\d+(?:[Dd](?:\[?(?:-?\d+[ \t]?,)?[ \t]?(?:-?\d+|%|F)\]?|\b))?)/u;
+    /(?:=|=!|<|>|<=|>=|=<|=>|-=|=-)(?:\d+(?:[Dd](?:%|F|-?\d+|\[\d+(?:[ \t]*,[ \t]*\d+)+\]|\b))?)/u;
 
 export interface LexicalToken extends Partial<moo.Token> {
     conditions?: Conditional[];
@@ -67,10 +67,10 @@ export default class Lexer {
                 match: OMITTED_REGEX,
                 value: (match) => {
                     const {
-                        roll = this.plugin.data.defaultRoll,
-                        faces = this.plugin.data.defaultFace
+                        roll = this.defaultRoll,
+                        faces = this.defaultFace
                     } = match.match(
-                        /(?<roll>\d+)?[Dd](?<faces>\[?(?:-?\d+[ \t]?,)?[ \t]?(?:-?\d+|%|F)\]?)?/
+                        /(?<roll>\d+)?[Dd](?<faces>%|F|-?\d+|\[\d+(?:[ \t]*,[ \t]*\d+)+\])?/
                     ).groups;
                     return `${roll}d${faces}`;
                 }
@@ -79,8 +79,8 @@ export default class Lexer {
             {
                 match: /\b[A-Za-z][A-Za-z0-9_]+\b/u,
                 value: (match) => {
-                    if (this.plugin.inline.has(match)) {
-                        return `${this.plugin.inline.get(match)}`;
+                    if (this.inline.has(match)) {
+                        return `${this.inline.get(match)}`;
                     }
                     return match;
                 }
@@ -95,11 +95,21 @@ export default class Lexer {
         math: MATH_REGEX
     });
     parser: Parser;
+    inline: Map<string, number> = new Map();
     clampInfinite(match: string) {
         if (/i$/.test(match)) return "100";
         return match.replace(/^\D+/g, "");
     }
-    constructor(public plugin: DiceRollerPlugin) {
+    public setInlineFields(fields: Map<string, number>) {
+        this.inline = fields;
+    }
+    public setDefaultRoll(roll: number) {
+        this.defaultRoll = roll;
+    }
+    public setDefaultFace(face: number) {
+        this.defaultFace = face;
+    }
+    constructor(public defaultRoll: number, public defaultFace: number) {
         const exponent = {
             precedence: 3,
             associativity: "right"
@@ -139,7 +149,7 @@ export default class Lexer {
                 if (!previous.conditions) previous.conditions = [];
                 const [_, operator, comparer] =
                     token.value.match(
-                        /(?<operator>=|=!|<|>|<=|>=|=<|=>|-=|=-)(?<comparer>\d+(?:[Dd](?:\[?(?:-?\d+[ \t]?,)?[ \t]?(?:-?\d+|%|F)\]?|\b))?)/
+                        /(?<operator>=|=!|<|>|<=|>=|=<|=>|-=|=-)(?<comparer>\d+(?:[Dd](?:%|F|-?\d+|\[\d+(?:[ \t]*,[ \t]*\d+)+\]|\b))?)/
                     ) ?? [];
                 const lexemes = this.parse(comparer);
                 previous.conditions.push({

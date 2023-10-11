@@ -1,6 +1,6 @@
 import { Notice, setIcon } from "obsidian";
 import type DiceRollerPlugin from "src/main";
-import Lexer, { LexicalToken } from "src/parser/lexer";
+import { LexicalToken } from "src/parser/lexer";
 import {
     ResultMapInterface,
     Conditional,
@@ -11,7 +11,7 @@ import {
 import { _insertIntoMap } from "src/utils/util";
 import { GenericRoller, Roller } from "./roller";
 import DiceRenderer from "src/renderer/renderer";
-import { D6Dice, DiceShape } from "src/renderer/shapes";
+import { DiceShape } from "src/renderer/shapes";
 
 interface Modifier {
     conditionals: Conditional[];
@@ -40,41 +40,55 @@ export class DiceRoller {
             this.static = true;
             this.modifiersAllowed = false;
         }
-        let [, rolls, minStr = null, maxStr = 1] = this.dice.match(
-            /(\-?\d+)[dD]\[?(?:(-?\d+)\s?,)?\s?(-?\d+|%|F)\]?/
-        ) || [, 1, null, 1];
+        let [, rolls, maxStr = "1"] = this.dice.match(
+            /(\-?\d+)[dD](%|F|-?\d+|\[\d+(?:[ \t]*,[ \t]*\d+)+\])/
+        ) || [, 1, "1"];
 
         rolls = Number(rolls);
 
         this.multiplier = rolls < 0 ? -1 : 1;
-        let min = isNaN(Number(minStr)) ? null : Number(minStr);
-        let max: number;
+        let min = 1;
+        let max = isNaN(Number(maxStr)) ? 1 : Number(maxStr);
         this.rolls = Math.abs(Number(rolls)) || 1;
 
-        if (maxStr === "%") {
-            max = 100;
-        } else if (maxStr === "F") {
-            max = 1;
-            min = -1;
-            this.fudge = true;
+        //ugly af
+        if (/\[\d+(?:[ \t]*,[ \t]*\d+)+\]/.test(maxStr)) {
+            this.possibilities = maxStr
+                .replace(/[\[\]\s]/g, "")
+                .split(",")
+                .map((v) => Number(v));
         } else {
-            max = Number(maxStr);
-        }
-        if (Number(max) < 0 && !min) {
-            min = -1;
-        }
-        if (Number(max) < Number(min)) {
-            [max, min] = [min, max];
-        }
+            if (maxStr === "%") {
+                max = 100;
+            } else if (maxStr === "F") {
+                this.possibilities = [-1, 0, 1];
+                this.fudge = true;
+            } else {
+                max = Number(maxStr);
+            }
+            if (Number(max) < 0 && !min) {
+                min = -1;
+            }
+            if (Number(max) < Number(min)) {
+                [max, min] = [min, max];
+            }
 
-        this.faces = { max: max ? Number(max) : 1, min: min ? Number(min) : 1 };
-
+            this.possibilities = [...Array(Number(max)).keys()].map(
+                (k) => k + min
+            );
+        }
         this.conditions = this.lexeme.conditions ?? [];
     }
     dice: string;
     modifiers: Map<ModifierType, Modifier> = new Map();
     rolls: number;
-    faces: { min: number; max: number };
+    possibilities: number[] = [];
+    get faces() {
+        return {
+            max: this.possibilities[this.possibilities.length - 1],
+            min: this.possibilities[0]
+        };
+    }
     results: ResultMapInterface<number> = new Map();
     shapes: Map<number, DiceShape[]> = new Map();
     getShapes(index?: number) {
@@ -318,9 +332,15 @@ export class DiceRoller {
             })
         );
     }
-
+    canRender() {
+        if (this.possibilities.length !== this.faces.max) return false;
+        const arr = [...Array(this.faces.max).keys()].map(
+            (k) => this.faces.min + k
+        );
+        return arr.every((v) => this.possibilities.includes(v));
+    }
     async getValue(shapes?: DiceShape[]) {
-        if (this.shouldRender) {
+        if (this.shouldRender && this.canRender()) {
             const temp = shapes ?? this.renderer.getDiceForRoller(this) ?? [];
             await this.renderer.addDice(temp);
             return this.#resolveShapeValue(temp);
@@ -566,10 +586,14 @@ export class DiceRoller {
         return true;
     }
     average(): number {
-        return (this.faces.min + this.faces.max) / 2;
+        return (
+            this.possibilities.reduce((a, b) => a + b) /
+            this.possibilities.length
+        );
     }
     getRandomBetween(min: number, max: number): number {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
+        const index = Math.floor(Math.random() * this.possibilities.length);
+        return this.possibilities[index];
     }
 
     shouldRender = false;

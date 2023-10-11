@@ -174,6 +174,9 @@ export default class SettingTab extends PluginSettingTab {
                     }
 
                     this.plugin.data.defaultFace = Number(t.inputEl.value);
+                    this.plugin.parser.setDefaultFace(
+                        this.plugin.data.defaultFace
+                    );
                     await this.plugin.saveSettings();
                 };
             });
