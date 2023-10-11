@@ -506,7 +506,7 @@ export class DiceRoller {
                 break;
             }
             case "u": {
-                this.makeUnique();
+                await this.makeUnique();
                 break;
             }
             case "condition": {
@@ -517,7 +517,7 @@ export class DiceRoller {
     async makeUnique() {
         let resultValues = [...this.results.values()];
         if (
-            this.faces.max - this.faces.min + 1 < this.rolls ||
+            new Set(this.possibilities).size < this.rolls ||
             new Set(resultValues.map((v) => v.value)).size == this.results.size
         )
             return;
@@ -527,16 +527,26 @@ export class DiceRoller {
                 this.results.size &&
             attempts < 100
         ) {
-            for (const result of resultValues) {
-                let dupe = resultValues.find(
-                    (v) => v.value == result.value && v != result
+            const promises = [];
+
+            for (const [index, result] of this.results) {
+                promises.push(
+                    new Promise<void>(async (resolve) => {
+                        let dupe = resultValues.find(
+                            (v) => v.value == result.value && v != result
+                        );
+                        if (dupe) {
+                            dupe.value = await this.getValue(
+                                this.getShapes(index)
+                            );
+                            dupe.display = `${dupe.value}`;
+                            dupe.modifiers.add("u");
+                        }
+                        resolve();
+                    })
                 );
-                if (dupe) {
-                    dupe.value = await this.getValue();
-                    dupe.display = `${dupe.value}`;
-                    dupe.modifiers.add("u");
-                }
             }
+            await Promise.all(promises);
 
             resultValues = [...this.results.values()];
             attempts++;
