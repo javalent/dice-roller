@@ -69,13 +69,6 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
     const widgets: Range<Decoration>[] = [];
     const selection = view.state.selection;
     const regex = new RegExp(".*?_?inline-code_?.*");
-    /* before:
-     *     em for italics
-     *     highlight for highlight
-     * after:
-     *     strong for bold
-     *     strikethrough for strikethrough
-     */
     for (const { from, to } of view.visibleRanges) {
         syntaxTree(view.state).iterate({
             from,
@@ -94,9 +87,9 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                 if (selectionAndRangeOverlap(selection, start, end + 1)) return;
 
                 const original = view.state.doc.sliceString(start, end).trim();
-                if (/^dice-mod:\s*([\s\S]+)\s*?/.test(original)) {
+                if (/^dice\-mod:\s*([\s\S]+)\s*?/.test(original)) {
                     let [, content] = original.match(
-                        /dice-mod:\s*([\s\S]+)\s*?/
+                        /dice\-mod:\s*([\s\S]+)\s*?/
                     );
 
                     const currentFile = app.workspace.getActiveFile();
@@ -104,9 +97,17 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                         content,
                         currentFile.path
                     );
+                    let showFormula = plugin.data.displayFormulaForMod;
 
-                    roller.roll().then((result) => {
-                        const insert = plugin.data.displayFormulaForMod
+                    if (content.includes("|noform")) {
+                        showFormula = false;
+                    }
+                    if (content.includes("|form")) {
+                        showFormula = true;
+                    }
+
+                    roller.roll().then(() => {
+                        const insert = showFormula
                             ? `${roller.inlineText} **${roller.replacer}**`
                             : `${roller.replacer}`;
                         const mod = {
