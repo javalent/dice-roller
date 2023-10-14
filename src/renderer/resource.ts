@@ -11,6 +11,9 @@ type TrackedResource = Trackable | Trackable[] | Disposable;
 export class ResourceTracker {
     resources: Map<TrackedResource, TrackedResource[]> = new Map();
     constructor() {}
+    isTracking(resource: TrackedResource) {
+        return this.resources.has(resource);
+    }
     #track(resource: TrackedResource, parent?: TrackedResource): void {
         if (Array.isArray(resource)) {
             resource.forEach((r) => {

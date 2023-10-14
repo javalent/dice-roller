@@ -51,7 +51,7 @@ export abstract class DiceShape {
     geometry: Mesh<BufferGeometry, Material | Material[]>;
 
     stopped: boolean | number = false;
-    iteration: number = 0;
+    iterations: number = 0;
 
     vector = { ...DEFAULT_VECTOR };
     constructor(
@@ -229,6 +229,7 @@ export abstract class DiceShape {
         this.h = height;
         this.vector = this.generateVector(vector);
         this.stopped = false;
+        this.iterations = 0;
         this.create();
     }
     create() {

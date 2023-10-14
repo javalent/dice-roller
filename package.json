@@ -23,6 +23,7 @@
     "license": "MIT",
     "devDependencies": {
         "@codemirror/language": "https://github.com/lishid/cm-language",
+        "@dimforge/rapier3d": "^0.11.2",
         "@fortawesome/fontawesome-svg-core": "^1.2.32",
         "@fortawesome/free-regular-svg-icons": "^5.15.4",
         "@fortawesome/free-solid-svg-icons": "^5.15.4",

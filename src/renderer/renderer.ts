@@ -28,19 +28,6 @@ import {
     D20Dice
 } from "./shapes";
 
-/* import {
-    WebGLRenderer,
-    Scene,
-    PerspectiveCamera,
-    DirectionalLight,
-    AmbientLight,
-    SpotLight,
-    PCFSoftShadowMap,
-    Vector3,
-    ShadowMaterial,
-    Mesh,
-    PlaneGeometry
-} from "three"; */
 import {
     Body,
     ContactMaterial,
@@ -140,7 +127,6 @@ export default class DiceRenderer extends Component {
      * The renderer should unload itself after all dice have finished rendering.
      */
     #finished: WeakMap<DiceShape[], () => void> = new WeakMap();
-    #executed: WeakMap<DiceShape[], boolean> = new WeakMap();
     async addDice(dice: DiceShape[]): Promise<void> {
         return new Promise((resolve) => {
             if (!this.#animating) {
@@ -155,7 +141,6 @@ export default class DiceRenderer extends Component {
             this.#finished.set(dice, () => {
                 resolve();
             });
-            this.#executed.set(dice, false);
         });
     }
     factory = new DiceFactory(this.WIDTH, this.HEIGHT, {
@@ -211,29 +196,16 @@ export default class DiceRenderer extends Component {
         //this.renderer.forceContextLoss();
     }
 
-    async start(): Promise<void> {
-        return new Promise(async (resolve, reject) => {
-            if (this.#animating) {
-                this.unload();
-            }
-            if (!this.loaded) {
-                this.load();
-            }
-            this.registerEvent(
-                this.event.on("throw-finished", () => {
-                    resolve();
-                })
-            );
-
-            this.registerEvent(
-                this.event.on("error", (e) => {
-                    reject(e);
-                })
-            );
-            this.#animating = true;
-            this.extraFrames = DiceRenderer.DEFAULT_EXTRA_FRAMES;
-            this.render();
-        });
+    start() {
+        if (this.#animating) {
+            this.unload();
+        }
+        if (!this.loaded) {
+            this.load();
+        }
+        this.#animating = true;
+        this.extraFrames = DiceRenderer.DEFAULT_EXTRA_FRAMES;
+        this.render();
     }
     static DEFAULT_EXTRA_FRAMES = 30;
     enableShadows() {
@@ -387,79 +359,35 @@ export default class DiceRenderer extends Component {
     static Threshold = 5;
     throwFinished() {
         let res = true;
-        if (this.iterations < 10 / this.frame_rate) {
-            for (const shapes of this.#current) {
-                let finished = true;
-                for (const dice of shapes) {
-                    if (dice.stopped === true) continue;
-                    /* const a = dice.body.angularVelocity,
-                        v = dice.body.velocity; */
-                    /* if (
-                            Math.abs(a.x) < threshold &&
-                            Math.abs(a.y) < threshold &&
-                            Math.abs(a.z) < threshold &&
-                            Math.abs(v.x) < threshold &&
-                            Math.abs(v.y) < threshold &&
-                            Math.abs(v.z) < threshold
-                        ) { */
-                    if (!this.#positions.has(dice)) {
-                        const pos = {
-                            x: dice.body.position.x,
-                            y: dice.body.position.y,
-                            z: dice.body.position.z
-                        };
-                        this.#positions.set(dice, pos as Vec3);
-                        finished = false;
-                        res = false;
+        for (const shapes of this.#current) {
+            let finished = true;
+            for (const dice of shapes) {
+                if (dice.iterations > 10 / this.frame_rate) {
+                    dice.stopped = true;
+                }
+                if (dice.stopped === true) continue;
+                const a = dice.body.angularVelocity;
+                const v = dice.body.velocity;
+                if (
+                    Math.abs(a.length()) < DiceRenderer.Threshold &&
+                    Math.abs(v.length()) < DiceRenderer.Threshold
+                ) {
+                    if (this.iterations - dice.iterations > 5) {
+                        dice.stopped = true;
                         continue;
                     }
-
-                    const previous = this.#positions.get(dice);
-                    const current = dice.body.position;
-                    const delta = Math.sqrt(
-                        Math.pow(current.x - previous.x, 2) +
-                            Math.pow(current.y - previous.y, 2) +
-                            Math.pow(current.z - previous.z, 2)
-                    );
-                    const a = dice.body.angularVelocity;
-                    if (
-                        delta < 0.1 &&
-                        Math.abs(a.x) < DiceRenderer.Threshold &&
-                        Math.abs(a.y) < DiceRenderer.Threshold &&
-                        Math.abs(a.z) < DiceRenderer.Threshold
-                    ) {
-                        if (dice.stopped) {
-                            if (this.iterations - dice.stopped > 5) {
-                                dice.stopped = true;
-                                continue;
-                            }
-                        } else {
-                            dice.stopped = this.iterations;
-                        }
-                        finished = false;
-                        res = false;
-                    } else {
-                        this.#positions.set(dice, {
-                            x: current.x,
-                            y: current.y,
-                            z: current.z
-                        } as Vec3);
-                        dice.stopped = false;
-                        finished = false;
-                        res = false;
-                    }
-                }
-                if (finished && this.#finished.has(shapes)) {
-                    this.#finished.get(shapes)();
-                    this.#finished.delete(shapes);
+                    finished = false;
+                    res = false;
+                } else {
+                    dice.iterations++;
+                    dice.stopped = false;
+                    finished = false;
+                    res = false;
                 }
             }
-        } else {
-            for (const shapes of this.#current) {
-                if (this.#finished.has(shapes)) {
-                    this.#finished.get(shapes)();
-                    this.#finished.delete(shapes);
-                }
+            if (finished && this.#finished.has(shapes)) {
+                this.#finished.get(shapes)();
+                this.#finished.delete(shapes);
             }
         }
         return res;
@@ -500,7 +428,6 @@ export default class DiceRenderer extends Component {
                 this.extraFrames--;
             } else {
                 try {
-                    this.finishRender();
                     if (!this.data.renderTime) {
                         const renderer = this;
                         function unrender() {

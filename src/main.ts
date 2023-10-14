@@ -742,16 +742,7 @@ export default class DiceRollerPlugin extends Plugin {
     }
 
     async renderRoll(roller: StackRoller) {
-        /* if (!(roller instanceof StackRoller) || !roller?.dice?.length) {
-            new Notice(`This dice roll can't be rendered: ${roller.original}`);
-            return;
-        }
-        this.addChild(this.renderer);
-        this.renderer.setDice(roller);
-
-        await this.renderer.start();
-
-        roller.recalculate(false); */
+        await roller.roll(true);
     }
     public async parseDice(content: string, source: string) {
         const roller = await this.getRoller(content, source);

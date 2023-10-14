@@ -225,19 +225,25 @@ export class DiceRoller {
                 this.checkCondition(value, conditionals)
             );
         while (i < times && toReroll.length > 0) {
-            i++;
-            await Promise.all(
-                toReroll.map(async ([i, roll]) => {
-                    roll.modifiers.add("r");
-                    const shapes = this.getShapes(i);
-                    const newValue = await this.getValue(shapes);
-                    roll.value = newValue;
-                    roll.display = `${newValue}`;
-                })
-            );
+            const promises = [];
+            for (const [i, roll] of toReroll) {
+                promises.push(
+                    new Promise<void>(async (resolve) => {
+                        roll.modifiers.add("r");
+                        const shapes = this.getShapes(i);
+                        const newValue = await this.getValue(shapes);
+                        roll.value = newValue;
+                        roll.display = `${newValue}`;
+                        resolve();
+                    })
+                );
+            }
+            await Promise.all(promises);
+
             toReroll = toReroll.filter(([, { value }]) =>
                 this.checkCondition(value, conditionals)
             );
+            i++;
         }
 
         toReroll.forEach(([index, value]) => {
@@ -376,12 +382,10 @@ export class DiceRoller {
         };
     }
     async applyModifiers() {
-        await Promise.all(
-            [...this.modifiers.entries()].map(async ([type, modifier]) => {
-                if (type == "kh" || type == "kl") return;
-                await this.applyModifier(type, modifier);
-            })
-        );
+        for (const [type, modifier] of this.modifiers) {
+            if (type == "kh" || type == "kl") continue;
+            await this.applyModifier(type, modifier);
+        }
         if (this.modifiers.has("kh")) {
             await this.applyModifier("kh", this.modifiers.get("kh"));
         }
@@ -396,24 +400,25 @@ export class DiceRoller {
         );
         this.updateResultArray();
     }
-    async setAndReturnResults(results: Map<number, number>) {
-        this.setResults(results);
-        await this.applyModifiers();
-        if (this.conditions?.length) this.applyConditions();
-        return [...results.values()];
-    }
     rollSync() {
         const results = new Map();
         for (let index = 0; index < this.rolls; index++) {
             results.set(index, this.getValueSync());
         }
-        return this.setAndReturnResults(results);
+        this.setResults(results);
+        this.applyModifiers();
+
+        if (this.conditions?.length) this.applyConditions();
+        return [...results.values()];
     }
     async roll(): Promise<number[]> {
         this.results = new Map();
         this.shapes = new Map();
         const results = await this.#roll();
-        return this.setAndReturnResults(results);
+        this.setResults(results);
+        await this.applyModifiers();
+        if (this.conditions?.length) this.applyConditions();
+        return [...results.values()];
     }
     async #roll() {
         const results = new Map();
@@ -459,6 +464,7 @@ export class DiceRoller {
                 result.value = 1;
             }
         }
+        return;
     }
     updateResultArray() {
         this.resultArray = [...this.results.values()].map((v) => v.value);
@@ -559,30 +565,31 @@ export class DiceRoller {
                 continue;
             }
 
-            const roller = new BasicStackRoller(comparer, lexemes);
+            /* const roller = new BasicStackRoller(comparer, lexemes);
             roller.rollSync();
-            condition.result = roller.result;
+            condition.result = roller.result; */
+            condition.result = Number(comparer);
 
-            if (Number.isNaN(roller.result)) continue;
+            if (Number.isNaN(condition.result)) continue;
             switch (operator) {
                 case "=":
-                    result = value === roller.result;
+                    result = value === condition.result;
                     break;
                 case "!=":
                 case "=!":
-                    result = value !== roller.result;
+                    result = value !== condition.result;
                     break;
                 case "<":
-                    result = value < roller.result;
+                    result = value < condition.result;
                     break;
                 case "<=":
-                    result = value <= roller.result;
+                    result = value <= condition.result;
                     break;
                 case ">":
-                    result = value > roller.result;
+                    result = value > condition.result;
                     break;
                 case ">=":
-                    result = value >= roller.result;
+                    result = value >= condition.result;
                     break;
             }
 
@@ -612,16 +619,6 @@ export class DiceRoller {
         this.shouldRender = true;
         await this.roll();
         this.shouldRender = false;
-        /* const results: Map<number, number> = new Map();
-        await Promise.all(
-            [...this.results.entries()].map(async ([i, result]) => {
-                result.value = await this.getValue(this.getShapes(i));
-                results.set(i, result.value);
-                return result;
-            })
-        );
-
-        await this.setAndReturnResults(results); */
     }
 }
 
@@ -972,6 +969,7 @@ export class StackRoller extends GenericRoller<number> {
     stunted: string = "";
     private _tooltip: string;
     shouldRender: boolean = false;
+    isRendering: boolean = false;
     showFormula: boolean = false;
     get resultText() {
         let text: string[] = [];
@@ -992,6 +990,9 @@ export class StackRoller extends GenericRoller<number> {
         return text.join("");
     }
     get tooltip() {
+        if (this.isRendering) {
+            return this.original;
+        }
         if (this._tooltip) return this._tooltip;
         if (this.expectedValue === ExpectedValue.Roll || this.shouldRender) {
             if (this.displayFixedText) {
@@ -1152,15 +1153,11 @@ export class StackRoller extends GenericRoller<number> {
     hasRunOnce = false;
     rollSync() {
         this.stunted = "";
-        this.parseLexemes();
-        const final = this.stack.pop();
-        final.rollSync();
-        if (final instanceof StuntRoller) {
-            if (final.doubles) {
-                this.stunted = ` - ${final.results.get(0).value} Stunt Points`;
-            }
+        this.buildDiceTree();
+        for (const dice of this.dice) {
+            dice.rollSync();
         }
-        this.result = final.result;
+        this.calculate();
         this._tooltip = null;
         this.render();
 
@@ -1173,48 +1170,28 @@ export class StackRoller extends GenericRoller<number> {
         setIcon(this.resultEl.createDiv("should-spin"), "loader-2");
     }
     async renderDice() {
-        this.renderer.stop();
+        this.isRendering = true;
+        this.setTooltip();
         this.setSpinner();
         /* if (!this.renderer.loaded) {
             this.plugin.addChild(this.renderer);
         } */
-        await Promise.all(
-            this.dice.map(async (d) => {
-                await d.render();
-            })
-        );
-
-        this.recalculate();
-        new Notice(`${this.tooltip}\n\nResult: ${this.result}`);
-    }
-    async roll(render?: boolean) {
-        this.stunted = "";
-        this.stackCopy = [];
-        this.parseLexemes();
-        if (render || (this.shouldRender && this.hasRunOnce)) {
-            await this.renderDice();
-        } else {
-            const final = this.stack.pop();
-            await final.roll();
-            if (final instanceof StuntRoller) {
-                if (final.doubles) {
-                    this.stunted = ` - ${
-                        final.results.get(0).value
-                    } Stunt Points`;
-                }
-            }
-            this.result = final.result;
-            this._tooltip = null;
+        const promises = [];
+        for (const die of this.dice) {
+            promises.push(
+                new Promise<void>(async (resolve) => {
+                    await die.render();
+                    resolve();
+                })
+            );
         }
+        await Promise.all(promises);
 
-        this.render();
-
-        this.trigger("new-result");
-        this.hasRunOnce = true;
-        return this.result;
+        this.isRendering = false;
+        this.setTooltip();
+        /* this.recalculate(); */
     }
-
-    parseLexemes() {
+    buildDiceTree() {
         let index = 0;
         for (const dice of this.lexemes) {
             switch (dice.type) {
@@ -1224,48 +1201,7 @@ export class StackRoller extends GenericRoller<number> {
                 case "/":
                 case "^":
                 case "math":
-                    let b = this.stack.pop(),
-                        a = this.stack.pop();
-                    if (!a) {
-                        if (dice.value === "-") {
-                            b = new DiceRoller(
-                                `-${b.dice}`,
-                                this.renderer,
-                                b.lexeme
-                            );
-                        }
-                        this.stackCopy.push(dice.value);
-                        this.stack.push(b);
-                        continue;
-                    }
-
-                    b.rollSync();
-                    if (b instanceof StuntRoller) {
-                        if (b.doubles) {
-                            this.stunted = ` - ${
-                                b.results.get(0).value
-                            } Stunt Points`;
-                        }
-                    }
-
-                    a.rollSync();
-                    if (a instanceof StuntRoller) {
-                        if (a.doubles) {
-                            this.stunted = ` - ${
-                                a.results.get(0).value
-                            } Stunt Points`;
-                        }
-                    }
-                    const result = this.operators[dice.value](
-                        a.result,
-                        b.result
-                    );
-
-                    this.stackCopy.push(dice.value);
-                    this.stack.push(
-                        new DiceRoller(`${result}`, this.renderer, dice)
-                    );
-                    break;
+                    continue;
                 case "u": {
                     let diceInstance = this.dice[index - 1];
                     let data = dice.value ? Number(dice.value) : 1;
@@ -1406,9 +1342,6 @@ export class StackRoller extends GenericRoller<number> {
                             dice
                         );
                     }
-
-                    this.stack.push(this.dice[index]);
-                    this.stackCopy.push(this.dice[index]);
                     index++;
                     break;
                 }
@@ -1421,14 +1354,110 @@ export class StackRoller extends GenericRoller<number> {
                             dice
                         );
                     }
-
-                    this.stack.push(this.dice[index]);
-                    this.stackCopy.push(this.dice[index]);
                     index++;
                     break;
                 }
             }
         }
+    }
+    async roll(render?: boolean) {
+        this.stunted = "";
+        this.stackCopy = [];
+        if (!this.dice.length) {
+            this.buildDiceTree();
+        }
+        this.renderer.stop();
+        this.dice.forEach((dice) => (dice.shouldRender = false));
+        if (render || (this.shouldRender && this.hasRunOnce)) {
+            await this.renderDice();
+        } else {
+            for (const dice of this.dice) {
+                await dice.roll();
+            }
+        }
+        this.calculate();
+        this.render();
+
+        if (render || (this.shouldRender && this.hasRunOnce)) {
+            new Notice(`${this.tooltip}\n\nResult: ${this.result}`);
+        }
+
+        this.trigger("new-result");
+        this.hasRunOnce = true;
+        return this.result;
+    }
+
+    calculate() {
+        let index = 0;
+        for (const dice of this.lexemes) {
+            switch (dice.type) {
+                case "+":
+                case "-":
+                case "*":
+                case "/":
+                case "^":
+                case "math": {
+                    let b = this.stack.pop(),
+                        a = this.stack.pop();
+                    if (!a) {
+                        if (dice.value === "-") {
+                            b = new DiceRoller(
+                                `-${b.dice}`,
+                                this.renderer,
+                                b.lexeme
+                            );
+                        }
+                        this.stackCopy.push(dice.value);
+                        this.stack.push(b);
+                        continue;
+                    }
+
+                    if (b instanceof StuntRoller) {
+                        if (b.doubles) {
+                            this.stunted = ` - ${
+                                b.results.get(0).value
+                            } Stunt Points`;
+                        }
+                    }
+
+                    if (a instanceof StuntRoller) {
+                        if (a.doubles) {
+                            this.stunted = ` - ${
+                                a.results.get(0).value
+                            } Stunt Points`;
+                        }
+                    }
+                    const result = this.operators[dice.value](
+                        a.result,
+                        b.result
+                    );
+
+                    this.stackCopy.push(dice.value);
+                    this.stack.push(
+                        new DiceRoller(`${result}`, this.renderer, dice)
+                    );
+                    break;
+                }
+                case "stunt":
+                case "%":
+                case "dice": {
+                    this.stack.push(this.dice[index]);
+                    this.stackCopy.push(this.dice[index]);
+                    index++;
+                }
+                default: {
+                    continue;
+                }
+            }
+        }
+        const final = this.stack.pop();
+        final.rollSync();
+        if (final instanceof StuntRoller) {
+            if (final.doubles) {
+                this.stunted = ` - ${final.results.get(0).value} Stunt Points`;
+            }
+        }
+        this.result = final.result;
     }
 
     recalculate(modify = false) {
