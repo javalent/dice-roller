@@ -224,12 +224,7 @@ export class DiceRoller {
             toReroll = [...this.results].filter(([, { value }]) =>
                 this.checkCondition(value, conditionals)
             );
-        while (
-            i < times &&
-            toReroll.filter(([, { value }]) =>
-                this.checkCondition(value, conditionals)
-            ).length > 0
-        ) {
+        while (i < times && toReroll.length > 0) {
             i++;
             await Promise.all(
                 toReroll.map(async ([i, roll]) => {
@@ -239,6 +234,9 @@ export class DiceRoller {
                     roll.value = newValue;
                     roll.display = `${newValue}`;
                 })
+            );
+            toReroll = toReroll.filter(([, { value }]) =>
+                this.checkCondition(value, conditionals)
             );
         }
 
