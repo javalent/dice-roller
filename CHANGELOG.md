@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.2](https://github.com/javalent/dice-roller/compare/10.0.1...10.0.2) (2023-10-14)
+
+
+### Bug Fixes
+
+* fix issue where reroll could happen incorrectly ([ae212e4](https://github.com/javalent/dice-roller/commit/ae212e462d45467433c5c75d001350837f750559))
+* fixes dice-mod not respecting form/noform in live preview ([c13922d](https://github.com/javalent/dice-roller/commit/c13922dbeeb0402eff82bc4270f55383b47ce717))
+* improves rendering performance ([74f351d](https://github.com/javalent/dice-roller/commit/74f351df5199649f6ae52b7c5ab77c5e4a350dd8))
+
 ## [10.0.1](https://github.com/javalent/dice-roller/compare/10.0.0...10.0.1) (2023-10-11)
 
 
