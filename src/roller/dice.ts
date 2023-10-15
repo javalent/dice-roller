@@ -57,12 +57,12 @@ export class DiceRoller {
                 .replace(/[\[\]\s]/g, "")
                 .split(",")
                 .map((v) => Number(v));
+        } else if (maxStr === "F") {
+            this.possibilities = [-1, 0, 1];
+            this.fudge = true;
         } else {
             if (maxStr === "%") {
                 max = 100;
-            } else if (maxStr === "F") {
-                this.possibilities = [-1, 0, 1];
-                this.fudge = true;
             } else {
                 max = Number(maxStr);
             }
@@ -337,7 +337,8 @@ export class DiceRoller {
         );
     }
     canRender() {
-        if (this.possibilities.length !== this.faces.max) return false;
+        if (this.possibilities.length !== this.faces.max && !this.fudge)
+            return false;
         const arr = [...Array(this.faces.max).keys()].map(
             (k) => this.faces.min + k
         );
@@ -353,10 +354,7 @@ export class DiceRoller {
         }
     }
     getValueSync() {
-        return (
-            this.multiplier *
-            this.getRandomBetween(this.faces.min, this.faces.max)
-        );
+        return this.multiplier * this.getRandomValue();
     }
     #resolveShapeValue(shapes: DiceShape[] = []) {
         if (!shapes.length) return this.getValueSync();
@@ -606,7 +604,7 @@ export class DiceRoller {
             this.possibilities.length
         );
     }
-    getRandomBetween(min: number, max: number): number {
+    getRandomValue(): number {
         const index = Math.floor(Math.random() * this.possibilities.length);
         return this.possibilities[index];
     }
