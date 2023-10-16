@@ -356,6 +356,12 @@ export class DiceRoller {
     getValueSync() {
         return this.multiplier * this.getRandomValue();
     }
+    getMaxPossible(): number {
+        return Math.max(...this.possibilities) * this.rolls;
+    }
+    getMinPossible(): number {
+        return Math.min(...this.possibilities) * this.rolls;
+    }
     #resolveShapeValue(shapes: DiceShape[] = []) {
         if (!shapes.length) return this.getValueSync();
         const values = shapes.map((v) => v.getUpsideValue());
@@ -1078,6 +1084,17 @@ export class StackRoller extends GenericRoller<number> {
         } else {
             this.resultEl.setText(result.join("") + this.stunted);
         }
+
+        if (this.result === this.max) {
+            this.containerEl.addClass("is-max");
+        } else {
+            this.containerEl.removeClass("is-max");
+        }
+        if (this.result === this.min) {
+            this.containerEl.addClass("is-min");
+        } else {
+            this.containerEl.removeClass("is-min");
+        }
     }
     async onClick(evt: MouseEvent) {
         evt.stopPropagation();
@@ -1146,6 +1163,8 @@ export class StackRoller extends GenericRoller<number> {
         }
     };
     stack: DiceRoller[] = [];
+    maxStack: number[] = [];
+    minStack: number[] = [];
     stackCopy: Array<DiceRoller | string> = [];
     dice: DiceRoller[] = [];
     hasRunOnce = false;
@@ -1384,7 +1403,8 @@ export class StackRoller extends GenericRoller<number> {
         this.hasRunOnce = true;
         return this.result;
     }
-
+    max = Number.MIN_VALUE;
+    min = Number.MAX_VALUE;
     calculate() {
         let index = 0;
         for (const dice of this.lexemes) {
@@ -1429,10 +1449,21 @@ export class StackRoller extends GenericRoller<number> {
                         b.result
                     );
 
+                    const min = this.operators[dice.value](
+                        this.minStack.pop(),
+                        this.minStack.pop()
+                    );
+                    const max = this.operators[dice.value](
+                        this.maxStack.pop(),
+                        this.maxStack.pop()
+                    );
+
                     this.stackCopy.push(dice.value);
                     this.stack.push(
                         new DiceRoller(`${result}`, this.renderer, dice)
                     );
+                    this.minStack.push(min);
+                    this.maxStack.push(max);
                     break;
                 }
                 case "stunt":
@@ -1440,6 +1471,8 @@ export class StackRoller extends GenericRoller<number> {
                 case "dice": {
                     this.stack.push(this.dice[index]);
                     this.stackCopy.push(this.dice[index]);
+                    this.minStack.push(this.dice[index].getMinPossible());
+                    this.maxStack.push(this.dice[index].getMaxPossible());
                     index++;
                 }
                 default: {
@@ -1448,7 +1481,8 @@ export class StackRoller extends GenericRoller<number> {
             }
         }
         const final = this.stack.pop();
-
+        this.min = this.minStack.pop();
+        this.max = this.maxStack.pop();
         if (final instanceof StuntRoller) {
             if (final.doubles) {
                 this.stunted = ` - ${final.results.get(0).value} Stunt Points`;
