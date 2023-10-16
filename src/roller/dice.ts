@@ -1417,7 +1417,6 @@ export class StackRoller extends GenericRoller<number> {
                             } Stunt Points`;
                         }
                     }
-
                     if (a instanceof StuntRoller) {
                         if (a.doubles) {
                             this.stunted = ` - ${
@@ -1449,7 +1448,7 @@ export class StackRoller extends GenericRoller<number> {
             }
         }
         const final = this.stack.pop();
-        final.rollSync();
+
         if (final instanceof StuntRoller) {
             if (final.doubles) {
                 this.stunted = ` - ${final.results.get(0).value} Stunt Points`;
