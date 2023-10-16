@@ -326,6 +326,16 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 });
             });
+        new Setting(containerEl)
+            .setName("Display Fudge/Fate Dice Icon")
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.showFudgeIcon);
+                t.onChange(async (v) => {
+                    this.plugin.data.showFudgeIcon = v;
+                    this.plugin.view?.buildButtons();
+                    await this.plugin.saveSettings();
+                });
+            });
     }
     buildRender(containerEl: HTMLDivElement) {
         containerEl.empty();

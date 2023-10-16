@@ -41,7 +41,6 @@ import { Round, ExpectedValue, RollerOptions } from "./types";
 import { inlinePlugin } from "./live-preview";
 import API from "./api/api";
 /* import GenesysView, { GENESYS_VIEW_TYPE } from "./view/genesys"; */
-
 String.prototype.matchAll =
     String.prototype.matchAll ||
     function* matchAll(regexp: RegExp): IterableIterator<RegExpMatchArray> {
@@ -128,6 +127,7 @@ declare global {
     }
 }
 interface DiceRollerSettings {
+    showFudgeIcon: boolean;
     rollLinksForTags: boolean;
     copyContentButton: boolean;
     displayResultsInline: boolean;
@@ -168,6 +168,7 @@ interface DiceRollerSettings {
 }
 
 export const DEFAULT_SETTINGS: DiceRollerSettings = {
+    showFudgeIcon: false,
     rollLinksForTags: false,
     copyContentButton: true,
     customFormulas: [],
