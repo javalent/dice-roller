@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.3](https://github.com/javalent/dice-roller/compare/10.0.2...10.0.3) (2023-10-16)
+
+
+### Bug Fixes
+
+* Dice rollers that roll min/max are decorated with the `is-min` or `is-max` css class (close [#244](https://github.com/javalent/dice-roller/issues/244)) ([6ab60d9](https://github.com/javalent/dice-roller/commit/6ab60d98bf3cbb82895b5447d691488e429b6b80))
+* Enables a Fudge/Fate dice icon (toggleable in settings) (close [#251](https://github.com/javalent/dice-roller/issues/251)) ([fd5aabf](https://github.com/javalent/dice-roller/commit/fd5aabf4c774003da4af8d87125b8f33b362ee0a))
+* fixes issue where rendered dice didn't match result (close [#252](https://github.com/javalent/dice-roller/issues/252)) ([21671ee](https://github.com/javalent/dice-roller/commit/21671ee13afa90e282e673143fe9903ceccd1e69))
+* fixes issue with calculating Fate results ([7388384](https://github.com/javalent/dice-roller/commit/7388384bbfd8594018a43e3f605a11945857c76c))
+
 ## [10.0.2](https://github.com/javalent/dice-roller/compare/10.0.1...10.0.2) (2023-10-14)
 
 
