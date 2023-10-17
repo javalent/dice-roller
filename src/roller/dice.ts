@@ -569,10 +569,9 @@ export class DiceRoller {
                 continue;
             }
 
-            /* const roller = new BasicStackRoller(comparer, lexemes);
+            const roller = new BasicStackRoller(comparer, lexemes);
             roller.rollSync();
-            condition.result = roller.result; */
-            condition.result = Number(comparer);
+            condition.result = roller.result;
 
             if (Number.isNaN(condition.result)) continue;
             switch (operator) {
