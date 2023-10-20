@@ -260,7 +260,7 @@ export default class DiceView extends ItemView {
         const roller = await this.plugin.getRoller(formula, "view", opts);
 
         if (!(roller instanceof StackRoller)) {
-            new Notice("The Dice View only supports dice rolls.");
+            new Notice("The Dice Tray only supports dice rolls.");
             return;
         }
         roller.iconEl.detach();
@@ -352,7 +352,7 @@ export default class DiceView extends ItemView {
     }
 
     getDisplayText() {
-        return "Dice Roller";
+        return "Dice Tray";
     }
     getViewType() {
         return VIEW_TYPE;
