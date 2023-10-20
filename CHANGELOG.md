@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.1.2](https://github.com/javalent/dice-roller/compare/10.1.1...10.1.2) (2023-10-20)
+
+
+### Bug Fixes
+
+* Adds "None" as a possible shape for dice tray icons ([62cd320](https://github.com/javalent/dice-roller/commit/62cd32029192adbe0751dbb80da0a5f05c08d380))
+* Buttons to add static values to Dice Tray formula work again ([ceae731](https://github.com/javalent/dice-roller/commit/ceae731fcd8e2443fc117b52fd2d74af86f2b9f7))
+* Right clicking a dice-tray icon executes a roll immediately again ([ff54b9e](https://github.com/javalent/dice-roller/commit/ff54b9ec3b7191dec31764d2e8490fe001943f26))
+
 ## [10.1.1](https://github.com/javalent/dice-roller/compare/10.1.0...10.1.1) (2023-10-20)
 
 
