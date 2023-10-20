@@ -360,10 +360,20 @@ export class DiceRoller {
     }
     getMaxPossible(): number {
         if (this.static) return Number(this.dice);
+        if (this.multiplier === -1) {
+            return (
+                this.multiplier * Math.min(...this.possibilities) * this.rolls
+            );
+        }
         return Math.max(...this.possibilities) * this.rolls;
     }
     getMinPossible(): number {
         if (this.static) return Number(this.dice);
+        if (this.multiplier === -1) {
+            return (
+                this.multiplier * Math.max(...this.possibilities) * this.rolls
+            );
+        }
         return Math.min(...this.possibilities) * this.rolls;
     }
     #resolveShapeValue(shapes: DiceShape[] = []) {
