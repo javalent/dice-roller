@@ -410,7 +410,7 @@ export default class SettingTab extends PluginSettingTab {
         const toAdd: DiceIcon = {
             text: null,
             formula: null,
-            shape: IconShapes.TRIANGLE,
+            shape: IconShapes.NONE,
             id: generateSlug()
         };
         const dropEl = addEl.createDiv("shape");
@@ -442,9 +442,10 @@ export default class SettingTab extends PluginSettingTab {
             drop.addOption(display, display);
         }
 
-        drop.onChange((v) => {
+        drop.setValue(toAdd.shape).onChange((v) => {
             toAdd.shape = drop.getValue() as IconShapes;
         });
+        toAdd.shape = drop.getValue() as IconShapes;
     }
     buildStaticIcon(rowEl: HTMLElement, index: number) {
         rowEl.empty();

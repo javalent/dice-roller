@@ -25,6 +25,7 @@ export interface DiceIcon {
 }
 
 export enum IconShapes {
+    NONE = "None",
     TRIANGLE = "Triangle",
     SQUARE = "Square",
     DIAMOND = "Diamond",
@@ -126,6 +127,9 @@ class _IconManager extends Component {
             case IconShapes.CIRCLE: {
                 shapeElement = this.getCircle();
                 break;
+            }
+            case IconShapes.NONE: {
+                shapeElement = createSvg("defs");
             }
         }
         svgElement.appendChild(shapeElement);
