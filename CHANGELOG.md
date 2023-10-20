@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.1.0](https://github.com/javalent/dice-roller/compare/10.0.3...10.1.0) (2023-10-20)
+
+
+### Features
+
+* Can now specify custom dice buttons for the Dice Tray view in settings ([f8a8a60](https://github.com/javalent/dice-roller/commit/f8a8a60a1f4b7cb497e43a9efaaaafdab28c6275))
+
+
+### Bug Fixes
+
+* Fixes decoration of dice when it is a negative roll ([da0fdb6](https://github.com/javalent/dice-roller/commit/da0fdb66b2bdf50975ab36892cf918d317c2bcf0))
+* Fixes max/min decoration of dice when a static number is present in formula ([8c9538e](https://github.com/javalent/dice-roller/commit/8c9538e77a05f3eea2fc803ae0c7c655bb1b7bdf))
+* improve visual appearance of dice roller settings ([7ec8bea](https://github.com/javalent/dice-roller/commit/7ec8beae2b0062b4c425d43617ef3031ef9514b0))
+* Improves behavior when the first dice in a formula is negative ([249e13d](https://github.com/javalent/dice-roller/commit/249e13de753ac94ec687e281a89cc8622ffb7c2c))
+* re-enable dice-based conditions ([059120f](https://github.com/javalent/dice-roller/commit/059120f23ba8b4f1a5c2e7abe47f6ba9c8468a7b))
+* Rename Dice View to Dice Tray ([a3c24c7](https://github.com/javalent/dice-roller/commit/a3c24c73ac1c16762459db13377b4a8f8a3ebc70))
+
 ## [10.0.3](https://github.com/javalent/dice-roller/compare/10.0.2...10.0.3) (2023-10-16)
 
 
