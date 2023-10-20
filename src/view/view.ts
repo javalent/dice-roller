@@ -109,6 +109,10 @@ export default class DiceView extends ItemView {
             new ExtraButtonComponent(buttons.createDiv("dice-button"))
                 .setIcon(icon.id)
                 .extraSettingsEl.onClickEvent((evt) => {
+                    if (evt.type === "auxclick") {
+                        this.roll(icon.formula);
+                        return;
+                    }
                     if (!this.#formula.has(icon)) {
                         this.#formula.set(icon, 0);
                     }
