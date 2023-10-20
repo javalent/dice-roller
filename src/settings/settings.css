@@ -1,0 +1,40 @@
+.dice-roller-settings .dice-icons > span {
+    display: block;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.dice-roller-settings .dice-icons.has-table {
+    padding-left: 0px;
+    padding-right: 0px;
+}
+.dice-roller-settings .buttons-table {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-auto-rows: 1fr;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: left;
+}
+.dice-roller-settings .icons-table-row {
+    display: contents;
+}
+
+.dice-roller-settings .icons-table-row .actions {
+    display: flex;
+    align-items: center;
+}
+.dice-roller-settings .icons-table-row .shape {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.dice-roller-settings .add-new .shape {
+    padding: 0 0.5rem;
+}
+.dice-roller-settings .add-new .formula {
+    display: flex;
+    gap: 0.5rem;
+}

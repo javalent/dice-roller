@@ -40,6 +40,8 @@ import Lexer, { LexicalToken } from "./parser/lexer";
 import { Round, ExpectedValue, RollerOptions } from "./types";
 import { inlinePlugin } from "./live-preview";
 import API from "./api/api";
+import { DEFAULT_ICONS, DiceIcon } from "./view/view.icons";
+import copy from "fast-copy";
 /* import GenesysView, { GENESYS_VIEW_TYPE } from "./view/genesys"; */
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -165,6 +167,8 @@ interface DiceRollerSettings {
     round: Round;
 
     initialDisplay: ExpectedValue;
+
+    icons: DiceIcon[];
 }
 
 export const DEFAULT_SETTINGS: DiceRollerSettings = {
@@ -195,7 +199,8 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     showDice: true,
     displayAsEmbed: true,
     round: Round.None,
-    initialDisplay: ExpectedValue.Roll
+    initialDisplay: ExpectedValue.Roll,
+    icons: copy(DEFAULT_ICONS)
 };
 
 export default class DiceRollerPlugin extends Plugin {

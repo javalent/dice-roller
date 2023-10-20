@@ -53,7 +53,7 @@
     width: fit-content;
 }
 
-.dice-roller-view .dice-button .clickable-icon > svg {
+.dice-button svg {
     width: 36px;
     height: 36px;
 }
@@ -176,4 +176,17 @@
     position: absolute;
     top: 0;
     left: 0;
+}
+
+.dice-button svg .font {
+    font-family: "ArialMT";
+    font-size: 200px;
+    fill: currentColor;
+}
+.dice-button svg .shape {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 15px !important;
 }

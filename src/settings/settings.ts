@@ -1,6 +1,8 @@
 import {
     App,
     ButtonComponent,
+    DropdownComponent,
+    ExtraButtonComponent,
     Notice,
     PluginSettingTab,
     setIcon,
@@ -11,8 +13,11 @@ import { Round, ExpectedValue } from "src/types";
 import { ICON_DEFINITION } from "src/utils/constants";
 import type DiceRoller from "../main";
 import { DEFAULT_SETTINGS } from "../main";
+import { DiceIcon, IconManager, IconShapes } from "src/view/view.icons";
+import { generateSlug } from "random-word-slugs";
 
 export default class SettingTab extends PluginSettingTab {
+    iconsEl: HTMLDivElement;
     constructor(app: App, public plugin: DiceRoller) {
         super(app, plugin);
         this.plugin = plugin;
@@ -326,16 +331,149 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 });
             });
+
         new Setting(containerEl)
-            .setName("Display Fudge/Fate Dice Icon")
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.showFudgeIcon);
-                t.onChange(async (v) => {
-                    this.plugin.data.showFudgeIcon = v;
-                    this.plugin.view?.buildButtons();
-                    await this.plugin.saveSettings();
-                });
+            .setName("Dice Tray Buttons")
+            .setDesc(
+                "Add and remove the buttons available in the Dice Tray here, to customize what quick-actions are available to roll."
+            );
+
+        this.iconsEl = containerEl.createDiv("dice-icons");
+        this.buildIcons();
+    }
+    buildIcons() {
+        this.iconsEl.empty();
+        if (!this.plugin.data.icons) {
+            this.iconsEl.createSpan({
+                cls: "no-icons",
+                text: "No dice buttons created! Create a button to use this functionality."
             });
+            return;
+        }
+
+        const pathsEl = this.iconsEl.createDiv("existing-buttons has-table");
+        //build table
+        const tableEl = pathsEl.createDiv("buttons-table");
+        for (let i = 0; i < this.plugin.data.icons.length; i++) {
+            const rowEl = tableEl.createDiv("icons-table-row");
+            this.buildStaticIcon(rowEl, i);
+        }
+
+        /** Build the "add-new" */
+        const addEl = tableEl.createDiv("icons-table-row add-new");
+        const toAdd: DiceIcon = {
+            text: null,
+            formula: null,
+            shape: IconShapes.TRIANGLE,
+            id: generateSlug()
+        };
+        const dropEl = addEl.createDiv("shape");
+        const formulaEl = addEl.createDiv("formula");
+        new TextComponent(formulaEl).setPlaceholder("Formula").onChange((v) => {
+            toAdd.formula = v;
+            button.setDisabled(
+                toAdd.text?.length === 0 || toAdd.formula?.length === 0
+            );
+        });
+        new TextComponent(formulaEl).setPlaceholder("Display").onChange((v) => {
+            toAdd.text = v;
+            button.setDisabled(
+                toAdd.text?.length === 0 || toAdd.formula?.length === 0
+            );
+        });
+        const button = new ExtraButtonComponent(addEl.createDiv("actions"))
+            .setIcon("plus-with-circle")
+            .setDisabled(true)
+            .onClick(async () => {
+                if (!toAdd.text || !toAdd.formula) return;
+                this.plugin.data.icons.push({ ...toAdd });
+                this.buildIcons();
+                await this.plugin.view.buildButtons();
+                await this.plugin.saveSettings();
+            });
+        const drop = new DropdownComponent(dropEl);
+        for (const [type, display] of Object.entries(IconShapes)) {
+            drop.addOption(display, display);
+        }
+
+        drop.onChange((v) => {
+            toAdd.shape = drop.getValue() as IconShapes;
+        });
+    }
+    buildStaticIcon(rowEl: HTMLElement, index: number) {
+        rowEl.empty();
+        rowEl.removeClass("add-new");
+        const instance = this.plugin.data.icons[index];
+        const iconEl = rowEl.createDiv("shape dice-button");
+
+        IconManager.registerIcon(instance.id, instance.shape, instance.text);
+
+        setIcon(iconEl, instance.id);
+
+        rowEl.createDiv({ cls: "formula", text: instance.formula });
+
+        const actions = rowEl.createDiv("actions");
+        new ExtraButtonComponent(actions).setIcon("edit").onClick(() => {
+            this.buildEditIcon(rowEl, index, instance);
+        });
+        new ExtraButtonComponent(actions).setIcon("trash").onClick(async () => {
+            this.plugin.data.icons.splice(index, 1);
+            await this.plugin.view.buildButtons();
+            this.buildIcons();
+        });
+    }
+    buildEditIcon(rowEl: HTMLElement, index: number, instance: DiceIcon) {
+        rowEl.empty();
+        rowEl.addClass("add-new");
+        /** Build the "add-new" */
+        const toAdd: DiceIcon = {
+            text: instance.text,
+            formula: instance.formula,
+            shape: instance.shape,
+            id: instance.id
+        };
+        const dropEl = rowEl.createDiv("shape");
+        const formulaEl = rowEl.createDiv("formula");
+        new TextComponent(formulaEl)
+            .setPlaceholder("Formula")
+            .setValue(toAdd.formula)
+            .onChange((v) => {
+                toAdd.formula = v;
+                button.setDisabled(
+                    toAdd.text.length === 0 || toAdd.formula.length === 0
+                );
+            });
+        new TextComponent(formulaEl)
+            .setPlaceholder("Display")
+            .setValue(toAdd.text)
+            .onChange((v) => {
+                toAdd.text = v;
+                button.setDisabled(
+                    toAdd.text.length === 0 || toAdd.formula.length === 0
+                );
+            });
+        const actionsEl = rowEl.createDiv("actions");
+        const button = new ExtraButtonComponent(actionsEl)
+            .setIcon("checkmark")
+            .setDisabled(toAdd.text.length === 0 || toAdd.formula.length === 0)
+            .onClick(async () => {
+                if (!toAdd.text || !toAdd.formula) return;
+                this.plugin.data.icons.splice(index, 1, { ...toAdd });
+                await this.plugin.saveSettings();
+                this.buildStaticIcon(rowEl, index);
+                await this.plugin.view.buildButtons();
+            });
+        new ExtraButtonComponent(actionsEl).setIcon("cross").onClick(() => {
+            this.buildStaticIcon(rowEl, index);
+        });
+        const drop = new DropdownComponent(dropEl);
+        for (const [type, display] of Object.entries(IconShapes)) {
+            drop.addOption(display, display);
+        }
+
+        drop.setValue(toAdd.shape).onChange((v) => {
+            toAdd.shape = v as IconShapes;
+        });
     }
     buildRender(containerEl: HTMLDivElement) {
         containerEl.empty();
