@@ -38,3 +38,37 @@
     display: flex;
     gap: 0.5rem;
 }
+
+details.dice-roller-nested-settings > summary {
+    outline: none;
+    display: block !important;
+    list-style: none !important;
+    list-style-type: none !important;
+    min-height: 1rem;
+    border-top-left-radius: 0.1rem;
+    border-top-right-radius: 0.1rem;
+    cursor: pointer;
+    position: relative;
+}
+
+details.dice-roller-nested-settings > summary::-webkit-details-marker,
+details.dice-roller-nested-settings > summary::marker {
+    display: none !important;
+}
+
+details.dice-roller-nested-settings > summary > .collapser {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    content: "";
+}
+
+details.dice-roller-nested-settings > summary > .collapser > .handle {
+    transform: rotate(0deg);
+    transition: transform 0.25s;
+}
+
+details.dice-roller-nested-settings[open] > summary > .collapser > .handle {
+    transform: rotate(90deg);
+}

@@ -18,6 +18,7 @@ import { generateSlug } from "random-word-slugs";
 
 export default class SettingTab extends PluginSettingTab {
     iconsEl: HTMLDivElement;
+    contentEl: HTMLDivElement;
     constructor(app: App, public plugin: DiceRoller) {
         super(app, plugin);
         this.plugin = plugin;
@@ -31,17 +32,51 @@ export default class SettingTab extends PluginSettingTab {
 
         containerEl.createEl("h2", { text: "Dice Roller Settings" });
 
-        this.buildGenerics(containerEl.createDiv());
-        this.buildDisplay(containerEl.createDiv());
-        this.buildDice(containerEl.createDiv());
-        this.buildTables(containerEl.createDiv());
-        this.buildSections(containerEl.createDiv());
-        this.buildTags(containerEl.createDiv());
-        this.buildView(containerEl.createDiv());
-        this.buildRender(containerEl.createDiv());
+        this.contentEl = this.containerEl.createDiv(
+            "dice-roller-settings-content"
+        );
+
+        this.buildGenerics(this.contentEl.createDiv());
+        this.buildDisplay(
+            this.contentEl.createEl("details", {
+                cls: "dice-roller-nested-settings"
+            })
+        );
+        this.buildDice(
+            this.contentEl.createEl("details", {
+                cls: "dice-roller-nested-settings"
+            })
+        );
+        this.buildView(
+            this.contentEl.createEl("details", {
+                cls: "dice-roller-nested-settings"
+            })
+        );
+        this.buildRender(
+            this.contentEl.createEl("details", {
+                cls: "dice-roller-nested-settings"
+            })
+        );
 
         this.buildFormulaSettings(
-            containerEl.createDiv("dice-roller-setting-additional-container")
+            this.contentEl.createEl("details", {
+                cls: "dice-roller-nested-settings"
+            })
+        );
+        this.buildTables(
+            this.contentEl.createEl("details", {
+                cls: "dice-roller-nested-settings"
+            })
+        );
+        this.buildSections(
+            this.contentEl.createEl("details", {
+                cls: "dice-roller-nested-settings"
+            })
+        );
+        this.buildTags(
+            this.contentEl.createEl("details", {
+                cls: "dice-roller-nested-settings"
+            })
         );
 
         const div = containerEl.createDiv("coffee");
@@ -76,9 +111,18 @@ export default class SettingTab extends PluginSettingTab {
                 });
             });
     }
-    buildDisplay(containerEl: HTMLDivElement) {
+    #buildSummary(containerEl: HTMLDetailsElement, name: string) {
+        const summary = containerEl.createEl("summary");
+        new Setting(summary).setHeading().setName(name);
+
+        setIcon(
+            summary.createDiv("collapser").createDiv("handle"),
+            "chevron-right"
+        );
+    }
+    buildDisplay(containerEl: HTMLDetailsElement) {
         containerEl.empty();
-        new Setting(containerEl).setHeading().setName("Dice Display");
+        this.#buildSummary(containerEl, "Dice Display");
         new Setting(containerEl)
             .setName("Display Formula With Results")
             .setDesc(
@@ -165,9 +209,9 @@ export default class SettingTab extends PluginSettingTab {
                 });
             });
     }
-    buildDice(containerEl: HTMLDivElement) {
+    buildDice(containerEl: HTMLDetailsElement) {
         containerEl.empty();
-        new Setting(containerEl).setHeading().setName("Dice Rollers");
+        this.#buildSummary(containerEl, "Dice Rollers");
         new Setting(containerEl)
             .setName("Default Face")
             .setDesc("Use this as the number of faces when it is omitted.")
@@ -239,11 +283,11 @@ export default class SettingTab extends PluginSettingTab {
                 });
             });
         new Setting(containerEl)
-            .setName("Add Rolls to Dice View")
+            .setName("Log Rolls to Dice Tray")
             .setDesc(
                 createFragment((e) => {
                     e.createSpan({
-                        text: "Dice rolled in notes will be added to the Dice View's Results section."
+                        text: "Dice rolled in notes will be added to the Dice Tray's Results section."
                     });
                 })
             )
@@ -254,9 +298,9 @@ export default class SettingTab extends PluginSettingTab {
                 });
             });
     }
-    buildTables(containerEl: HTMLDivElement) {
+    buildTables(containerEl: HTMLDetailsElement) {
         containerEl.empty();
-        new Setting(containerEl).setHeading().setName("Table Rollers");
+        this.#buildSummary(containerEl, "Table Rollers");
 
         new Setting(containerEl)
             .setName("Display Lookup Table Roll")
@@ -271,9 +315,10 @@ export default class SettingTab extends PluginSettingTab {
                 });
             });
     }
-    buildSections(containerEl: HTMLDivElement) {
+    buildSections(containerEl: HTMLDetailsElement) {
         containerEl.empty();
-        new Setting(containerEl).setHeading().setName("Section Rollers");
+        this.#buildSummary(containerEl, "Section Rollers");
+
         new Setting(containerEl)
             .setName("Add Copy Button to Section Results")
             .setDesc(
@@ -299,9 +344,9 @@ export default class SettingTab extends PluginSettingTab {
                 });
             });
     }
-    buildTags(containerEl: HTMLDivElement) {
+    buildTags(containerEl: HTMLDetailsElement) {
         containerEl.empty();
-        new Setting(containerEl).setHeading().setName("Tag Rollers");
+        this.#buildSummary(containerEl, "Tag Rollers");
 
         new Setting(containerEl)
             .setName("Always Return Links for Tags")
@@ -316,11 +361,12 @@ export default class SettingTab extends PluginSettingTab {
                 });
             });
     }
-    buildView(containerEl: HTMLDivElement) {
+    buildView(containerEl: HTMLDetailsElement) {
         containerEl.empty();
-        new Setting(containerEl).setHeading().setName("Dice View");
+        this.#buildSummary(containerEl, "Dice Tray");
+
         new Setting(containerEl)
-            .setName("Open Dice View on Startup")
+            .setName("Open Dice Tray on Startup")
             .setDesc(
                 "The dice view can always be opened using the command from the command palette."
             )
@@ -475,11 +521,12 @@ export default class SettingTab extends PluginSettingTab {
             toAdd.shape = v as IconShapes;
         });
     }
-    buildRender(containerEl: HTMLDivElement) {
+    buildRender(containerEl: HTMLDetailsElement) {
         containerEl.empty();
-        new Setting(containerEl).setHeading().setName("Graphical Dice");
+        this.#buildSummary(containerEl, "Graphical Dice");
+
         new Setting(containerEl)
-            .setName("Display graphics for Dice View Rolls")
+            .setName("Display graphics for Dice Tray Rolls")
             .setDesc("Dice rolls from dice view will be displayed on screen.")
             .addToggle((t) => {
                 t.setValue(this.plugin.data.renderer);
@@ -594,10 +641,14 @@ export default class SettingTab extends PluginSettingTab {
         );
     }
 
-    buildFormulaSettings(containerEl: HTMLDivElement) {
+    buildFormulaSettings(containerEl: HTMLDetailsElement) {
         containerEl.empty();
-        new Setting(containerEl).setHeading().setName("Saved Formulas");
-        const addNew = containerEl.createDiv();
+        this.#buildSummary(containerEl, "Saved Formulas");
+        const settingEl = containerEl.createDiv(
+            "dice-roller-setting-additional-container"
+        );
+
+        const addNew = settingEl.createDiv();
         new Setting(addNew)
             .setName("Add Formula")
             .setDesc("Add a new formula shortcut.")
