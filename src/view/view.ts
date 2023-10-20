@@ -36,29 +36,16 @@ export default class DiceView extends ItemView {
     noResultsEl: HTMLSpanElement;
     rollButton: ButtonComponent;
     saveButton: ExtraButtonComponent;
-    static DICE() {
-        return {
-            d4: 0,
-            d6: 0,
-            dF: 0,
-            d8: 0,
-            d10: 0,
-            d12: 0,
-            d20: 0,
-            d100: 0
-        };
-    }
     stack: StackRoller;
     gridEl: HTMLDivElement;
     formulaEl: HTMLDivElement;
-    dice: { [dice: string]: number } = DiceView.DICE();
     get customFormulas() {
         return this.plugin.data.customFormulas;
     }
     custom = "";
-    adv = false;
-    dis = false;
-    add = 0;
+    #adv = false;
+    #dis = false;
+    #add = 0;
 
     formulaComponent: TextAreaComponent;
     resultEl: HTMLDivElement;
@@ -125,13 +112,19 @@ export default class DiceView extends ItemView {
 
         const advDis = this.gridEl.createDiv("advantage-disadvantage");
 
+        new ExtraButtonComponent(advDis)
+            .setIcon("dice-roller-minus")
+            .onClick(() => {
+                this.#add -= 1;
+                this.setFormula();
+            });
         const adv = new ButtonComponent(advDis)
             .setButtonText("ADV")
             .onClick(() => {
-                this.adv = !this.adv;
-                this.dis = false;
+                this.#adv = !this.#adv;
+                this.#dis = false;
 
-                if (this.adv) {
+                if (this.#adv) {
                     adv.setCta();
                     dis.removeCta();
                 } else {
@@ -142,10 +135,10 @@ export default class DiceView extends ItemView {
         const dis = new ButtonComponent(advDis)
             .setButtonText("DIS")
             .onClick(() => {
-                this.dis = !this.dis;
-                this.adv = false;
+                this.#dis = !this.#dis;
+                this.#adv = false;
 
-                if (this.dis) {
+                if (this.#dis) {
                     dis.setCta();
                     adv.removeCta();
                 } else {
@@ -155,26 +148,11 @@ export default class DiceView extends ItemView {
                 this.setFormula();
             });
 
-        const add = this.gridEl
-            .createDiv("dice-context")
-            .createDiv("add-subtract");
-
-        new ExtraButtonComponent(add)
-            .setIcon("dice-roller-minus")
-            .onClick(() => {
-                this.add -= 1;
-                addComponent.setValue(`${this.add}`);
-            });
-        const addComponent = new TextComponent(add)
-            .setValue(`${this.add ? this.add : ""}`)
-            .onChange((v) => {
-                if (!isNaN(Number(v))) this.add = Number(v);
-            });
-        new ExtraButtonComponent(add)
+        new ExtraButtonComponent(advDis)
             .setIcon("dice-roller-plus")
             .onClick(() => {
-                this.add += 1;
-                addComponent.setValue(`${this.add}`);
+                this.#add += 1;
+                this.setFormula();
             });
 
         if (this.customFormulas.length) {
@@ -210,7 +188,7 @@ export default class DiceView extends ItemView {
         }
     }
     setFormula() {
-        if (!this.#formula.size) {
+        if (!this.#formula.size && !this.#add) {
             this.formulaComponent.inputEl.value = "";
             return;
         }
@@ -238,9 +216,9 @@ export default class DiceView extends ItemView {
             }
             let mod = "";
             if (index === 0) {
-                if (this.adv) {
+                if (this.#adv) {
                     mod = "kh";
-                } else if (this.dis) {
+                } else if (this.#dis) {
                     mod = "kl";
                 }
                 instance.formula = instance.formula.replace(
@@ -249,6 +227,12 @@ export default class DiceView extends ItemView {
                 );
             }
             str.push(`${instance.formula}`);
+        }
+        if (this.#add !== 0) {
+            if (str.length > 0) {
+                str.push(this.#add > 0 ? "+" : "-");
+            }
+            str.push(`${Math.abs(this.#add)}`);
         }
         this.formulaComponent.inputEl.value = str.join(" ");
     }
@@ -281,6 +265,7 @@ export default class DiceView extends ItemView {
 
         this.buildButtons();
         this.#formula = new Map();
+        this.#add = 0;
         this.setFormula();
     }
     buildFormula() {
