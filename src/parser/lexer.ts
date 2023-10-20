@@ -143,6 +143,17 @@ export default class Lexer {
             return token.type != "WS";
         });
         let clone: LexicalToken[] = [];
+        /** If the first token is a negative sign and the second is a dice roller, just make the dice roller negative. */
+        if (tokens.length >= 2) {
+            if (
+                (tokens[0].type === "-" ||
+                    (tokens[0].type === "math" && tokens[0].value === "-")) &&
+                tokens[1].type === "dice"
+            ) {
+                tokens[1].value = `-${tokens[1].value}`;
+                tokens.shift();
+            }
+        }
         for (const token of tokens) {
             if (token.type == "condition" && clone.length > 0) {
                 const previous = clone[clone.length - 1];
