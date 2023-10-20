@@ -112,12 +112,12 @@ export class DiceRoller {
     }
     get result() {
         if (this.static) {
-            return Number(this.dice);
+            return this.multiplier * Number(this.dice);
         }
         const results = [...this.results].map(([, { usable, value }]) =>
             usable ? value : 0
         );
-        return results.reduce((a, b) => a + b, 0);
+        return this.multiplier * results.reduce((a, b) => a + b, 0);
     }
     get display() {
         if (this.static) {
@@ -345,21 +345,25 @@ export class DiceRoller {
         return arr.every((v) => this.possibilities.includes(v));
     }
     async getValue(shapes?: DiceShape[]) {
+        let value: number;
         if (this.shouldRender && this.canRender()) {
             const temp = shapes ?? this.renderer.getDiceForRoller(this) ?? [];
             await this.renderer.addDice(temp);
-            return this.#resolveShapeValue(temp);
+            value = this.#resolveShapeValue(temp);
         } else {
-            return this.getValueSync();
+            value = this.getValueSync();
         }
+        return value;
     }
     getValueSync() {
-        return this.multiplier * this.getRandomValue();
+        return this.getRandomValue();
     }
     getMaxPossible(): number {
+        if (this.static) return Number(this.dice);
         return Math.max(...this.possibilities) * this.rolls;
     }
     getMinPossible(): number {
+        if (this.static) return Number(this.dice);
         return Math.min(...this.possibilities) * this.rolls;
     }
     #resolveShapeValue(shapes: DiceShape[] = []) {
@@ -759,14 +763,6 @@ class BasicStackRoller extends Roller<number> {
                 case "math":
                     let b = this.stack.pop(),
                         a = this.stack.pop();
-                    if (!a) {
-                        if (dice.value === "-") {
-                            b = new DiceRoller(`-${b.dice}`, null, b.lexeme);
-                        }
-                        this.stackCopy.push(dice.value);
-                        this.stack.push(b);
-                        continue;
-                    }
 
                     b.rollSync();
                     if (b instanceof StuntRoller) {
@@ -1212,12 +1208,13 @@ export class StackRoller extends GenericRoller<number> {
         for (const dice of this.lexemes) {
             switch (dice.type) {
                 case "+":
-                case "-":
                 case "*":
                 case "/":
                 case "^":
-                case "math":
+                case "-":
+                case "math": {
                     continue;
+                }
                 case "u": {
                     let diceInstance = this.dice[index - 1];
                     let data = dice.value ? Number(dice.value) : 1;
@@ -1344,9 +1341,6 @@ export class StackRoller extends GenericRoller<number> {
                             dice
                         );
                     }
-
-                    this.stack.push(this.dice[index]);
-                    this.stackCopy.push(this.dice[index]);
                     index++;
                     break;
                 }
@@ -1416,18 +1410,6 @@ export class StackRoller extends GenericRoller<number> {
                 case "math": {
                     let b = this.stack.pop(),
                         a = this.stack.pop();
-                    if (!a) {
-                        if (dice.value === "-") {
-                            b = new DiceRoller(
-                                `-${b.dice}`,
-                                this.renderer,
-                                b.lexeme
-                            );
-                        }
-                        this.stackCopy.push(dice.value);
-                        this.stack.push(b);
-                        continue;
-                    }
 
                     if (b instanceof StuntRoller) {
                         if (b.doubles) {
@@ -1500,18 +1482,6 @@ export class StackRoller extends GenericRoller<number> {
             if (typeof item === "string") {
                 let b: DiceRoller = stack.pop(),
                     a = stack.pop();
-
-                if (!a) {
-                    if (item === "-") {
-                        b = new DiceRoller(
-                            `-${b.result}`,
-                            this.renderer,
-                            b.lexeme
-                        );
-                    }
-                    stack.push(b);
-                    continue;
-                }
 
                 const r = this.operators[item](a.result, b.result);
                 stack.push(new DiceRoller(`${r}`, this.renderer));
