@@ -596,7 +596,16 @@ export default class SettingTab extends PluginSettingTab {
                         this.plugin.saveSettings();
                     });
             });
-
+        new Setting(containerEl)
+            .setName("Font for dice")
+            .setDesc("Select the font use for the dice")
+            .addText((t) => {
+                t.setValue(this.plugin.data.textFont);
+                t.onChange(async (v) => {
+                    this.plugin.data.textFont = v;
+                    await this.plugin.saveSettings();
+                });
+            });
         const diceColor = new Setting(containerEl)
             .setName("Dice Base Color")
             .setDesc("Rendered dice will be this color.");

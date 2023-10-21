@@ -25,11 +25,13 @@ const MATERIAL_OPTIONS = {
 const DEFAULT_DICE_OPTIONS: DiceOptions = {
     diceColor: "#202020",
     textColor: "#ffffff",
+    textFont: "Arial",
 };
 
 interface DiceOptions {
     diceColor: string;
     textColor: string;
+    textFont: string;
 }
 
 export default abstract class DiceGeometry {
@@ -92,6 +94,8 @@ export default abstract class DiceGeometry {
             ...DEFAULT_DICE_OPTIONS,
             ...options
         };
+
+        this.fontFace = this.options.textFont;
     }
     setColor({
         diceColor,

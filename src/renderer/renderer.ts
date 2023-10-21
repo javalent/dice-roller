@@ -61,6 +61,7 @@ export type RendererData = {
     colorfulDice: boolean;
     scaler: number;
     renderTime: number;
+    textFont: string;
 };
 
 export default class DiceRenderer extends Component {
@@ -147,7 +148,8 @@ export default class DiceRenderer extends Component {
         diceColor: this.data.diceColor,
         textColor: this.data.textColor,
         colorfulDice: this.data.colorfulDice,
-        scaler: this.data.scaler
+        scaler: this.data.scaler,
+        textFont: this.data.textFont,
     });
 
     onload() {
@@ -603,6 +605,7 @@ class DiceFactory extends Component {
     get colors() {
         const diceColor = this.options.diceColor;
         const textColor = this.options.textColor;
+        const textFont = this.options.textFont;
 
         // If we want colorful dice then just use the default colors in the geometry
         if (this.options.colorfulDice) {
@@ -611,7 +614,7 @@ class DiceFactory extends Component {
 
         return {
             diceColor,
-            textColor
+            textFont
         };
     }
     constructor(
@@ -622,6 +625,7 @@ class DiceFactory extends Component {
             textColor: string;
             scaler: number;
             colorfulDice: boolean;
+            textFont: string;
         }
     ) {
         super();
