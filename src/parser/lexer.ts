@@ -4,6 +4,7 @@ import * as moo from "moo";
 import DiceRollerPlugin from "src/main";
 import { Conditional } from "src/types";
 import { Parser } from "./parser";
+import copy from "fast-copy";
 
 export const TAG_REGEX =
     /(?:\d+[Dd])?#(?:[\p{Letter}\p{Emoji_Presentation}\w/-]+)(?:\|(?:[+-]))?(?:\|(?:[^+-]+))?/u;
@@ -133,7 +134,7 @@ export default class Lexer {
             "^": exponent
         });
     }
-    parse(input: string) {
+    parse(input: string): LexicalToken[] {
         const tokens = Array.from(this.lexer.reset(input));
         this.lexer.reset();
         return this.parser.parse(this.transform(tokens));
@@ -142,18 +143,44 @@ export default class Lexer {
         tokens = tokens.filter((token) => {
             return token.type != "WS";
         });
+
+        let isPlus = (t: moo.Token) => t.type === "+" || (t.type === "math" && t.value === "+")
+        let isMinus = (t: moo.Token) => t.type === "-" || (t.type === "math" && t.value === "-")
+        let isPlusOrMinus = (t: moo.Token) => isPlus(t) || isMinus(t)
+        let peek = (arr: moo.Token[]) => arr[arr.length - 1]
+        let replaceTop = (arr: moo.Token[], newTop: moo.Token) =>
+            arr.splice(arr.length - 1, 1, newTop)
+
+        tokens = tokens.reduce(
+            (acc, e) => {
+                if (acc.length == 0) {
+                    acc.push(e)
+                } else {
+                    let top = peek(acc)
+
+                    if (isPlusOrMinus(top) && isPlusOrMinus(e)) {
+                        if (isMinus(top) != isMinus(e)) {
+                            // one minus => minus
+                            if (!isMinus(top))
+                                replaceTop(acc, e)
+                        } else {
+                            // plus
+                            if (isMinus(top)) {
+                                let newTop = copy(top)
+                                newTop.type = newTop.type === "math" ? newTop.type : "+"
+                                newTop.value = "+"
+                                replaceTop(acc, newTop)
+                            }
+                        }
+                    } else {
+                        acc.push(e)
+                    }
+                }
+                return acc
+            },
+            [] as moo.Token[]
+        )
         let clone: LexicalToken[] = [];
-        /** If the first token is a negative sign and the second is a dice roller, just make the dice roller negative. */
-        if (tokens.length >= 2) {
-            if (
-                (tokens[0].type === "-" ||
-                    (tokens[0].type === "math" && tokens[0].value === "-")) &&
-                tokens[1].type === "dice"
-            ) {
-                tokens[1].value = `-${tokens[1].value}`;
-                tokens.shift();
-            }
-        }
         for (const token of tokens) {
             if (token.type == "condition" && clone.length > 0) {
                 const previous = clone[clone.length - 1];
