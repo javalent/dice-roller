@@ -119,6 +119,11 @@ export default class SettingTab extends PluginSettingTab {
                 cls: "dice-roller-nested-settings"
             })
         );
+        this.buildDiceModTemplateFoldersSettings(
+            this.contentEl.createEl("details", {
+                cls: "dice-roller-nested-settings"
+            })
+        )
 
         const div = containerEl.createDiv("coffee");
         div.createEl("a", {
@@ -187,24 +192,6 @@ export default class SettingTab extends PluginSettingTab {
                 });
             });
         new Setting(containerEl)
-            .setName("Add Formula When Using Modify Dice")
-            .setDesc(
-                createFragment((e) => {
-                    e.createSpan({
-                        text: "Both the formula and the results will both be added to the note when using "
-                    });
-                    e.createEl("code", { text: "dice-mod" });
-                    e.createSpan({ text: "." });
-                })
-            )
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.displayFormulaForMod);
-                t.onChange(async (v) => {
-                    this.plugin.data.displayFormulaForMod = v;
-                    await this.plugin.saveSettings();
-                });
-            });
-        new Setting(containerEl)
             .setName("Display Formula in Parentheses After")
             .setDesc(
                 createFragment((e) => {
@@ -231,24 +218,7 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 });
             });
-        new Setting(containerEl)
-            .setName("Escape Markdown When Modifying")
-            .setDesc(
-                createFragment((e) => {
-                    e.createSpan({
-                        text: "Markdown characters will be escaped when using "
-                    });
-                    e.createEl("code", { text: "dice-mod" });
-                    e.createSpan({ text: "." });
-                })
-            )
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.escapeDiceMod);
-                t.onChange(async (v) => {
-                    this.plugin.data.escapeDiceMod = v;
-                    await this.plugin.saveSettings();
-                });
-            });
+
     }
     buildDice(containerEl: HTMLDetailsElement) {
         containerEl.empty();
@@ -841,9 +811,205 @@ export default class SettingTab extends PluginSettingTab {
                 );
         });
     }
+
+    buildDiceModTemplateFoldersSettings(containerEl: HTMLDetailsElement) {
+        containerEl.empty();
+        this.#buildSummary(containerEl, "Modify Dice");
+        new Setting(containerEl)
+            .setName(
+                createFragment((e) => {
+                    e.createSpan({ text: "Apply " });
+                    e.createEl("code", { text: "dice-mod" });
+                    e.createSpan({ text: " in live-preview" });
+                })
+            )
+            .setDesc(
+                createFragment((e) => {
+                    e.createSpan({ text: "If not enabled " });
+                    e.createEl("code", { text: "dice-mod" });
+                    e.createSpan({ text: " will only be applied/replaced in read mode." });
+                })
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.replaceDiceModInLivePreview);
+                t.onChange(async (v) => {
+                    this.plugin.data.replaceDiceModInLivePreview = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+        new Setting(containerEl)
+            .setName("Escape Markdown When Modifying")
+            .setDesc(
+                createFragment((e) => {
+                    e.createSpan({
+                        text: "Markdown characters will be escaped when using "
+                    });
+                    e.createEl("code", { text: "dice-mod" });
+                    e.createSpan({ text: "." });
+                })
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.escapeDiceMod);
+                t.onChange(async (v) => {
+                    this.plugin.data.escapeDiceMod = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+        new Setting(containerEl)
+            .setName("Add Formula When Using Modify Dice")
+            .setDesc(
+                createFragment((e) => {
+                    e.createSpan({
+                        text: "Both the formula and the results will both be added to the note when using "
+                    });
+                    e.createEl("code", { text: "dice-mod" });
+                    e.createSpan({ text: "." });
+                })
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.displayFormulaForMod);
+                t.onChange(async (v) => {
+                    this.plugin.data.displayFormulaForMod = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+
+        const settingEl = containerEl.createDiv(
+            "dice-roller-setting-additional-container"
+        );
+        const addNew = settingEl.createDiv();
+        new Setting(addNew)
+            .setName("Template Folders")
+            .setDesc(
+                createFragment((e) => {
+                    e.createSpan({ text: "Define folders where " });
+                    e.createEl("code", { text: "dice-mod" });
+                    e.createSpan({ text: " is not applied/replaced and can be used in templates." });
+                })
+            )
+            .addButton((button: ButtonComponent): ButtonComponent => {
+                let b = button
+                    .setTooltip("Add Folder")
+                    .setButtonText("+")
+                    .onClick(async () => {
+                        const tmp = await this.buildDiceModTemplateFoldersForm(addNew);
+
+                        if (tmp) {
+                            this.plugin.data.diceModTemplateFolders[tmp.folder] =
+                                tmp.useSubfolders;
+                            this.buildDiceModTemplateFoldersSettings(containerEl);
+                            await this.plugin.saveSettings();
+                        }
+                    });
+
+                return b;
+            });
+
+
+        const additional = settingEl.createDiv("additional");
+
+        const diceModeTemplateFolders = this.plugin.data.diceModTemplateFolders;
+
+        for (const [folder, useSubfolders] of Object.entries(diceModeTemplateFolders)) {
+            const setting = new Setting(additional).setName(folder);
+            if (useSubfolders) {
+                setting.controlEl.createSpan({
+                    text: "(including subfolders)",
+                    cls: "dice-mod-template-use-subfolders"
+                });
+            }
+            setting
+                .addExtraButton((b) =>
+                    b
+                        .setIcon("pencil")
+                        .setTooltip("Edit")
+                        .onClick(async () => {
+                            const edited = await this.buildDiceModTemplateFoldersForm(addNew, {
+                                folder: folder,
+                                useSubfolders: useSubfolders
+                            });
+
+                            if (edited) {
+                                delete this.plugin.data.diceModTemplateFolders[folder];
+                                this.plugin.data.diceModTemplateFolders[edited.folder] =
+                                    edited.useSubfolders;
+                                this.buildDiceModTemplateFoldersSettings(containerEl);
+                                await this.plugin.saveSettings();
+                            }
+                        })
+                )
+                .addExtraButton((b) =>
+                    b
+                        .setIcon("trash")
+                        .setTooltip("Delete")
+                        .onClick(async () => {
+                            delete this.plugin.data.diceModTemplateFolders[folder];
+                            await this.plugin.saveSettings();
+                            this.buildDiceModTemplateFoldersSettings(containerEl);
+                        })
+                );
+        }
+        if (!Object.values(diceModeTemplateFolders).length) {
+            additional.createDiv({ cls: "no-dice-mod-template-folders" }, (e) => {
+                e.createSpan({ text: "Add a template folder to enable " });
+                e.createEl("code", { text: "dice-mod" });
+                e.createSpan({ text: " in templates!" });
+            })
+        }
+    }
+    async buildDiceModTemplateFoldersForm(
+        el: HTMLElement,
+        temp: DiceModTemplateFolder = {
+            folder: null,
+            useSubfolders: true
+        }
+    ): Promise<DiceModTemplateFolder> {
+        return new Promise((resolve) => {
+            const formulaEl = el.createDiv("add-new-formula");
+            const dataEl = formulaEl.createDiv("formula-data");
+
+            new Setting(dataEl).setName("Template Folder").addText((t) => {
+                t.setValue(temp.folder).onChange((v) => (temp.folder = v));
+            });
+            new Setting(dataEl).setName("Also use subfolders").addToggle((t) => {
+                t.setValue(temp.useSubfolders).onChange((v) => (temp.useSubfolders = v));
+            });
+
+            const buttonEl = formulaEl.createDiv("formula-buttons");
+            new Setting(buttonEl)
+                .addButton((b) =>
+                    b
+                        .setCta()
+                        .setButtonText("Save")
+                        .onClick(async () => {
+                            formulaEl.detach();
+                            if (temp.folder && temp.folder != "") {
+                                resolve(temp);
+                            } else {
+                                new Notice("Invalid Template folder!")
+                                resolve(null)
+                            }
+                        })
+                )
+                .addExtraButton((b) =>
+                    b
+                        .setIcon("cross")
+                        .setTooltip("Cancel")
+                        .onClick(() => {
+                            formulaEl.detach();
+                            resolve(null);
+                        })
+                );
+        });
+    }
 }
 
 interface DiceFormula {
     alias: string;
     formula: string;
+}
+
+interface DiceModTemplateFolder {
+    folder: string;
+    useSubfolders: boolean;
 }
