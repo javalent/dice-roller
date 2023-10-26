@@ -1037,6 +1037,7 @@ export class StackRoller extends GenericRoller<number> {
                     }
                     roller.setResults(results);
                 }
+                this.calculate();
             } else {
                 this.expectedValue = ExpectedValue.Roll;
             }
