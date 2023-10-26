@@ -144,42 +144,35 @@ export default class Lexer {
             return token.type != "WS";
         });
 
-        let isPlus = (t: moo.Token) => t.type === "+" || (t.type === "math" && t.value === "+")
-        let isMinus = (t: moo.Token) => t.type === "-" || (t.type === "math" && t.value === "-")
-        let isPlusOrMinus = (t: moo.Token) => isPlus(t) || isMinus(t)
-        let peek = (arr: moo.Token[]) => arr[arr.length - 1]
+        let isPlus = (t: moo.Token) =>
+            t.type === "+" || (t.type === "math" && t.value === "+");
+        let isMinus = (t: moo.Token) =>
+            t.type === "-" || (t.type === "math" && t.value === "-");
+        let isPlusOrMinus = (t: moo.Token) => isPlus(t) || isMinus(t);
+        let peek = (arr: moo.Token[]) => arr[arr.length - 1];
         let replaceTop = (arr: moo.Token[], newTop: moo.Token) =>
-            arr.splice(arr.length - 1, 1, newTop)
+            arr.splice(arr.length - 1, 1, newTop);
 
-        tokens = tokens.reduce(
-            (acc, e) => {
-                if (acc.length == 0) {
-                    acc.push(e)
-                } else {
-                    let top = peek(acc)
+        tokens = tokens.reduce((acc, e) => {
+            if (acc.length == 0) {
+                acc.push(e);
+            } else {
+                let top = peek(acc);
 
-                    if (isPlusOrMinus(top) && isPlusOrMinus(e)) {
-                        if (isMinus(top) != isMinus(e)) {
-                            // one minus => minus
-                            if (!isMinus(top))
-                                replaceTop(acc, e)
-                        } else {
-                            // plus
-                            if (isMinus(top)) {
-                                let newTop = copy(top)
-                                newTop.type = newTop.type === "math" ? newTop.type : "+"
-                                newTop.value = "+"
-                                replaceTop(acc, newTop)
-                            }
-                        }
-                    } else {
-                        acc.push(e)
+                if (isPlusOrMinus(top) && isPlusOrMinus(e)) {
+                    if (isMinus(top) != isMinus(e)) {
+                        // one minus => minus
+                        if (!isMinus(top)) replaceTop(acc, e);
+                    } else if (isMinus(top)) {
+                        top.type = top.type === "math" ? top.type : "+";
+                        top.value = "+";
                     }
+                } else {
+                    acc.push(e);
                 }
-                return acc
-            },
-            [] as moo.Token[]
-        )
+            }
+            return acc;
+        }, [] as moo.Token[]);
         let clone: LexicalToken[] = [];
         for (const token of tokens) {
             if (token.type == "condition" && clone.length > 0) {
