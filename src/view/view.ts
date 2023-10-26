@@ -245,28 +245,31 @@ export default class DiceView extends ItemView {
         if (opts.expectedValue == ExpectedValue.None) {
             opts.expectedValue = ExpectedValue.Roll;
         }
-        const roller = await this.plugin.getRoller(formula, "view", opts);
-
-        if (!(roller instanceof StackRoller)) {
-            new Notice("The Dice Tray only supports dice rolls.");
-            return;
+        try {
+            const roller =
+                await this.plugin.getRoller(formula, "view", opts)
+                    .catch((e) => { throw e });
+            if (!(roller instanceof StackRoller)) {
+                throw new Error("The Dice Tray only supports dice rolls.")
+            }
+            roller.iconEl.detach();
+            roller.containerEl.onclick = null;
+            roller.buildDiceTree();
+            if (!roller.dice.length) {
+                throw new Error("No dice.")
+            }
+            await roller.roll(this.plugin.data.renderer)
+                .catch((e) => { throw e });
+            this.addResult(roller);
+        } catch (e) {
+            new Notice("Invalid Formula: " + e.message);
+        } finally {
+            this.rollButton.setDisabled(false);
+            this.buildButtons();
+            this.#formula = new Map();
+            this.#add = 0;
+            this.setFormula();
         }
-        roller.iconEl.detach();
-        roller.containerEl.onclick = null;
-        roller.buildDiceTree();
-        if (!roller.dice.length) {
-            new Notice("Invalid formula.");
-            return;
-        }
-        await roller.roll(this.plugin.data.renderer);
-        this.rollButton.setDisabled(false);
-
-        this.addResult(roller);
-
-        this.buildButtons();
-        this.#formula = new Map();
-        this.#add = 0;
-        this.setFormula();
     }
     buildFormula() {
         this.formulaEl.empty();
