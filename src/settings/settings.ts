@@ -4,6 +4,7 @@ import {
     DropdownComponent,
     ExtraButtonComponent,
     Notice,
+    Platform,
     PluginSettingTab,
     setIcon,
     Setting,
@@ -15,13 +16,53 @@ import type DiceRoller from "../main";
 import { DEFAULT_SETTINGS } from "../main";
 import { DiceIcon, IconManager, IconShapes } from "src/view/view.icons";
 import { generateSlug } from "random-word-slugs";
+import { FontSuggestionModal } from "src/suggester/fonts";
 
+declare var require: (id: "get-fonts") => { getFonts: () => Promise<string[]> };
+
+declare global {
+    interface Window {
+        Capacitor?: {
+            isPluginAvailable(plugin: string): boolean;
+            Plugins: {
+                App: {
+                    getFonts: () => Promise<string[]>;
+                };
+            };
+        };
+    }
+}
 export default class SettingTab extends PluginSettingTab {
     iconsEl: HTMLDivElement;
     contentEl: HTMLDivElement;
     constructor(app: App, public plugin: DiceRoller) {
         super(app, plugin);
         this.plugin = plugin;
+    }
+    async getFonts() {
+        let fonts: string[] = [];
+        try {
+            if (
+                Platform.isMobile &&
+                window?.Capacitor?.isPluginAvailable("App")
+            ) {
+                fonts = await window?.Capacitor?.Plugins["App"]
+                    ?.getFonts()
+                    ?.catch((e) => []);
+            } else {
+                fonts = await require("get-fonts")
+                    .getFonts()
+                    .catch((e) => []);
+            }
+        } catch (e) {}
+
+        let fontSet: Set<string> = new Set();
+
+        for (const font of fonts) {
+            fontSet.add(font);
+        }
+
+        return [...fontSet].sort();
     }
     async display(): Promise<void> {
         let { containerEl } = this;
@@ -598,13 +639,26 @@ export default class SettingTab extends PluginSettingTab {
             });
         new Setting(containerEl)
             .setName("Font for dice")
-            .setDesc("Select the font use for the dice")
-            .addText((t) => {
-                t.setValue(this.plugin.data.textFont);
-                t.onChange(async (v) => {
-                    this.plugin.data.textFont = v;
+            .setDesc("Select the font to use for the dice")
+            .addText(async (t) => {
+                const set = async () => {
+                    this.plugin.data.textFont = t.getValue();
                     await this.plugin.saveSettings();
-                });
+                    this.plugin.renderer.setData(this.plugin.getRendererData());
+                };
+                const folderModal = new FontSuggestionModal(
+                    this.app,
+                    t,
+                    await this.getFonts()
+                );
+                folderModal.onClose = () => {
+                    t.setValue(folderModal.item);
+                    set();
+                };
+                t.setValue(this.plugin.data.textFont);
+                t.inputEl.onblur = async () => {
+                    set();
+                };
             });
         const diceColor = new Setting(containerEl)
             .setName("Dice Base Color")

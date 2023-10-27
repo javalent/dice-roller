@@ -25,6 +25,7 @@ esbuild
         bundle: true,
         external: [
             "obsidian",
+            "get-fonts",
             "electron",
             "codemirror",
             "@codemirror/autocomplete",

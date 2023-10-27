@@ -111,7 +111,8 @@ export default class DiceRenderer extends Component {
         this.data = data;
         this.factory.width = this.WIDTH;
         this.factory.height = this.HEIGHT;
-        this.factory.updateDice();
+
+        this.factory.updateDice(this.data);
     }
     constructor(public data: RendererData) {
         super();
@@ -149,7 +150,7 @@ export default class DiceRenderer extends Component {
         textColor: this.data.textColor,
         colorfulDice: this.data.colorfulDice,
         scaler: this.data.scaler,
-        textFont: this.data.textFont,
+        textFont: this.data.textFont
     });
 
     onload() {
@@ -278,7 +279,7 @@ export default class DiceRenderer extends Component {
         this.factory.width = this.display.currentWidth;
         this.factory.height = this.display.currentHeight;
 
-        this.factory.updateDice();
+        this.factory.updateDice(this.data);
 
         this.cameraHeight.medium = this.cameraHeight.max / 1.5;
         this.cameraHeight.far = this.cameraHeight.max;
@@ -600,6 +601,7 @@ class LocalWorld {
     }
 }
 
+type FactoryData = Omit<RendererData, "renderTime">;
 class DiceFactory extends Component {
     dice: Record<string, DiceGeometry> = {};
     get colors() {
@@ -620,18 +622,13 @@ class DiceFactory extends Component {
     constructor(
         public width: number,
         public height: number,
-        public options: {
-            diceColor: string;
-            textColor: string;
-            scaler: number;
-            colorfulDice: boolean;
-            textFont: string;
-        }
+        public options: FactoryData
     ) {
         super();
         this.buildDice();
     }
-    updateDice = debounce(() => {
+    updateDice = debounce((options: FactoryData) => {
+        this.options = { ...options };
         this.dispose();
         this.buildDice();
     }, 200);
