@@ -22,10 +22,18 @@ const MATERIAL_OPTIONS = {
     shininess: 60,
     flatShading: true
 };
-const DEFAULT_DICE_OPTIONS = {
+const DEFAULT_DICE_OPTIONS: DiceOptions = {
     diceColor: "#202020",
-    textColor: "#ffffff"
+    textColor: "#ffffff",
+    textFont: "Arial",
 };
+
+interface DiceOptions {
+    diceColor: string;
+    textColor: string;
+    textFont: string;
+}
+
 export default abstract class DiceGeometry {
     body: Body;
     chamferGeometry: { vectors: Vector3[]; faces: any[][] };
@@ -76,7 +84,7 @@ export default abstract class DiceGeometry {
     constructor(
         public w: number,
         public h: number,
-        public options = {
+        public options: Partial<DiceOptions> = {
             diceColor: "#202020",
             textColor: "#aaaaaa"
         },
@@ -86,6 +94,8 @@ export default abstract class DiceGeometry {
             ...DEFAULT_DICE_OPTIONS,
             ...options
         };
+
+        this.fontFace = this.options.textFont;
     }
     setColor({
         diceColor,
@@ -454,7 +464,7 @@ class D20DiceGeometry extends DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options = { diceColor: "#171120", textColor: "#FF0000" },
+        options: Partial<DiceOptions> = { diceColor: "#171120", textColor: "#FF0000" },
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -504,7 +514,7 @@ class D12DiceGeometry extends DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options = { diceColor: "#7339BE", textColor: "#FFFFFF" },
+        options: Partial<DiceOptions> = { diceColor: "#7339BE", textColor: "#FFFFFF" },
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -571,7 +581,7 @@ class D10DiceGeometry extends DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options = { diceColor: "#c74749", textColor: "#FFFFFF" },
+        options: Partial<DiceOptions> = { diceColor: "#c74749", textColor: "#FFFFFF" },
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -622,7 +632,7 @@ class D100DiceGeometry extends DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options = { diceColor: "#7a2c2d", textColor: "#FFFFFF" },
+        options: Partial<DiceOptions> = { diceColor: "#7a2c2d", textColor: "#FFFFFF" },
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -668,7 +678,7 @@ class D8DiceGeometry extends DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options = { diceColor: "#5eb0c5", textColor: "#FFFFFF" },
+        options: Partial<DiceOptions> = { diceColor: "#5eb0c5", textColor: "#FFFFFF" },
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -705,7 +715,7 @@ class D6DiceGeometry extends DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options = { diceColor: "#d68316", textColor: "#FFFFFF" },
+        options: Partial<DiceOptions> = { diceColor: "#d68316", textColor: "#FFFFFF" },
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -772,7 +782,7 @@ class D4DiceGeometry extends DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options = { diceColor: "#93b139", textColor: "#FFFFFF" },
+        options: Partial<DiceOptions> = { diceColor: "#93b139", textColor: "#FFFFFF" },
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -869,7 +879,7 @@ abstract class GenesysD12DiceGeometry extends GenesysDice {
     constructor(
         w: number,
         h: number,
-        options = DEFAULT_DICE_OPTIONS,
+        options: Partial<DiceOptions> = DEFAULT_DICE_OPTIONS,
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -921,7 +931,7 @@ export class GenesysProficiencyDiceGeometry extends GenesysD12DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options = DEFAULT_DICE_OPTIONS,
+        options: Partial<DiceOptions> = DEFAULT_DICE_OPTIONS,
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -949,7 +959,7 @@ export class GenesysChallengeDiceGeometry extends GenesysD12DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options = DEFAULT_DICE_OPTIONS,
+        options: Partial<DiceOptions> = DEFAULT_DICE_OPTIONS,
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -991,7 +1001,7 @@ export class GenesysAbilityDiceGeometry extends GenesysD8DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options = DEFAULT_DICE_OPTIONS,
+        options: Partial<DiceOptions> = DEFAULT_DICE_OPTIONS,
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -1003,7 +1013,7 @@ export class GenesysDifficultyDiceGeometry extends GenesysD8DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options = DEFAULT_DICE_OPTIONS,
+        options: Partial<DiceOptions> = DEFAULT_DICE_OPTIONS,
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -1045,7 +1055,7 @@ export class GenesysBoostDiceGeometry extends GenesysD6DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options = DEFAULT_DICE_OPTIONS,
+        options: Partial<DiceOptions> = DEFAULT_DICE_OPTIONS,
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -1057,7 +1067,7 @@ export class GenesysSetbackDiceGeometry extends GenesysD6DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options = DEFAULT_DICE_OPTIONS,
+        options: Partial<DiceOptions> = DEFAULT_DICE_OPTIONS,
         scaler: number
     ) {
         super(w, h, options, scaler);

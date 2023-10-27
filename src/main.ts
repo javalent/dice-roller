@@ -159,6 +159,7 @@ interface DiceRollerSettings {
     scaler: number;
     diceColor: string;
     textColor: string;
+    textFont: string;
     showLeafOnStartup: boolean;
     customFormulas: string[];
 
@@ -195,6 +196,7 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     scaler: 1,
     diceColor: "#202020",
     textColor: "#ffffff",
+    textFont: "Arial",
     showLeafOnStartup: true,
     showDice: true,
     displayAsEmbed: true,
@@ -231,7 +233,8 @@ export default class DiceRollerPlugin extends Plugin {
             textColor: this.data.textColor,
             colorfulDice: this.data.colorfulDice,
             scaler: this.data.scaler,
-            renderTime: this.data.renderTime
+            renderTime: this.data.renderTime,
+            textFont: this.data.textFont,
         };
     }
     async onload() {
