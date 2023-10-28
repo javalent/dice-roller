@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.2.0](https://github.com/javalent/dice-roller/compare/10.1.2...10.2.0) (2023-10-27)
+
+
+### Features
+
+* Enables changing the font of rendered dice ([c16d3c0](https://github.com/javalent/dice-roller/commit/c16d3c07fd71675fd56facaf94045dca51eeecb1))
+
+
+### Bug Fixes
+
+* **dicetray:** error handling for roll button ([#264](https://github.com/javalent/dice-roller/issues/264)) ([0f2c599](https://github.com/javalent/dice-roller/commit/0f2c599c242b099d7bd3811314cc95486fffca7c))
+* Fixes average calculation ([bf87aa8](https://github.com/javalent/dice-roller/commit/bf87aa80565b4e45cbb4c88cc9b89a3c49e82be5))
+* **lexer:** handle unary minus operator ([#262](https://github.com/javalent/dice-roller/issues/262)) ([139cbfa](https://github.com/javalent/dice-roller/commit/139cbfa6c7927686a3d2bedda6732c3ce3df7fef))
+
 ## [10.1.2](https://github.com/javalent/dice-roller/compare/10.1.1...10.1.2) (2023-10-20)
 
 
