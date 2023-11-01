@@ -972,6 +972,7 @@ export class StackRoller extends GenericRoller<number> {
     expectedValue: ExpectedValue;
     round: Round;
     signed: boolean;
+    showRenderNotice: boolean;
     get replacer() {
         return `${this.result}`;
     }
@@ -1399,7 +1400,10 @@ export class StackRoller extends GenericRoller<number> {
         this.calculate();
         this.render();
 
-        if (render || (this.shouldRender && this.hasRunOnce)) {
+        if (
+            this.showRenderNotice &&
+            (render || (this.shouldRender && this.hasRunOnce))
+        ) {
             new Notice(`${this.tooltip}\n\nResult: ${this.result}`);
         }
 

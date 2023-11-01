@@ -113,6 +113,10 @@ declare module "obsidian" {
             name: "dice-roller:rendered-result",
             callback: (result: number) => void
         ): EventRef;
+        on(
+            name: "dice-roller:settings-change",
+            callback: (data: DiceRollerSettings) => void
+        ): EventRef;
     }
     interface MetadataCache {
         on(name: "dataview:api-ready", callback: () => void): EventRef;
@@ -169,6 +173,8 @@ interface DiceRollerSettings {
     initialDisplay: ExpectedValue;
 
     icons: DiceIcon[];
+
+    showRenderNotice: boolean;
 }
 
 export const DEFAULT_SETTINGS: DiceRollerSettings = {
@@ -200,7 +206,8 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     displayAsEmbed: true,
     round: Round.None,
     initialDisplay: ExpectedValue.Roll,
-    icons: copy(DEFAULT_ICONS)
+    icons: copy(DEFAULT_ICONS),
+    showRenderNotice: true
 };
 
 export default class DiceRollerPlugin extends Plugin {
@@ -225,13 +232,16 @@ export default class DiceRollerPlugin extends Plugin {
     persistingFiles: Set<string> = new Set();
     renderer: DiceRenderer;
 
+    existingDice: WeakSet<StackRoller> = new WeakSet();
+
     getRendererData(): RendererData {
         return {
             diceColor: this.data.diceColor,
             textColor: this.data.textColor,
             colorfulDice: this.data.colorfulDice,
             scaler: this.data.scaler,
-            renderTime: this.data.renderTime
+            renderTime: this.data.renderTime,
+            textFont: this.data.textFont
         };
     }
     async onload() {
@@ -927,6 +937,8 @@ export default class DiceRollerPlugin extends Plugin {
                 );
                 roller.showFormula = showFormula;
                 roller.shouldRender = shouldRender;
+                roller.showRenderNotice = this.data.showRenderNotice;
+                this.existingDice.add(roller);
                 return roller;
             }
             case "table": {
@@ -1026,6 +1038,8 @@ export default class DiceRollerPlugin extends Plugin {
                 );
                 roller.shouldRender = shouldRender;
                 roller.showFormula = showFormula;
+                roller.showRenderNotice = this.data.showRenderNotice;
+                this.existingDice.add(roller);
                 return roller;
             }
             case "table": {

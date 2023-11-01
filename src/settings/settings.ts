@@ -640,6 +640,28 @@ export default class SettingTab extends PluginSettingTab {
                 };
             }
         );
+
+        new Setting(containerEl)
+            .setName("Show Notice for Results")
+            .setDesc(
+                createFragment((e) => {
+                    e.createSpan({
+                        text: "A notice will be displayed for each rendered dice roll."
+                    });
+                    e.createEl("br");
+                    e.createSpan({
+                        text: "Changing this setting will not effect any existing dice rollers in opened notes."
+                    });
+                })
+            )
+            .addToggle((t) => {
+                t.setValue(this.plugin.data.showRenderNotice).onChange(
+                    async (v) => {
+                        this.plugin.data.showRenderNotice = v;
+                        await this.plugin.saveSettings();
+                    }
+                );
+            });
     }
 
     buildFormulaSettings(containerEl: HTMLDetailsElement) {
