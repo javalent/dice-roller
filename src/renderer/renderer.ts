@@ -61,6 +61,7 @@ export type RendererData = {
     colorfulDice: boolean;
     scaler: number;
     renderTime: number;
+    textFont: string;
 };
 
 export default class DiceRenderer extends Component {
@@ -110,7 +111,8 @@ export default class DiceRenderer extends Component {
         this.data = data;
         this.factory.width = this.WIDTH;
         this.factory.height = this.HEIGHT;
-        this.factory.updateDice();
+
+        this.factory.updateDice(this.data);
     }
     constructor(public data: RendererData) {
         super();
@@ -147,7 +149,8 @@ export default class DiceRenderer extends Component {
         diceColor: this.data.diceColor,
         textColor: this.data.textColor,
         colorfulDice: this.data.colorfulDice,
-        scaler: this.data.scaler
+        scaler: this.data.scaler,
+        textFont: this.data.textFont
     });
 
     onload() {
@@ -276,7 +279,7 @@ export default class DiceRenderer extends Component {
         this.factory.width = this.display.currentWidth;
         this.factory.height = this.display.currentHeight;
 
-        this.factory.updateDice();
+        this.factory.updateDice(this.data);
 
         this.cameraHeight.medium = this.cameraHeight.max / 1.5;
         this.cameraHeight.far = this.cameraHeight.max;
@@ -598,11 +601,13 @@ class LocalWorld {
     }
 }
 
+type FactoryData = Omit<RendererData, "renderTime">;
 class DiceFactory extends Component {
     dice: Record<string, DiceGeometry> = {};
     get colors() {
         const diceColor = this.options.diceColor;
         const textColor = this.options.textColor;
+        const textFont = this.options.textFont;
 
         // If we want colorful dice then just use the default colors in the geometry
         if (this.options.colorfulDice) {
@@ -611,23 +616,19 @@ class DiceFactory extends Component {
 
         return {
             diceColor,
-            textColor
+            textFont
         };
     }
     constructor(
         public width: number,
         public height: number,
-        public options: {
-            diceColor: string;
-            textColor: string;
-            scaler: number;
-            colorfulDice: boolean;
-        }
+        public options: FactoryData
     ) {
         super();
         this.buildDice();
     }
-    updateDice = debounce(() => {
+    updateDice = debounce((options: FactoryData) => {
+        this.options = { ...options };
         this.dispose();
         this.buildDice();
     }, 200);

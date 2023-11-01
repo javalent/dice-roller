@@ -163,6 +163,7 @@ interface DiceRollerSettings {
     scaler: number;
     diceColor: string;
     textColor: string;
+    textFont: string;
     showLeafOnStartup: boolean;
     customFormulas: string[];
 
@@ -201,6 +202,7 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     scaler: 1,
     diceColor: "#202020",
     textColor: "#ffffff",
+    textFont: "Arial",
     showLeafOnStartup: true,
     showDice: true,
     displayAsEmbed: true,
