@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.3.0](https://github.com/javalent/dice-roller/compare/10.2.0...10.3.0) (2023-11-01)
+
+
+### Features
+
+* Can now disable Notice for graphical rolls ([8e901b6](https://github.com/javalent/dice-roller/commit/8e901b6a813d75a3942a62c6591c6e68d96e8616))
+
+
+### Bug Fixes
+
+* **escapeDiceMod:** disabling option is not preventing evaluation anymore ([#266](https://github.com/javalent/dice-roller/issues/266)) ([53a64f1](https://github.com/javalent/dice-roller/commit/53a64f16ae32a2c96524f78c07d99a73b42bf382))
+
 ## [10.2.0](https://github.com/javalent/dice-roller/compare/10.1.2...10.2.0) (2023-10-27)
 
 
