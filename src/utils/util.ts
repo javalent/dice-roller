@@ -1,3 +1,4 @@
+import { TFile } from "obsidian";
 import { ResultInterface, ResultMapInterface } from "src/types";
 
 const MATCH = /^\|?([\s\S]+?)\|?$/;
@@ -62,4 +63,19 @@ export function _insertIntoMap(
     });
     /** Insert the new value at the specified index */
     map.set(index, value);
+}
+
+export function isTemplateFolder(diceModTemplateFolders: Record<string, boolean>, currentFile: TFile) {
+    return Object.entries(diceModTemplateFolders)
+        .reduce(
+            (acc, e) => {
+                let folderName: string = e[0]
+                let useSubfoldees = e[1]
+                let ret = useSubfoldees ?
+                    currentFile.parent.path.startsWith(folderName) :
+                    currentFile.parent.path == folderName
+                return acc || ret
+            },
+            false
+        )
 }

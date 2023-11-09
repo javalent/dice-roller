@@ -45,6 +45,7 @@ import {
 } from "obsidian";
 import DiceRollerPlugin from "./main";
 import { BasicRoller } from "./roller/roller";
+import { isTemplateFolder } from "./utils/util";
 
 function selectionAndRangeOverlap(
     selection: EditorSelection,
@@ -63,7 +64,7 @@ function selectionAndRangeOverlap(
 function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
     // still doesn't work as expected for tables and callouts
 
-    const currentFile = app.workspace.getActiveFile();
+    const currentFile = this.app.workspace.getActiveFile();
     if (!currentFile) return;
 
     const widgets: Range<Decoration>[] = [];
@@ -86,8 +87,19 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                 // symbols) overlap
                 if (selectionAndRangeOverlap(selection, start, end + 1)) return;
 
+
                 const original = view.state.doc.sliceString(start, end).trim();
-                if (/^dice\-mod:\s*([\s\S]+)\s*?/.test(original)) {
+
+                const isTemplate =
+                    isTemplateFolder(
+                        plugin.data.diceModTemplateFolders,
+                        currentFile
+                    )
+                if (
+                    /^dice\-mod:\s*([\s\S]+)\s*?/.test(original) &&
+                    !isTemplate &&
+                    plugin.data.replaceDiceModInLivePreview
+                ) {
                     let [, content] = original.match(
                         /dice\-mod:\s*([\s\S]+)\s*?/
                     );
@@ -124,13 +136,12 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                         const transaction = view.state.update({ changes: mod });
                         view.dispatch(transaction);
                     });
-
                     return;
                 }
 
-                if (!/^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/.test(original)) return;
+                if (!/^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/.test(original)) return;
                 let [, content] = original.match(
-                    /^dice(?:\+|\-)?:\s*([\s\S]+)\s*?/
+                    /^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/
                 );
                 const roller = plugin.getRollerSync(content, currentFile.path);
 
