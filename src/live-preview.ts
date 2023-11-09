@@ -106,10 +106,14 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                         showFormula = true;
                     }
 
-                    roller.roll().then(() => {
+                    roller.roll().then(async () => {
+                        const replacer = await roller.getReplacer();
                         const insert = showFormula
-                            ? `${roller.inlineText} **${roller.replacer}**`
-                            : `${roller.replacer}`;
+                            ? `${roller.inlineText} **${replacer}**`
+                            : `${replacer}`;
+
+
+
                         const mod = {
                             from: start - 1,
                             to: end + 1,
@@ -209,13 +213,11 @@ export function inlinePlugin(plugin: DiceRollerPlugin) {
         class {
             decorations: DecorationSet;
             constructor(view: EditorView) {
-                this.decorations =
-                    inlineRender(view, plugin) ?? Decoration.none;
+                this.decorations = Decoration.none;
             }
 
             update(update: ViewUpdate) {
                 // only activate in LP and not source mode
-                //@ts-ignore
                 if (!update.state.field(editorLivePreviewField)) {
                     this.decorations = Decoration.none;
                     return;
