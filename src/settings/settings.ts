@@ -8,7 +8,8 @@ import {
     PluginSettingTab,
     setIcon,
     Setting,
-    TextComponent
+    TextComponent,
+    TFolder
 } from "obsidian";
 import { Round, ExpectedValue } from "src/types";
 import { ICON_DEFINITION } from "src/utils/constants";
@@ -17,6 +18,7 @@ import { DEFAULT_SETTINGS } from "../main";
 import { DiceIcon, IconManager, IconShapes } from "src/view/view.icons";
 import { generateSlug } from "random-word-slugs";
 import { FontSuggestionModal } from "src/suggester/fonts";
+import { FolderSuggestionModal } from "src/suggester/folder";
 
 declare var require: (id: "get-fonts") => { getFonts: () => Promise<string[]> };
 
@@ -123,7 +125,7 @@ export default class SettingTab extends PluginSettingTab {
             this.contentEl.createEl("details", {
                 cls: "dice-roller-nested-settings"
             })
-        )
+        );
 
         const div = containerEl.createDiv("coffee");
         div.createEl("a", {
@@ -218,7 +220,6 @@ export default class SettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 });
             });
-
     }
     buildDice(containerEl: HTMLDetailsElement) {
         containerEl.empty();
@@ -827,7 +828,9 @@ export default class SettingTab extends PluginSettingTab {
                 createFragment((e) => {
                     e.createSpan({ text: "If not enabled " });
                     e.createEl("code", { text: "dice-mod" });
-                    e.createSpan({ text: " will only be applied/replaced in read mode." });
+                    e.createSpan({
+                        text: " will only be applied/replaced in read mode."
+                    });
                 })
             )
             .addToggle((t) => {
@@ -884,7 +887,9 @@ export default class SettingTab extends PluginSettingTab {
                 createFragment((e) => {
                     e.createSpan({ text: "Define folders where " });
                     e.createEl("code", { text: "dice-mod" });
-                    e.createSpan({ text: " is not applied/replaced and can be used in templates." });
+                    e.createSpan({
+                        text: " is not applied/replaced and can be used in templates."
+                    });
                 })
             )
             .addButton((button: ButtonComponent): ButtonComponent => {
@@ -892,12 +897,17 @@ export default class SettingTab extends PluginSettingTab {
                     .setTooltip("Add Folder")
                     .setButtonText("+")
                     .onClick(async () => {
-                        const tmp = await this.buildDiceModTemplateFoldersForm(addNew);
+                        const tmp = await this.buildDiceModTemplateFoldersForm(
+                            addNew
+                        );
 
                         if (tmp) {
-                            this.plugin.data.diceModTemplateFolders[tmp.folder] =
-                                tmp.useSubfolders;
-                            this.buildDiceModTemplateFoldersSettings(containerEl);
+                            this.plugin.data.diceModTemplateFolders[
+                                tmp.folder
+                            ] = tmp.useSubfolders;
+                            this.buildDiceModTemplateFoldersSettings(
+                                containerEl
+                            );
                             await this.plugin.saveSettings();
                         }
                     });
@@ -905,12 +915,13 @@ export default class SettingTab extends PluginSettingTab {
                 return b;
             });
 
-
         const additional = settingEl.createDiv("additional");
 
         const diceModeTemplateFolders = this.plugin.data.diceModTemplateFolders;
 
-        for (const [folder, useSubfolders] of Object.entries(diceModeTemplateFolders)) {
+        for (const [folder, useSubfolders] of Object.entries(
+            diceModeTemplateFolders
+        )) {
             const setting = new Setting(additional).setName(folder);
             if (useSubfolders) {
                 setting.controlEl.createSpan({
@@ -924,16 +935,25 @@ export default class SettingTab extends PluginSettingTab {
                         .setIcon("pencil")
                         .setTooltip("Edit")
                         .onClick(async () => {
-                            const edited = await this.buildDiceModTemplateFoldersForm(addNew, {
-                                folder: folder,
-                                useSubfolders: useSubfolders
-                            });
+                            const edited =
+                                await this.buildDiceModTemplateFoldersForm(
+                                    addNew,
+                                    {
+                                        folder: folder,
+                                        useSubfolders: useSubfolders
+                                    }
+                                );
 
                             if (edited) {
-                                delete this.plugin.data.diceModTemplateFolders[folder];
-                                this.plugin.data.diceModTemplateFolders[edited.folder] =
-                                    edited.useSubfolders;
-                                this.buildDiceModTemplateFoldersSettings(containerEl);
+                                delete this.plugin.data.diceModTemplateFolders[
+                                    folder
+                                ];
+                                this.plugin.data.diceModTemplateFolders[
+                                    edited.folder
+                                ] = edited.useSubfolders;
+                                this.buildDiceModTemplateFoldersSettings(
+                                    containerEl
+                                );
                                 await this.plugin.saveSettings();
                             }
                         })
@@ -943,20 +963,38 @@ export default class SettingTab extends PluginSettingTab {
                         .setIcon("trash")
                         .setTooltip("Delete")
                         .onClick(async () => {
-                            delete this.plugin.data.diceModTemplateFolders[folder];
+                            delete this.plugin.data.diceModTemplateFolders[
+                                folder
+                            ];
                             await this.plugin.saveSettings();
-                            this.buildDiceModTemplateFoldersSettings(containerEl);
+                            this.buildDiceModTemplateFoldersSettings(
+                                containerEl
+                            );
                         })
                 );
         }
         if (!Object.values(diceModeTemplateFolders).length) {
-            additional.createDiv({ cls: "no-dice-mod-template-folders" }, (e) => {
-                e.createSpan({ text: "Add a template folder to enable " });
-                e.createEl("code", { text: "dice-mod" });
-                e.createSpan({ text: " in templates!" });
-            })
+            additional.createDiv(
+                { cls: "no-dice-mod-template-folders" },
+                (e) => {
+                    e.createSpan({ text: "Add a template folder to enable " });
+                    e.createEl("code", { text: "dice-mod" });
+                    e.createSpan({ text: " in templates!" });
+                }
+            );
         }
     }
+    allFolders = this.app.vault
+        .getAllLoadedFiles()
+        .filter((f) => f instanceof TFolder) as TFolder[];
+    folders = this.allFolders
+        .filter(
+            (f) =>
+                !Object.keys(
+                    this.plugin.data.diceModTemplateFolders ?? {}
+                ).find(([p]) => f.path === p)
+        )
+        .sort((a, b) => a.path.localeCompare(b.path));
     async buildDiceModTemplateFoldersForm(
         el: HTMLElement,
         temp: DiceModTemplateFolder = {
@@ -968,12 +1006,40 @@ export default class SettingTab extends PluginSettingTab {
             const formulaEl = el.createDiv("add-new-formula");
             const dataEl = formulaEl.createDiv("formula-data");
 
-            new Setting(dataEl).setName("Template Folder").addText((t) => {
-                t.setValue(temp.folder).onChange((v) => (temp.folder = v));
-            });
-            new Setting(dataEl).setName("Also use subfolders").addToggle((t) => {
-                t.setValue(temp.useSubfolders).onChange((v) => (temp.useSubfolders = v));
-            });
+            new Setting(dataEl)
+                .setName("Template Folder")
+                .addText(async (t) => {
+                    const set = async () => {
+                        temp.folder = t.getValue();
+                        this.folders = this.allFolders
+                            .filter(
+                                (f) =>
+                                    !Object.keys(
+                                        this.plugin.data
+                                            .diceModTemplateFolders ?? {}
+                                    ).find(([p]) => f.path === p)
+                            )
+                            .sort((a, b) => a.path.localeCompare(b.path));
+                    };
+                    const folderModal = new FolderSuggestionModal(
+                        this.app,
+                        t,
+                        this.folders
+                    );
+                    folderModal.onClose = () => {
+                        set();
+                    };
+                    t.inputEl.onblur = async () => {
+                        set();
+                    };
+                });
+            new Setting(dataEl)
+                .setName("Also use subfolders")
+                .addToggle((t) => {
+                    t.setValue(temp.useSubfolders).onChange(
+                        (v) => (temp.useSubfolders = v)
+                    );
+                });
 
             const buttonEl = formulaEl.createDiv("formula-buttons");
             new Setting(buttonEl)
@@ -986,8 +1052,8 @@ export default class SettingTab extends PluginSettingTab {
                             if (temp.folder && temp.folder != "") {
                                 resolve(temp);
                             } else {
-                                new Notice("Invalid Template folder!")
-                                resolve(null)
+                                new Notice("Invalid Template folder!");
+                                resolve(null);
                             }
                         })
                 )
