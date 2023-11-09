@@ -6,17 +6,12 @@ import {
     Notice,
     Pos,
     SectionCache,
-    setIcon,
-    TFile
+    setIcon
 } from "obsidian";
 import DiceRollerPlugin from "src/main";
 import { LexicalToken } from "src/parser/lexer";
-import { COPY_DEFINITION, SECTION_REGEX, TAG_REGEX } from "src/utils/constants";
-import {
-    GenericEmbeddedRoller,
-    GenericFileRoller,
-    GenericRoller
-} from "./roller";
+import { COPY_DEFINITION, SECTION_REGEX } from "src/utils/constants";
+import { GenericEmbeddedRoller } from "./roller";
 
 type RollerCache = SectionCache | ListItemCache;
 
@@ -38,8 +33,8 @@ export function blockid(len: number) {
 
 export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
     result: RollerCache;
-    get replacer() {
-        const blockID = this.getBlockId(this.result);
+    async getReplacer() {
+        const blockID = await this.getBlockId();
         if (blockID) {
             return `![[${this.path}#^${blockID}]]`;
         }
@@ -152,11 +147,14 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
     transformResultsToString(): string {
         return this.displayFromCache(...this.results);
     }
-    getBlockId(cache: RollerCache) {
+    async getBlockId() {
+        if (!this.result) {
+            await this.roll();
+        }
         const blocks = this.cache.blocks ?? {};
         const block = Object.entries(blocks).find(
             ([id, block]: [string, BlockCache]) => {
-                return samePosition(block.position, cache.position);
+                return samePosition(block.position, this.result.position);
             }
         );
         if (!block) {
@@ -280,8 +278,6 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
         await this.render();
     }
 }
-
-
 
 const samePosition = (pos: Pos, pos2: Pos) => {
     return (

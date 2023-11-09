@@ -23,7 +23,7 @@ export class LinkRoller extends GenericRoller<TFile> {
         this.getFiles();
     }
     result: TFile;
-    get replacer() {
+    async getReplacer() {
         return `[[${this.result.basename}]]`;
     }
     get tooltip() {

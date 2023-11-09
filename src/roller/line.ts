@@ -5,7 +5,7 @@ import { COPY_DEFINITION, SECTION_REGEX } from "src/utils/constants";
 import { GenericEmbeddedRoller } from "./roller";
 
 export class LineRoller extends GenericEmbeddedRoller<string> {
-    get replacer() {
+    async getReplacer() {
         return this.result;
     }
     result: string;

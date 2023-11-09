@@ -80,7 +80,7 @@ abstract class BareRoller<T> extends Roller<T> {
 }
 
 export abstract class BasicRoller<T = any> extends BareRoller<T> {
-    abstract replacer: string;
+    abstract getReplacer(): Promise<string>;
     save: boolean = false;
 
     get inlineText() {

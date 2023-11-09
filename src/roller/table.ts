@@ -45,7 +45,7 @@ export class TableRoller extends GenericFileRoller<string> {
     get tooltip() {
         return this.prettyTooltip;
     }
-    get replacer() {
+    async getReplacer() {
         return this.result;
     }
     result: string;

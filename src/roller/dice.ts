@@ -973,7 +973,7 @@ export class StackRoller extends GenericRoller<number> {
     round: Round;
     signed: boolean;
     showRenderNotice: boolean;
-    get replacer() {
+    async getReplacer() {
         return `${this.result}`;
     }
     stunted: string = "";

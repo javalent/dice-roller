@@ -439,7 +439,7 @@ export default class DiceRollerPlugin extends Plugin {
                                     info.lineStart,
                                     info.lineEnd + 1
                                 );
-                                const replacer = roller.replacer;
+                                const replacer = await roller.getReplacer();
                                 if (!replacer) {
                                     new Notice(
                                         "Dice Roller: There was an issue modifying the file."
@@ -461,10 +461,7 @@ export default class DiceRollerPlugin extends Plugin {
                                 } else {
                                     splitContent = splitContent
                                         .join("\n")
-                                        .replace(
-                                            `\`${full}\``,
-                                            rep
-                                        )
+                                        .replace(`\`${full}\``, rep)
                                         .split("\n");
                                 }
 
@@ -930,7 +927,6 @@ export default class DiceRollerPlugin extends Plugin {
         const lexemes = this.parse(content);
 
         const type = this.getTypeFromLexemes(lexemes);
-
         switch (type) {
             case "dice": {
                 const roller = new StackRoller(
