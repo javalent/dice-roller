@@ -1,4 +1,4 @@
-import { Notice } from "obsidian";
+import { Component, MarkdownRenderer, Notice } from "obsidian";
 import DiceRollerPlugin from "src/main";
 import { LexicalToken } from "src/parser/lexer";
 import { TAG_REGEX, DATAVIEW_REGEX } from "src/utils/constants";
@@ -14,8 +14,11 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
     types: string;
     results: SectionRoller[];
 
-    get replacer() {
-        return this.result.replacer;
+    async getReplacer() {
+        if (this.isLink) {
+            return `[[${this.result.file.basename}]]`;
+        }
+        return await this.result.getReplacer();
     }
     random: number;
     chosen: any;
@@ -106,19 +109,29 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
             (file) => `[[${file}]]${this.typeText}`
         );
 
-        this.results = links.map((link) => {
-            return new SectionRoller(
-                this.plugin,
-                link,
-                {
-                    ...this.lexeme,
-                    value: link,
-                    type: "section"
-                },
-                this.source,
-                false
+        this.results = [];
+        const promises = [];
+        for (const link of links) {
+            promises.push(
+                new Promise<void>(async (resolve) => {
+                    const roller = new SectionRoller(
+                        this.plugin,
+                        link,
+                        {
+                            ...this.lexeme,
+                            value: link,
+                            type: "section"
+                        },
+                        this.source,
+                        false
+                    );
+                    /* await roller.roll(); */
+                    this.results.push(roller);
+                    resolve();
+                })
             );
-        });
+        }
+        await Promise.all(promises);
         this.loaded = true;
         this.trigger("loaded");
     }
@@ -135,38 +148,54 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
         for (let i = 0; i < this.rolls; i++) {
             if (!clone.size) continue;
             const result = this.getRandomBetween(0, clone.size);
-            results.push(clone.get(result));
+            const cloned = clone.get(result);
+            await cloned.roll();
+            results.push(cloned);
             clone.delete(result);
         }
-        for (let r = 0; r < results.length; r++) {
-            const result = results[r];
-            if (this.isLink) {
-                const link = this.resultEl.createEl("a", {
-                    cls: "internal-link",
-                    text: result.file.basename
-                });
-                link.onclick = async (evt) => {
-                    evt.stopPropagation();
-                    this.plugin.app.workspace.openLinkText(
-                        result.path,
-                        this.plugin.app.workspace.getActiveFile()?.path,
-                        evt.getModifierState("Control")
-                    );
-                };
-
-                link.onmouseenter = async (evt) => {
-                    this.plugin.app.workspace.trigger(
-                        "link-hover",
-                        this, //not sure
-                        link, //targetEl
-                        result.path, //linkText
-                        this.plugin.app.workspace.getActiveFile()?.path //source
-                    );
-                };
-                if (results.length > 1 && r != results.length - 1) {
-                    this.resultEl.createSpan({ text: ", " });
+        if (this.isLink) {
+            const text: string[] = results.reduce((a, b, i, arr) => {
+                a.push(`[[${b.file.basename}]]`);
+                if (arr.length > 1 && i != arr.length - 1) {
+                    a.push(",");
                 }
-            } else {
+                return a;
+            }, []);
+            MarkdownRenderer.render(
+                this.plugin.app,
+                text.join(" "),
+                this.resultEl,
+                this.plugin.app.workspace.getActiveFile()?.path,
+                new Component()
+            );
+        } else {
+            for (const result of results) {
+                /* const link = this.resultEl.createEl("a", {
+                        cls: "internal-link",
+                        text: result.file.basename
+                    });
+                    link.onclick = async (evt) => {
+                        evt.stopPropagation();
+                        this.plugin.app.workspace.openLinkText(
+                            result.path,
+                            this.plugin.app.workspace.getActiveFile()?.path,
+                            evt.getModifierState("Control")
+                        );
+                    };
+    
+                    link.onmouseenter = async (evt) => {
+                        this.plugin.app.workspace.trigger(
+                            "link-hover",
+                            this, //not sure
+                            link, //targetEl
+                            result.path, //linkText
+                            this.plugin.app.workspace.getActiveFile()?.path //source
+                        );
+                    };
+                    if (results.length > 1 && r != results.length - 1) {
+                        this.resultEl.createSpan({ text: ", " });
+                    } */
+
                 const container = this.resultEl.createDiv();
                 container.createEl("h5", {
                     cls: "dice-file-name",
@@ -179,16 +208,12 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
     async roll(): Promise<SectionRoller> {
         return new Promise((resolve, reject) => {
             if (this.loaded) {
-                this.results.forEach(async (section) => await section.roll());
                 this.result = this.results[0];
                 this.render();
                 this.trigger("new-result");
                 resolve(this.result);
             } else {
                 this.on("loaded", () => {
-                    this.results.forEach(
-                        async (section) => await section.roll()
-                    );
                     this.result = this.results[0];
                     this.render();
                     this.trigger("new-result");
