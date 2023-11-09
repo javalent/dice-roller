@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.4.0](https://github.com/javalent/dice-roller/compare/10.3.0...10.4.0) (2023-11-09)
+
+
+### Features
+
+* **dice-mod:** add setting for template folder to prevent applicatio… ([#263](https://github.com/javalent/dice-roller/issues/263)) ([0c02b78](https://github.com/javalent/dice-roller/commit/0c02b789b66021a73695957353d0c0639e6cf1a2))
+
+
+### Bug Fixes
+
+* Fixes bug where opening in source mode caused `dice-mod` to immediately fire ([3d9c19e](https://github.com/javalent/dice-roller/commit/3d9c19e9f0f57613c68b5fcc39eaee205d3bd908))
+* Fixes issue where Link Rollers would modify notes ([3d98a75](https://github.com/javalent/dice-roller/commit/3d98a7506e1214313394fa4c7267f4d5d7cb7125))
+* Fixes issue where the Escape Dice Mod setting wasn't respected by LP ([1183e34](https://github.com/javalent/dice-roller/commit/1183e341b9ccf6ecde685527566d2fcd9a69089b))
+* Significantly improves Section Roller performance for large number of files ([4905d7c](https://github.com/javalent/dice-roller/commit/4905d7cb8899afe70f847c1c3d7909d274f9d7e6))
+
 ## [10.3.0](https://github.com/javalent/dice-roller/compare/10.2.0...10.3.0) (2023-11-01)
 
 
