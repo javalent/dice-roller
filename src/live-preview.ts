@@ -112,7 +112,9 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                             ? `${roller.inlineText} **${replacer}**`
                             : `${replacer}`;
 
-
+                        if (plugin.data.escapeDiceMod) {
+                            insert.replace(/([\*\[\]])/g, "\\$1");
+                        }
 
                         const mod = {
                             from: start - 1,
