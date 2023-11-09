@@ -177,7 +177,6 @@ interface DiceRollerSettings {
     icons: DiceIcon[];
 
     showRenderNotice: boolean;
-    
     diceModTemplateFolders: Record<string, boolean>;
     replaceDiceModInLivePreview: boolean;
 }
@@ -395,18 +394,15 @@ export default class DiceRollerPlugin extends Plugin {
         const modPromises: Promise<void>[] = [];
         for (let index = 0; index < nodeList.length; index++) {
             const node = nodeList.item(index);
-            const isTemplate =
-                isTemplateFolder(
-                    this.data.diceModTemplateFolders,
-                    file
-                )
+
             if (
                 file &&
                 file instanceof TFile &&
                 /^dice\-mod:\s*([\s\S]+)\s*?/.test(node.innerText) &&
-                info &&
-                !isTemplate
+                info
             ) {
+                if (isTemplateFolder(this.data.diceModTemplateFolders, file))
+                    continue;
                 try {
                     if (!replacementFound) {
                         fileContent = (
@@ -472,10 +468,7 @@ export default class DiceRollerPlugin extends Plugin {
                                 } else {
                                     splitContent = splitContent
                                         .join("\n")
-                                        .replace(
-                                            `\`${full}\``,
-                                            rep
-                                        )
+                                        .replace(`\`${full}\``, rep)
                                         .split("\n");
                                 }
 

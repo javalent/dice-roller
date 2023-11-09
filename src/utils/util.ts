@@ -1,3 +1,4 @@
+import { TFile } from "obsidian";
 import { ResultInterface, ResultMapInterface } from "src/types";
 
 const MATCH = /^\|?([\s\S]+?)\|?$/;
