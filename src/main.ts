@@ -580,6 +580,7 @@ export default class DiceRollerPlugin extends Plugin {
         if (!file || !(file instanceof TFile)) return;
         if (replacementFound && modPromises.length) {
             await Promise.all(modPromises);
+            sleep(500)
             await this.app.vault.modify(file, fileContent.join("\n"));
         }
 
