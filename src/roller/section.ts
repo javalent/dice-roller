@@ -104,7 +104,8 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
 
                 continue;
             }
-            MarkdownRenderer.renderMarkdown(
+            MarkdownRenderer.render(
+                app,
                 this.displayFromCache(result),
                 ret.createDiv(),
                 this.source,

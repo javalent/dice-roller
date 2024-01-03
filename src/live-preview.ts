@@ -85,7 +85,7 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                 const end = node.to;
                 // don't continue if current cursor position and inline code node (including formatting
                 // symbols) overlap
-                if (selectionAndRangeOverlap(selection, start, end + 1)) return;
+                if (selectionAndRangeOverlap(selection, start, end )) return;
 
 
                 const original = view.state.doc.sliceString(start, end).trim();
