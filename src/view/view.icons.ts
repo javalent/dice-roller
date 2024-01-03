@@ -38,7 +38,7 @@ export const DEFAULT_ICONS: DiceIcon[] = [
     {
         id: "dice-roller-d4",
         shape: IconShapes.TRIANGLE,
-        formula: "2d8 + 3",
+        formula: "d4",
         text: "4"
     },
     {
