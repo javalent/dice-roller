@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.4.1](https://github.com/javalent/dice-roller/compare/10.4.0...10.4.1) (2024-01-03)
+
+
+### Bug Fixes
+
+* Fixes clicking on a section/table roller in LP enters the source (close [#283](https://github.com/javalent/dice-roller/issues/283)) ([43e93d7](https://github.com/javalent/dice-roller/commit/43e93d774e73d01127f002acb9fc6ce56e195b4a))
+* Fixes custom percent dice (close [#280](https://github.com/javalent/dice-roller/issues/280)) ([e3bb922](https://github.com/javalent/dice-roller/commit/e3bb922fa6d24c0e036df1368ac71e7785643762))
+* Fixes d4 dice formula for dice tray (close [#276](https://github.com/javalent/dice-roller/issues/276)) ([7f7aa17](https://github.com/javalent/dice-roller/commit/7f7aa17545a4d842e704bee50b82f0ac53a2cf6a))
+* Fixes dice-mod race condition (close [#277](https://github.com/javalent/dice-roller/issues/277)) ([06a55a5](https://github.com/javalent/dice-roller/commit/06a55a5fcd00d72f90567e45852533927c6d2d1b))
+* Stopping the renderer resolves in-process dice rolls (close [#285](https://github.com/javalent/dice-roller/issues/285)) ([74d33c6](https://github.com/javalent/dice-roller/commit/74d33c62e9c680689a3761b63fb608beaaa2093a))
+
 ## [10.4.0](https://github.com/javalent/dice-roller/compare/10.3.0...10.4.0) (2023-11-09)
 
 
