@@ -701,9 +701,16 @@ export class PercentRoller extends DiceRoller {
         }
     }
     get result() {
-        return this.stack
-            .map((stack) => Number(stack.map((dice) => dice.result).join("")))
-            .reduce((a, b) => a + b);
+        let result = 0;
+        for (const stack of this.stack) {
+            const build = [];
+            for (const dice of stack) {
+                dice.rollSync();
+                build.push(dice.result);
+            }
+            result += Number(build.join(""));
+        }
+        return result;
     }
     get display() {
         return this.stack
@@ -713,6 +720,7 @@ export class PercentRoller extends DiceRoller {
     async roll() {
         if (!this.stack || !this.stack.length) return super.roll();
         this.stack.forEach((stack) => stack.map((dice) => dice.roll()));
+
         return [
             ...this.stack
                 .map((stack) => stack.map((dice) => dice.result))
