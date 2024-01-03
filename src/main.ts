@@ -374,6 +374,9 @@ export default class DiceRollerPlugin extends Plugin {
         this.fileMap.set(file, [...this.fileMap.get(file), roller]);
     }
 
+    processing: WeakMap<TFile, number> = new WeakMap();
+    promises: WeakMap<TFile, Array<(content: string[]) => Promise<string[]>>> =
+        new WeakMap();
     async postprocessor(el: HTMLElement, ctx: MarkdownPostProcessorContext) {
         let nodeList = el.querySelectorAll("code");
 
@@ -386,12 +389,15 @@ export default class DiceRollerPlugin extends Plugin {
 
         if ((!file || !(file instanceof TFile)) && path != "STATBLOCK_RENDERER")
             return;
+        if (file && file instanceof TFile) {
+            this.processing.set(file, (this.processing.get(file) ?? 0) + 1);
+            if (!this.promises.has(file)) {
+                this.promises.set(file, []);
+            }
+        }
 
         const toPersist: Record<number, BasicRoller> = {};
 
-        let fileContent: string[];
-        let replacementFound: boolean = false;
-        const modPromises: Promise<void>[] = [];
         for (let index = 0; index < nodeList.length; index++) {
             const node = nodeList.item(index);
 
@@ -404,13 +410,6 @@ export default class DiceRollerPlugin extends Plugin {
                 if (isTemplateFolder(this.data.diceModTemplateFolders, file))
                     continue;
                 try {
-                    if (!replacementFound) {
-                        fileContent = (
-                            await this.app.vault.cachedRead(file)
-                        ).split("\n");
-                        replacementFound = true;
-                    }
-
                     let [full, content] = node.innerText.match(
                         /^dice\-mod:\s*([\s\S]+)\s*?/
                     );
@@ -439,10 +438,12 @@ export default class DiceRollerPlugin extends Plugin {
                         });
                     }
 
-                    modPromises.push(
-                        new Promise((resolve, reject) => {
-                            roller.on("new-result", async () => {
-                                let splitContent = fileContent.slice(
+                    await roller.roll();
+
+                    this.promises.get(file).unshift(
+                        async (content: string[]) =>
+                            new Promise(async (resolve, reject) => {
+                                let splitContent = content.slice(
                                     info.lineStart,
                                     info.lineEnd + 1
                                 );
@@ -472,17 +473,14 @@ export default class DiceRollerPlugin extends Plugin {
                                         .split("\n");
                                 }
 
-                                fileContent.splice(
+                                content.splice(
                                     info.lineStart,
                                     info.lineEnd - info.lineStart + 1,
                                     ...splitContent
                                 );
-                                resolve();
-                            });
-                        })
+                                resolve(content);
+                            })
                     );
-
-                    await roller.roll();
 
                     continue;
                 } catch (e) {
@@ -578,11 +576,6 @@ export default class DiceRollerPlugin extends Plugin {
             }
         }
         if (!file || !(file instanceof TFile)) return;
-        if (replacementFound && modPromises.length) {
-            await Promise.all(modPromises);
-            sleep(500)
-            await this.app.vault.modify(file, fileContent.join("\n"));
-        }
 
         if (path in this.data.results) {
             this.data.results[path][lineStart] = {};
@@ -660,6 +653,19 @@ export default class DiceRollerPlugin extends Plugin {
                     }
                 });
             }
+        }
+        this.consume(file);
+    }
+
+    async consume(file: TFile) {
+        if (!this.processing.has(file)) return;
+        this.processing.set(file, this.processing.get(file) - 1);
+        if (this.processing.get(file) == 0) {
+            let content = (await this.app.vault.cachedRead(file)).split("\n");
+            for (const promise of this.promises.get(file)) {
+                content = await promise(content);
+            }
+            this.app.vault.process(file, (data) => content.join("\n"));
         }
     }
 
