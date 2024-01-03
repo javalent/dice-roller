@@ -407,8 +407,14 @@ export default class DiceRenderer extends Component {
     }
     stop() {
         if (this.#animating) {
-            for (const dice of [...this.#current].flat()) {
-                dice.stopped = true;
+            for (const shape of [...this.#current]) {
+                if (this.#finished.has(shape)) {
+                    this.#finished.get(shape)();
+                    this.#finished.delete(shape);
+                }
+                for (const dice of shape) {
+                    dice.stopped = true;
+                }
             }
         }
         this.#animating = false;

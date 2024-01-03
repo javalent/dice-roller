@@ -1113,8 +1113,6 @@ export class StackRoller extends GenericRoller<number> {
         }
         if (evt.getModifierState("Shift")) {
             await this.roll(true);
-            /* this.render();
-            this.trigger("new-result"); */
             this.hasRunOnce = true;
         } else if (window.getSelection()?.isCollapsed) {
             await this.roll();
