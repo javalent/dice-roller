@@ -160,6 +160,16 @@
     margin: 0 6px;
 }
 
+.dice-roller-setting-additional-container
+    > .additional
+    > .setting-item
+    > .setting-item-control
+    > .dice-mod-template-use-subfolders {
+    margin: 0 px;
+    font-style: italic;
+    font-size: small;
+}
+
 .dice-roller-setting-additional-container .add-new-formula {
     margin: 0 1rem;
     padding: 1rem 1rem 0 1rem;
@@ -167,9 +177,9 @@
     box-shadow: 0 0 0.25rem var(--background-modifier-box-shadow);
 }
 
-.dice-roller-setting-additional-container
-    .add-new-formula
-    .formula-data
+.dice-roller-setting-additional-container 
+    .add-new-formula 
+    .formula-data 
     .setting-item {
     border: 0;
 }

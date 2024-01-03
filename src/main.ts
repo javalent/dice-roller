@@ -42,6 +42,7 @@ import { inlinePlugin } from "./live-preview";
 import API from "./api/api";
 import { DEFAULT_ICONS, DiceIcon } from "./view/view.icons";
 import copy from "fast-copy";
+import { isTemplateFolder } from "./utils/util";
 /* import GenesysView, { GENESYS_VIEW_TYPE } from "./view/genesys"; */
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -176,6 +177,8 @@ interface DiceRollerSettings {
     icons: DiceIcon[];
 
     showRenderNotice: boolean;
+    diceModTemplateFolders: Record<string, boolean>;
+    replaceDiceModInLivePreview: boolean;
 }
 
 export const DEFAULT_SETTINGS: DiceRollerSettings = {
@@ -209,7 +212,9 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     round: Round.None,
     initialDisplay: ExpectedValue.Roll,
     icons: copy(DEFAULT_ICONS),
-    showRenderNotice: true
+    showRenderNotice: true,
+    diceModTemplateFolders: {},
+    replaceDiceModInLivePreview: true
 };
 
 export default class DiceRollerPlugin extends Plugin {
@@ -396,6 +401,8 @@ export default class DiceRollerPlugin extends Plugin {
                 /^dice\-mod:\s*([\s\S]+)\s*?/.test(node.innerText) &&
                 info
             ) {
+                if (isTemplateFolder(this.data.diceModTemplateFolders, file))
+                    continue;
                 try {
                     if (!replacementFound) {
                         fileContent = (
