@@ -43,6 +43,10 @@ import API from "./api/api";
 import { DEFAULT_ICONS, DiceIcon } from "./view/view.icons";
 import copy from "fast-copy";
 import { isTemplateFolder } from "./utils/util";
+
+import init, { onload } from "../crate/pkg/crate.js";
+import wasmbin from "../crate/pkg/crate_bg.wasm";
+
 /* import GenesysView, { GENESYS_VIEW_TYPE } from "./view/genesys"; */
 String.prototype.matchAll =
     String.prototype.matchAll ||
@@ -253,6 +257,9 @@ export default class DiceRollerPlugin extends Plugin {
     }
     async onload() {
         console.log("DiceRoller plugin loaded");
+        await init(wasmbin);
+        onload(this);
+        
         this.data = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 
         this.renderer = new DiceRenderer(this.getRendererData());

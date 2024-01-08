@@ -1,7 +1,11 @@
 import esbuild from "esbuild";
 import process from "process";
 import builtins from "builtin-modules";
+import path from "path";
+import fs from "fs";
+import { copyFile } from "fs/promises";
 import { config } from "dotenv";
+import { wasmPack } from "esbuild-plugin-wasm-pack";
 
 config();
 
@@ -15,53 +19,97 @@ const prod = process.argv[2] === "production";
 
 const dir = prod ? "./" : process.env.OUTDIR;
 
-esbuild
-    .build({
-        banner: {
-            js: banner
-        },
-        loader: { ".ttf": "base64", ".woff": "base64" },
-        entryPoints: ["src/main.ts", "src/styles.css"],
-        bundle: true,
-        external: [
-            "obsidian",
-            "get-fonts",
-            "electron",
-            "codemirror",
-            "@codemirror/autocomplete",
-            "@codemirror/closebrackets",
-            "@codemirror/collab",
-            "@codemirror/commands",
-            "@codemirror/comment",
-            "@codemirror/fold",
-            "@codemirror/gutter",
-            "@codemirror/highlight",
-            "@codemirror/history",
-            "@codemirror/language",
-            "@codemirror/lint",
-            "@codemirror/matchbrackets",
-            "@codemirror/panel",
-            "@codemirror/rangeset",
-            "@codemirror/rectangular-selection",
-            "@codemirror/search",
-            "@codemirror/state",
-            "@codemirror/stream-parser",
-            "@codemirror/text",
-            "@codemirror/tooltip",
-            "@codemirror/view",
-            ...builtins
-        ],
-        format: "cjs",
-        watch: !prod,
-        target: "es2020",
-        logLevel: "info",
-        minify: true,
-        treeShaking: true,
-        sourcemap: !prod,
-        outdir: dir,
-        metafile: true
-    })
-    .catch((e) => {
-        console.error(e);
+// load WASM files - see https://github.com/evanw/esbuild/issues/408#issuecomment-699688651
+const wasmPlugin = {
+    name: "wasm",
+    setup(build) {
+        // Resolve ".wasm" files to a path with a namespace
+        build.onResolve({ filter: /\.wasm$/ }, (args) => {
+            if (args.resolveDir === "") {
+                return; // Ignore unresolvable paths
+            }
+            return {
+                path: path.isAbsolute(args.path)
+                    ? args.path
+                    : path.join(args.resolveDir, args.path),
+                namespace: "wasm-binary"
+            };
+        });
+        build.onLoad(
+            { filter: /.*/, namespace: "wasm-binary" },
+            async (args) => ({
+                contents: await fs.promises.readFile(args.path),
+                loader: "binary"
+            })
+        );
+    }
+};
+const parameters = {
+    banner: {
+        js: banner
+    },
+    entryPoints: ["src/main.ts", "src/styles.css"],
+    bundle: true,
+    external: [
+        "obsidian",
+        "electron",
+        "codemirror",
+        "@codemirror/autocomplete",
+        "@codemirror/closebrackets",
+        "@codemirror/collab",
+        "@codemirror/commands",
+        "@codemirror/comment",
+        "@codemirror/fold",
+        "@codemirror/gutter",
+        "@codemirror/highlight",
+        "@codemirror/history",
+        "@codemirror/language",
+        "@codemirror/lint",
+        "@codemirror/matchbrackets",
+        "@codemirror/panel",
+        "@codemirror/rangeset",
+        "@codemirror/rectangular-selection",
+        "@codemirror/search",
+        "@codemirror/state",
+        "@codemirror/stream-parser",
+        "@codemirror/text",
+        "@codemirror/tooltip",
+        "@codemirror/view",
+        "moment",
+        ...builtins
+    ],
+    format: "cjs",
+    target: "es2022",
+    logLevel: "info",
+    sourcemap: prod ? false : "inline",
+    minify: prod,
+    treeShaking: true,
+    outdir: dir,
+    plugins: [wasmPlugin, wasmPack({ target: "web", path: "./crate" })],
+
+    logOverride: { "empty-import-meta": "silent" }
+};
+
+await esbuild.build(parameters).catch((x) => {
+    if (x.errors) {
+        console.error(x.errors);
+    } else {
+        console.error(x);
+    }
+    process.exit(1);
+});
+
+if (prod) {
+    await esbuild.build(parameters).catch((x) => {
+        if (x.errors) {
+            console.error(x.errors);
+        } else {
+            console.error(x);
+        }
         process.exit(1);
     });
+} else {
+    let ctx = await esbuild.context(parameters);
+    await copyFile("./manifest.json", path.resolve(dir, "manifest.json"));
+    await ctx.watch();
+}
