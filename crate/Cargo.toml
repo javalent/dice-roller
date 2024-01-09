@@ -7,11 +7,21 @@ edition = "2018"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-[features]
-default = ["console_error_panic_hook"]
+#[features]
+#default = ["console_error_panic_hook"]
 
 [dependencies]
-wasm-bindgen = "0.2.84"
+wasm-bindgen = "0.2"
+logos = "0.13.0"
+three-d = "0.16.3"
+js-sys = "0.3"
+#rapier3d = { version = "*", features = [ "wasm-bindgen" ] }
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+  "Window","console"
+]
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires

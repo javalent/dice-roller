@@ -44,7 +44,7 @@ import { DEFAULT_ICONS, DiceIcon } from "./view/view.icons";
 import copy from "fast-copy";
 import { isTemplateFolder } from "./utils/util";
 
-import init, { onload } from "../crate/pkg/crate.js";
+import init, { onload, calculate } from "../crate/pkg/crate.js";
 import wasmbin from "../crate/pkg/crate_bg.wasm";
 
 /* import GenesysView, { GENESYS_VIEW_TYPE } from "./view/genesys"; */
@@ -258,8 +258,10 @@ export default class DiceRollerPlugin extends Plugin {
     async onload() {
         console.log("DiceRoller plugin loaded");
         await init(wasmbin);
-        onload(this);
-        
+        onload();
+
+        console.log(calculate("1 + 2 + 3"), typeof calculate("2 + 3 + 4"));
+
         this.data = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 
         this.renderer = new DiceRenderer(this.getRendererData());
