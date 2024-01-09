@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.4.3](https://github.com/javalent/dice-roller/compare/10.4.2...10.4.3) (2024-01-09)
+
+
+### Bug Fixes
+
+* upgrade esbuild ([7cd4737](https://github.com/javalent/dice-roller/commit/7cd47372d76d3191d64759bf53c59716e3cdb4a2))
+
 ## [10.4.2](https://github.com/javalent/dice-roller/compare/10.4.1...10.4.2) (2024-01-09)
 
 
