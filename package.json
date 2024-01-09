@@ -41,7 +41,7 @@
         "copy-webpack-plugin": "^9.0.1",
         "css-loader": "^6.3.0",
         "dotenv": "^10.0.0",
-        "esbuild": "^0.14.2",
+        "esbuild": "^0.19.11",
         "fast-copy": "^3.0.1",
         "he": "^1.2.0",
         "luxon": "^2.5.2",
