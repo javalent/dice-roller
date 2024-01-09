@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.4.2](https://github.com/javalent/dice-roller/compare/10.4.1...10.4.2) (2024-01-09)
+
+
+### Bug Fixes
+
+* revert dice-mod changes until a better solution is found ([bd06964](https://github.com/javalent/dice-roller/commit/bd06964809f0fd47dc1bae7e3fda0d06422074e4))
+
 ## [10.4.1](https://github.com/javalent/dice-roller/compare/10.4.0...10.4.1) (2024-01-03)
 
 
