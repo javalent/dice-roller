@@ -58,7 +58,7 @@ const parameters = {
     sourcemap: prod ? false : "inline",
     minify: prod,
     treeShaking: true,
-    outdir: dir
+    outdir: dir,
 
     logOverride: { "empty-import-meta": "silent" }
 };
