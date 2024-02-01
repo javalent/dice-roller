@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.4.4](https://github.com/javalent/dice-roller/compare/10.4.3...10.4.4) (2024-02-01)
+
+
+### Bug Fixes
+
+* allow backticks in lookup table rolls ([5a7500e](https://github.com/javalent/dice-roller/commit/5a7500ed9a9bd0f28b6439a2aece555f089f67f3))
+
 ## [10.4.3](https://github.com/javalent/dice-roller/compare/10.4.2...10.4.3) (2024-01-09)
 
 
