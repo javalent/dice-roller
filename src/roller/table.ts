@@ -315,7 +315,10 @@ export class TableRoller extends GenericFileRoller<string> {
                 )
             ) {
                 const roller = await this.plugin.getRoller(
-                    Array.from(table.columns.keys())[0].split(":").pop(),
+                    Array.from(table.columns.keys())[0]
+                        .split(":")
+                        .pop()
+                        .replace(/\`/g, ""),
                     this.source
                 );
                 if (roller instanceof StackRoller) {
