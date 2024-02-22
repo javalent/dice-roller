@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.4.5](https://github.com/javalent/dice-roller/compare/10.4.4...10.4.5) (2024-02-22)
+
+
+### Bug Fixes
+
+* Fixes folder suggester not opening sometimes ([88c3a9a](https://github.com/javalent/dice-roller/commit/88c3a9ad49e6a706b0bfffa9fd405bd0e59399c8))
+* Improves UI for dice mod template folders settings ([ec0a1e3](https://github.com/javalent/dice-roller/commit/ec0a1e382c5e7a6173c43456d712b5797bdaec7f))
+
 ## [10.4.4](https://github.com/javalent/dice-roller/compare/10.4.3...10.4.4) (2024-02-01)
 
 
