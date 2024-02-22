@@ -42,6 +42,7 @@ export class FolderSuggestionModal extends SuggestionModal<TFolder> {
     }
     renderSuggestion(result: FuzzyMatch<TFolder>, el: HTMLElement) {
         let { item, match: matches } = result || {};
+        el.addClass("mod-complex");
         let content = el.createDiv({
             cls: "suggestion-content"
         });
@@ -68,7 +69,7 @@ export class FolderSuggestionModal extends SuggestionModal<TFolder> {
 
             content.appendText(item.path[i]);
         }
-        el.createDiv({
+        content.createDiv({
             cls: "suggestion-note",
             text: item.path
         });

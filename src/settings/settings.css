@@ -72,3 +72,26 @@ details.dice-roller-nested-settings > summary > .collapser > .handle {
 details.dice-roller-nested-settings[open] > summary > .collapser > .handle {
     transform: rotate(90deg);
 }
+
+.template-edit {
+    display: grid;
+    grid-template-columns: 1fr auto;
+}
+.template-edit .actions {
+    display: flex;
+    align-items: center;
+}
+
+.template-input {
+    margin-right: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.template-input .setting-item {
+    border: 0;
+}
+.template-input .folder-input,
+.template-input input {
+    width: 100%;
+}

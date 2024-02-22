@@ -3,13 +3,15 @@ import {
     ButtonComponent,
     DropdownComponent,
     ExtraButtonComponent,
+    normalizePath,
     Notice,
     Platform,
     PluginSettingTab,
     setIcon,
     Setting,
     TextComponent,
-    TFolder
+    TFolder,
+    ToggleComponent
 } from "obsidian";
 import { Round, ExpectedValue } from "src/types";
 import { ICON_DEFINITION } from "src/utils/constants";
@@ -37,6 +39,7 @@ declare global {
 export default class SettingTab extends PluginSettingTab {
     iconsEl: HTMLDivElement;
     contentEl: HTMLDivElement;
+    pathsEl: HTMLDivElement;
     constructor(app: App, public plugin: DiceRoller) {
         super(app, plugin);
         this.plugin = plugin;
@@ -727,7 +730,7 @@ export default class SettingTab extends PluginSettingTab {
                 return b;
             });
 
-        const additional = containerEl.createDiv("additional");
+        const additional = settingEl.createDiv("additional");
 
         const formulas = this.plugin.data.formulas;
 
@@ -812,7 +815,13 @@ export default class SettingTab extends PluginSettingTab {
                 );
         });
     }
-
+    #needsSort = true;
+    allFolders = this.app.vault
+        .getAllLoadedFiles()
+        .filter((f) => f instanceof TFolder);
+    folders = this.allFolders.filter(
+        (f) => !(f.path in this.plugin.data.diceModTemplateFolders)
+    );
     buildDiceModTemplateFoldersSettings(containerEl: HTMLDetailsElement) {
         containerEl.empty();
         this.#buildSummary(containerEl, "Modify Dice");
@@ -877,11 +886,29 @@ export default class SettingTab extends PluginSettingTab {
                 });
             });
 
-        const settingEl = containerEl.createDiv(
-            "dice-roller-setting-additional-container"
+        this.pathsEl = containerEl.createDiv(
+            "template-paths dice-roller-setting-additional-container"
         );
-        const addNew = settingEl.createDiv();
-        new Setting(addNew)
+        this.buildPaths();
+    }
+    buildPaths() {
+        if (this.#needsSort) {
+            //sort data
+            this.folders = this.allFolders.filter(
+                (f) => !(f.path in this.plugin.data.diceModTemplateFolders)
+            );
+            const temp = Object.entries(
+                this.plugin.data.diceModTemplateFolders
+            );
+            temp.sort((a, b) => {
+                return a[0].localeCompare(b[0]);
+            });
+            this.plugin.data.diceModTemplateFolders = Object.fromEntries(temp);
+            this.#needsSort = false;
+        }
+        this.pathsEl.empty();
+
+        new Setting(this.pathsEl)
             .setName("Template Folders")
             .setDesc(
                 createFragment((e) => {
@@ -892,181 +919,132 @@ export default class SettingTab extends PluginSettingTab {
                     });
                 })
             )
-            .addButton((button: ButtonComponent): ButtonComponent => {
-                let b = button
-                    .setTooltip("Add Folder")
-                    .setButtonText("+")
-                    .onClick(async () => {
-                        const tmp = await this.buildDiceModTemplateFoldersForm(
-                            addNew
-                        );
-
-                        if (tmp) {
-                            this.plugin.data.diceModTemplateFolders[
-                                tmp.folder
-                            ] = tmp.useSubfolders;
-                            this.buildDiceModTemplateFoldersSettings(
-                                containerEl
-                            );
-                            await this.plugin.saveSettings();
-                        }
-                    });
-
-                return b;
-            });
-
-        const additional = settingEl.createDiv("additional");
-
-        const diceModeTemplateFolders = this.plugin.data.diceModTemplateFolders;
-
-        for (const [folder, useSubfolders] of Object.entries(
-            diceModeTemplateFolders
-        )) {
-            const setting = new Setting(additional).setName(folder);
-            if (useSubfolders) {
-                setting.controlEl.createSpan({
-                    text: "(including subfolders)",
-                    cls: "dice-mod-template-use-subfolders"
-                });
-            }
-            setting
-                .addExtraButton((b) =>
-                    b
-                        .setIcon("pencil")
-                        .setTooltip("Edit")
-                        .onClick(async () => {
-                            const edited =
-                                await this.buildDiceModTemplateFoldersForm(
-                                    addNew,
-                                    {
-                                        folder: folder,
-                                        useSubfolders: useSubfolders
-                                    }
-                                );
-
-                            if (edited) {
-                                delete this.plugin.data.diceModTemplateFolders[
-                                    folder
-                                ];
-                                this.plugin.data.diceModTemplateFolders[
-                                    edited.folder
-                                ] = edited.useSubfolders;
-                                this.buildDiceModTemplateFoldersSettings(
-                                    containerEl
-                                );
-                                await this.plugin.saveSettings();
-                            }
-                        })
-                )
-                .addExtraButton((b) =>
-                    b
-                        .setIcon("trash")
-                        .setTooltip("Delete")
-                        .onClick(async () => {
-                            delete this.plugin.data.diceModTemplateFolders[
-                                folder
-                            ];
-                            await this.plugin.saveSettings();
-                            this.buildDiceModTemplateFoldersSettings(
-                                containerEl
-                            );
-                        })
-                );
+            .setHeading();
+        const nested = this.pathsEl.createDiv("additional");
+        for (const folder in this.plugin.data.diceModTemplateFolders) {
+            this.buildStaticPath(nested.createDiv(), folder);
         }
-        if (!Object.values(diceModeTemplateFolders).length) {
-            additional.createDiv(
-                { cls: "no-dice-mod-template-folders" },
-                (e) => {
-                    e.createSpan({ text: "Add a template folder to enable " });
-                    e.createEl("code", { text: "dice-mod" });
-                    e.createSpan({ text: " in templates!" });
+        this.buildEditPath(nested.createDiv());
+    }
+    buildStaticPath(rowEl: HTMLElement, folder: string) {
+        rowEl.empty();
+        const useSubfolders = this.plugin.data.diceModTemplateFolders[folder];
+
+        const setting = new Setting(rowEl).setName(folder);
+        if (useSubfolders) {
+            setting.setDesc("(incl. subfolders)");
+        }
+        setting
+            .addExtraButton((b) =>
+                b.setIcon("wrench").onClick(() => {
+                    this.buildEditPath(rowEl, folder);
+                })
+            )
+            .addExtraButton((b) =>
+                b.setIcon("trash").onClick(async () => {
+                    delete this.plugin.data.diceModTemplateFolders[folder];
+                    await this.plugin.saveSettings();
+                    this.#needsSort = true;
+                    this.buildPaths();
+                })
+            );
+    }
+    buildEditPath(rowEl: HTMLElement, folder?: string) {
+        rowEl.empty();
+        const temp: DiceModTemplateFolder = {
+            folder,
+            useSubfolders:
+                this.plugin.data.diceModTemplateFolders[folder] ?? true
+        };
+        const editEl = rowEl.createDiv("template-edit setting-item");
+        const input = editEl.createDiv("template-input");
+        const pathEl = input.createDiv("folder-input");
+
+        const sub = new ExtraButtonComponent(input)
+            .setTooltip("Include Subfolders")
+            .onClick(() => {
+                temp.useSubfolders = !temp.useSubfolders;
+                if (temp.useSubfolders) {
+                    sub.setIcon("folder-tree");
+                } else {
+                    sub.setIcon("folder-closed");
                 }
+            });
+        if (this.plugin.data.diceModTemplateFolders[folder] ?? true) {
+            sub.setIcon("folder-tree");
+        } else {
+            sub.setIcon("folder-closed");
+        }
+        const actions = editEl.createDiv("actions");
+        if (!folder) {
+            new ExtraButtonComponent(actions).extraSettingsEl.setAttr(
+                "style",
+                "visibility: hidden;"
             );
         }
-    }
-    allFolders = this.app.vault
-        .getAllLoadedFiles()
-        .filter((f) => f instanceof TFolder) as TFolder[];
-    folders = this.allFolders
-        .filter(
-            (f) =>
-                !Object.keys(
-                    this.plugin.data.diceModTemplateFolders ?? {}
-                ).find(([p]) => f.path === p)
-        )
-        .sort((a, b) => a.path.localeCompare(b.path));
-    async buildDiceModTemplateFoldersForm(
-        el: HTMLElement,
-        temp: DiceModTemplateFolder = {
-            folder: null,
-            useSubfolders: true
+        const add = new ExtraButtonComponent(actions)
+            .setIcon(folder ? "check" : "plus-with-circle")
+            .setDisabled(!folder)
+            .onClick(async () => {
+                this.plugin.data.diceModTemplateFolders[temp.folder] =
+                    temp.useSubfolders;
+                await this.plugin.saveSettings();
+                if (temp.folder != folder) {
+                    this.#needsSort = true;
+                    this.buildPaths();
+                } else {
+                    this.buildStaticPath(rowEl, folder);
+                }
+            });
+        if (folder) {
+            new ExtraButtonComponent(actions)
+                .setIcon("cross")
+                .onClick(() => this.buildStaticPath(rowEl, folder));
         }
-    ): Promise<DiceModTemplateFolder> {
-        return new Promise((resolve) => {
-            const formulaEl = el.createDiv("add-new-formula");
-            const dataEl = formulaEl.createDiv("formula-data");
 
-            new Setting(dataEl)
-                .setName("Template Folder")
-                .addText(async (t) => {
-                    const set = async () => {
-                        temp.folder = t.getValue();
-                        this.folders = this.allFolders
-                            .filter(
-                                (f) =>
-                                    !Object.keys(
-                                        this.plugin.data
-                                            .diceModTemplateFolders ?? {}
-                                    ).find(([p]) => f.path === p)
-                            )
-                            .sort((a, b) => a.path.localeCompare(b.path));
-                    };
-                    const folderModal = new FolderSuggestionModal(
-                        this.app,
-                        t,
-                        this.folders
-                    );
-                    folderModal.onClose = () => {
-                        set();
-                    };
-                    t.inputEl.onblur = async () => {
-                        set();
-                    };
-                });
-            new Setting(dataEl)
-                .setName("Also use subfolders")
-                .addToggle((t) => {
-                    t.setValue(temp.useSubfolders).onChange(
-                        (v) => (temp.useSubfolders = v)
-                    );
-                });
+        this.buildPathInput(
+            pathEl,
+            add,
+            (p) => {
+                temp.folder = p;
+            },
+            folder
+        );
+    }
+    buildPathInput(
+        inputEl: HTMLElement,
+        addButton: ExtraButtonComponent,
+        callback: (path: string) => void,
+        originalPath: string = "Folder"
+    ) {
+        const validateAndSend = (path: string) => {
+            if (
+                !path ||
+                !path.length ||
+                path in this.plugin.data.diceModTemplateFolders
+            ) {
+                addButton.setDisabled(true);
+                return false;
+            }
+            addButton.setDisabled(false);
+            callback(normalizePath(path));
+        };
+        const text = new TextComponent(inputEl)
+            .setPlaceholder(originalPath)
+            .onChange((path) => {
+                /** Validate no existing paths... */
+                validateAndSend(path);
+            });
+        const modal = new FolderSuggestionModal(this.app, text, [
+            ...(this.folders as TFolder[])
+        ]);
 
-            const buttonEl = formulaEl.createDiv("formula-buttons");
-            new Setting(buttonEl)
-                .addButton((b) =>
-                    b
-                        .setCta()
-                        .setButtonText("Save")
-                        .onClick(async () => {
-                            formulaEl.detach();
-                            if (temp.folder && temp.folder != "") {
-                                resolve(temp);
-                            } else {
-                                new Notice("Invalid Template folder!");
-                                resolve(null);
-                            }
-                        })
-                )
-                .addExtraButton((b) =>
-                    b
-                        .setIcon("cross")
-                        .setTooltip("Cancel")
-                        .onClick(() => {
-                            formulaEl.detach();
-                            resolve(null);
-                        })
-                );
-        });
+        modal.onClose = async () => {
+            const path = text.inputEl.value?.trim()
+                ? text.inputEl.value.trim()
+                : "/";
+            validateAndSend(path);
+        };
     }
 }
 

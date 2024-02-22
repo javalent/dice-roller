@@ -133,6 +133,9 @@
     border: 0px;
 }
 
+.dice-roller-setting-additional-container .additional {
+    padding: 0 18px;
+}
 .dice-roller-setting-additional-container {
     border-bottom: 1px solid var(--background-modifier-border);
     border-top: 1px solid var(--background-modifier-border);
@@ -177,9 +180,9 @@
     box-shadow: 0 0 0.25rem var(--background-modifier-box-shadow);
 }
 
-.dice-roller-setting-additional-container 
-    .add-new-formula 
-    .formula-data 
+.dice-roller-setting-additional-container
+    .add-new-formula
+    .formula-data
     .setting-item {
     border: 0;
 }
@@ -198,10 +201,10 @@
         transform: scale(1) rotate(-60deg);
     }
     20% {
-        transform: /* scale(1.1)  */rotate(-90deg);
+        transform: /* scale(1.1)  */ rotate(-90deg);
     }
     50% {
-        transform: /* scale(0.9)  */rotate(690deg);
+        transform: /* scale(0.9)  */ rotate(690deg);
     }
     100% {
         transform: /* scale(1) */ rotate(660deg);
