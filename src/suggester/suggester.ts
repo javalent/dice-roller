@@ -164,7 +164,6 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
     empty() {
         this.suggester.empty();
     }
-    shouldRender = true;
     onInputChanged(): void {
         if (this.shouldNotOpen) return;
         const inputStr = this.modifyInput(this.inputEl.value);
@@ -174,11 +173,9 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
         } else {
             this.onNoSuggestion();
         }
-        if (this.shouldRender) {
-            this.open();
-            this.shouldRender = false;
-        }
+        this.open();
     }
+
     onFocus(): void {
         this.shouldNotOpen = false;
         this.onInputChanged();
