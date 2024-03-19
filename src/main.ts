@@ -44,16 +44,6 @@ import { DEFAULT_ICONS, DiceIcon } from "./view/view.icons";
 import copy from "fast-copy";
 import { isTemplateFolder } from "./utils/util";
 /* import GenesysView, { GENESYS_VIEW_TYPE } from "./view/genesys"; */
-String.prototype.matchAll =
-    String.prototype.matchAll ||
-    function* matchAll(regexp: RegExp): IterableIterator<RegExpMatchArray> {
-        const flags = regexp.global ? regexp.flags : regexp.flags + "g";
-        const re = new RegExp(regexp, flags);
-        let match;
-        while ((match = re.exec(this))) {
-            yield match;
-        }
-    };
 
 /** Functional return type for error handling. */
 export declare class Success<T, E> {
@@ -580,7 +570,7 @@ export default class DiceRollerPlugin extends Plugin {
         if (!file || !(file instanceof TFile)) return;
         if (replacementFound && modPromises.length) {
             await Promise.all(modPromises);
-            sleep(500)
+            sleep(500);
             await this.app.vault.modify(file, fileContent.join("\n"));
         }
 

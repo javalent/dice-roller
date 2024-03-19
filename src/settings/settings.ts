@@ -21,6 +21,7 @@ import { DiceIcon, IconManager, IconShapes } from "src/view/view.icons";
 import { generateSlug } from "random-word-slugs";
 import { FontSuggestionModal } from "src/suggester/fonts";
 import { FolderSuggestionModal } from "src/suggester/folder";
+import { FolderInputSuggest } from "obsidian-utilities";
 
 declare var require: (id: "get-fonts") => { getFonts: () => Promise<string[]> };
 
@@ -36,6 +37,10 @@ declare global {
         };
     }
 }
+
+const SUBFOLDER_ICON = "folder-tree";
+const PARENT_FOLDER_ICON = "folder-closed";
+
 export default class SettingTab extends PluginSettingTab {
     iconsEl: HTMLDivElement;
     contentEl: HTMLDivElement;
@@ -819,9 +824,7 @@ export default class SettingTab extends PluginSettingTab {
     allFolders = this.app.vault
         .getAllLoadedFiles()
         .filter((f) => f instanceof TFolder);
-    folders = this.allFolders.filter(
-        (f) => !(f.path in this.plugin.data.diceModTemplateFolders)
-    );
+    folders: TFolder[] = [];
     buildDiceModTemplateFoldersSettings(containerEl: HTMLDetailsElement) {
         containerEl.empty();
         this.#buildSummary(containerEl, "Modify Dice");
@@ -894,9 +897,12 @@ export default class SettingTab extends PluginSettingTab {
     buildPaths() {
         if (this.#needsSort) {
             //sort data
+            //sort data
             this.folders = this.allFolders.filter(
-                (f) => !(f.path in this.plugin.data.diceModTemplateFolders)
+                (f): f is TFolder =>
+                    !(f.path in this.plugin.data.diceModTemplateFolders)
             );
+
             const temp = Object.entries(
                 this.plugin.data.diceModTemplateFolders
             );
@@ -931,9 +937,22 @@ export default class SettingTab extends PluginSettingTab {
         const useSubfolders = this.plugin.data.diceModTemplateFolders[folder];
 
         const setting = new Setting(rowEl).setName(folder);
-        if (useSubfolders) {
-            setting.setDesc("(incl. subfolders)");
-        }
+        setting.setDesc(
+            createFragment((e) => {
+                const container = e.createDiv({
+                    attr: {
+                        style: "display: flex;align-items: center;gap: 0.5rem;"
+                    }
+                });
+                if (useSubfolders) {
+                    setIcon(container, SUBFOLDER_ICON);
+                    container.createSpan({ text: "Includes Subfolders" });
+                } else {
+                    setIcon(container, PARENT_FOLDER_ICON);
+                    container.createSpan({ text: "Root Only" });
+                }
+            })
+        );
         setting
             .addExtraButton((b) =>
                 b.setIcon("wrench").onClick(() => {
@@ -960,20 +979,22 @@ export default class SettingTab extends PluginSettingTab {
         const input = editEl.createDiv("template-input");
         const pathEl = input.createDiv("folder-input");
 
-        const sub = new ExtraButtonComponent(input)
-            .setTooltip("Include Subfolders")
-            .onClick(() => {
-                temp.useSubfolders = !temp.useSubfolders;
-                if (temp.useSubfolders) {
-                    sub.setIcon("folder-tree");
-                } else {
-                    sub.setIcon("folder-closed");
-                }
-            });
+        const sub = new ExtraButtonComponent(input).onClick(() => {
+            temp.useSubfolders = !temp.useSubfolders;
+            if (temp.useSubfolders) {
+                sub.setIcon(SUBFOLDER_ICON).setTooltip("Including Subfolders");
+            } else {
+                sub.setIcon(PARENT_FOLDER_ICON).setTooltip(
+                    "Not Including Subfolders"
+                );
+            }
+        });
         if (this.plugin.data.diceModTemplateFolders[folder] ?? true) {
-            sub.setIcon("folder-tree");
+            sub.setIcon(SUBFOLDER_ICON).setTooltip("Including Subfolders");
         } else {
-            sub.setIcon("folder-closed");
+            sub.setIcon(PARENT_FOLDER_ICON).setTooltip(
+                "Not Including Subfolders"
+            );
         }
         const actions = editEl.createDiv("actions");
         if (!folder) {
@@ -1035,16 +1056,12 @@ export default class SettingTab extends PluginSettingTab {
                 /** Validate no existing paths... */
                 validateAndSend(path);
             });
-        const modal = new FolderSuggestionModal(this.app, text, [
-            ...(this.folders as TFolder[])
-        ]);
-
-        modal.onClose = async () => {
-            const path = text.inputEl.value?.trim()
-                ? text.inputEl.value.trim()
-                : "/";
-            validateAndSend(path);
-        };
+        const modal = new FolderInputSuggest(this.app, text, this.folders);
+        modal.onSelect(async (value) => {
+            modal.close();
+            modal.setValue(value.item.path);
+            validateAndSend(value.item.path);
+        });
     }
 }
 
