@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.4.6](https://github.com/javalent/dice-roller/compare/10.4.5...10.4.6) (2024-03-19)
+
+
+### Bug Fixes
+
+* Fixes issue with folder suggester for template folders in settings ([dd4f87a](https://github.com/javalent/dice-roller/commit/dd4f87aa58927de066e1ae15b9edde08a4709388))
+
 ## [10.4.5](https://github.com/javalent/dice-roller/compare/10.4.4...10.4.5) (2024-02-22)
 
 
