@@ -1028,8 +1028,9 @@ export class StackRoller extends GenericRoller<number> {
         return `${this.original}\nempty`;
     }
     allowAverage(): boolean {
-        const avgAllowed = (roller: DiceRoller) => roller.allowAverage();
-        return this.dynamic.every(avgAllowed);
+        return this.dynamic.every((roller: DiceRoller) =>
+            roller.allowAverage()
+        );
     }
     async build() {
         this.resultEl.empty();
