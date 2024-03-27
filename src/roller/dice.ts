@@ -1203,9 +1203,6 @@ export class StackRoller extends GenericRoller<number> {
         this.isRendering = true;
         this.setTooltip();
         this.setSpinner();
-        /* if (!this.renderer.loaded) {
-            this.plugin.addChild(this.renderer);
-        } */
         const promises = [];
         for (const die of this.dice) {
             promises.push(
@@ -1219,7 +1216,6 @@ export class StackRoller extends GenericRoller<number> {
 
         this.isRendering = false;
         this.setTooltip();
-        /* this.recalculate(); */
     }
     buildDiceTree() {
         let index = 0;
@@ -1491,38 +1487,6 @@ export class StackRoller extends GenericRoller<number> {
             }
         }
         this.result = final.result;
-    }
-
-    recalculate(modify = false) {
-        let stack = [];
-        let result = 0;
-        if (!this.stackCopy.length) {
-            return this.roll();
-        }
-        for (let item of this.stackCopy) {
-            if (typeof item === "string") {
-                let b: DiceRoller = stack.pop(),
-                    a = stack.pop();
-
-                const r = this.operators[item](a.result, b.result);
-                stack.push(new DiceRoller(`${r}`, this.renderer));
-            } else {
-                stack.push(item);
-                if (
-                    item instanceof DiceRoller &&
-                    this.stackCopy.indexOf(item) != this.stackCopy.length - 1
-                ) {
-                    if (modify) item.applyModifiers();
-                }
-            }
-        }
-        if (stack.length && stack[0] instanceof DiceRoller) {
-            if (modify) stack[0].applyModifiers();
-            result += stack[0].result;
-        }
-
-        this.result = result;
-        this.render();
     }
 
     toResult() {
