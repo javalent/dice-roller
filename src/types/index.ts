@@ -45,3 +45,15 @@ export enum ExpectedValue {
     Average = "Average",
     Roll = "Roll"
 }
+
+declare global {
+    interface Array<T> {
+        range(start: number, end: number): number[];
+    }
+}
+
+if (!Array.prototype.range) {
+    Array.prototype.range = function (start: number, end: number) {
+        return Array.from({ length: end - start }, (_, i) => i + start);
+    };
+}

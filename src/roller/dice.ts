@@ -9,7 +9,7 @@ import {
     ResultInterface
 } from "src/types";
 import { _insertIntoMap } from "src/utils/util";
-import { GenericRoller, Roller } from "./roller";
+import {ArrayRoller, GenericRoller, Roller} from "./roller";
 import DiceRenderer from "src/renderer/renderer";
 import { DiceShape } from "src/renderer/shapes";
 
@@ -53,10 +53,11 @@ export class DiceRoller {
 
         //ugly af
         if (/\[\d+(?:[ \t]*,[ \t]*\d+)+\]/.test(maxStr)) {
-            this.possibilities = maxStr
+            [min,  max] = maxStr
                 .replace(/[\[\]\s]/g, "")
                 .split(",")
                 .map((v) => Number(v));
+            this.possibilities = Array.prototype.range(min, max);
         } else if (maxStr === "F") {
             this.possibilities = [-1, 0, 1];
             this.fudge = true;
