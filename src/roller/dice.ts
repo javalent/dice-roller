@@ -53,9 +53,14 @@ export class DiceRoller {
 
         //ugly af
         if (/\[\d+(?:[ \t]*,[ \t]*\d+)+\]/.test(maxStr)) {
-            [min,  max] = maxStr
+            this.possibilities = maxStr
                 .replace(/[\[\]\s]/g, "")
                 .split(",")
+                .map((v) => Number(v));
+        } else if (/\[\d+(?:[ \t]*-[ \t]*\d+)+\]/.test(maxStr)) {
+            [min,  max] = maxStr
+                .replace(/[\[\]\s]/g, "")
+                .split("-")
                 .map((v) => Number(v));
             this.possibilities = Array.prototype.range(min, max);
         } else if (maxStr === "F") {
