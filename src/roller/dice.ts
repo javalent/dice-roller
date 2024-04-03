@@ -9,7 +9,7 @@ import {
     ResultInterface
 } from "src/types";
 import { _insertIntoMap } from "src/utils/util";
-import {ArrayRoller, GenericRoller, Roller} from "./roller";
+import {GenericRoller, Roller} from "./roller";
 import DiceRenderer from "src/renderer/renderer";
 import { DiceShape } from "src/renderer/shapes";
 
