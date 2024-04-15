@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.5.0](https://github.com/javalent/dice-roller/compare/10.4.6...10.5.0) (2024-04-15)
+
+
+### Features
+
+* New min/max syntax: `dice: 1d[5-10]` ([fc7ee80](https://github.com/javalent/dice-roller/commit/fc7ee80d3eacd2e95711d9c1ca7501a3bc58373a))
+
 ## [10.4.6](https://github.com/javalent/dice-roller/compare/10.4.5...10.4.6) (2024-03-19)
 
 
