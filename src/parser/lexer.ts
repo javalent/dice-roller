@@ -18,10 +18,10 @@ export const LINE_REGEX =
     /(?:\d+[Dd])?(?:\[.*\]\(|\[\[)(?:.+)(?:\)|\]\])\|line/u;
 export const MATH_REGEX = /[\(\^\+\-\*\/\)]/u;
 export const OMITTED_REGEX =
-    /(?:\d+|\b)[Dd](?:%|F|-?\d+|\[\d+(?:[ \t]*,[ \t]*\d+)+\]|\b)/u;
+    /(?:\d+|\b)[Dd](?:%|F|-?\d+|\[\d+(?:[ \t]*[,-][ \t]*\d+)+\]|\b)/u;
 
 export const CONDITIONAL_REGEX =
-    /(?:=|=!|<|>|<=|>=|=<|=>|-=|=-)(?:\d+(?:[Dd](?:%|F|-?\d+|\[\d+(?:[ \t]*,[ \t]*\d+)+\]|\b))?)/u;
+    /(?:=|=!|<|>|<=|>=|=<|=>|-=|=-)(?:\d+(?:[Dd](?:%|F|-?\d+|\[\d+(?:[ \t]*[,-][ \t]*\d+)+\]|\b))?)/u;
 
 export interface LexicalToken extends Partial<moo.Token> {
     conditions?: Conditional[];
@@ -71,8 +71,9 @@ export default class Lexer {
                         roll = this.defaultRoll,
                         faces = this.defaultFace
                     } = match.match(
-                        /(?<roll>\d+)?[Dd](?<faces>%|F|-?\d+|\[\d+(?:[ \t]*,[ \t]*\d+)+\])?/
+                        /(?<roll>\d+)?[Dd](?<faces>%|F|-?\d+|\[\d+(?:[ \t]*[,-][ \t]*\d+)+\])?/
                     ).groups;
+                    console.log("🚀 ~ file: lexer.ts:73 ~ faces:", faces);
                     return `${roll}d${faces}`;
                 }
             },
@@ -180,7 +181,7 @@ export default class Lexer {
                 if (!previous.conditions) previous.conditions = [];
                 const [_, operator, comparer] =
                     token.value.match(
-                        /(?<operator>=|=!|<|>|<=|>=|=<|=>|-=|=-)(?<comparer>\d+(?:[Dd](?:%|F|-?\d+|\[\d+(?:[ \t]*,[ \t]*\d+)+\]|\b))?)/
+                        /(?<operator>=|=!|<|>|<=|>=|=<|=>|-=|=-)(?<comparer>\d+(?:[Dd](?:%|F|-?\d+|\[\d+(?:[ \t]*[,-][ \t]*\d+)+\]|\b))?)/
                     ) ?? [];
                 const lexemes = this.parse(comparer);
                 previous.conditions.push({
