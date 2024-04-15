@@ -41,7 +41,7 @@ export class DiceRoller {
             this.modifiersAllowed = false;
         }
         let [, rolls, maxStr = "1"] = this.dice.match(
-            /(\-?\d+)[dD](%|F|-?\d+|\[\d+(?:[ \t]*,[ \t]*\d+)+\])/
+            /(\-?\d+)[dD](%|F|-?\d+|\[\d+(?:[ \t]*[,-][ \t]*\d+)+\])/
         ) || [, 1, "1"];
 
         rolls = Number(rolls);
@@ -49,6 +49,7 @@ export class DiceRoller {
         this.multiplier = rolls < 0 ? -1 : 1;
         let min = 1;
         let max = isNaN(Number(maxStr)) ? 1 : Number(maxStr);
+
         this.rolls = Math.abs(Number(rolls)) || 1;
 
         //ugly af
@@ -1368,6 +1369,7 @@ export class StackRoller extends GenericRoller<number> {
                             dice
                         );
                     }
+
                     index++;
                     break;
                 }
