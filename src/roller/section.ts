@@ -1,15 +1,15 @@
 import {
-    BlockCache,
+    type BlockCache,
+    type ListItemCache,
+    type Pos,
+    type SectionCache,
     Component,
-    ListItemCache,
     MarkdownRenderer,
     Notice,
-    Pos,
-    SectionCache,
     setIcon
 } from "obsidian";
 import DiceRollerPlugin from "src/main";
-import { LexicalToken } from "src/parser/lexer";
+import type { LexicalToken } from "src/parser/lexer";
 import { COPY_DEFINITION, SECTION_REGEX } from "src/utils/constants";
 import { GenericEmbeddedRoller } from "./roller";
 

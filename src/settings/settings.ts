@@ -17,10 +17,9 @@ import { Round, ExpectedValue } from "src/types";
 import { ICON_DEFINITION } from "src/utils/constants";
 import type DiceRoller from "../main";
 import { DEFAULT_SETTINGS } from "src/settings/settings.const";
-import { DiceIcon, IconManager, IconShapes } from "src/view/view.icons";
+import { type DiceIcon, IconManager, IconShapes } from "src/view/view.icons";
 import { generateSlug } from "random-word-slugs";
 import { FontSuggestionModal } from "src/suggester/fonts";
-import { FolderSuggestionModal } from "src/suggester/folder";
 import { FolderInputSuggest } from "obsidian-utilities";
 
 declare var require: (id: "get-fonts") => { getFonts: () => Promise<string[]> };
@@ -630,10 +629,10 @@ export default class SettingTab extends PluginSettingTab {
                     t,
                     await this.getFonts()
                 );
-                folderModal.onClose = () => {
-                    t.setValue(folderModal.item);
+                folderModal.onSelect(({ item }) => {
+                    t.setValue(item);
                     set();
-                };
+                });
                 t.setValue(this.plugin.data.textFont);
                 t.inputEl.onblur = async () => {
                     set();

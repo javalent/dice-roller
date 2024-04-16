@@ -1,13 +1,6 @@
-import {
-    CachedMetadata,
-    EventRef,
-    Events,
-    Notice,
-    setIcon,
-    TFile
-} from "obsidian";
+import { type CachedMetadata, Events, Notice, setIcon, TFile } from "obsidian";
 import DiceRollerPlugin from "src/main";
-import { LexicalToken } from "src/parser/lexer";
+import type { LexicalToken } from "src/parser/lexer";
 import { COPY_DEFINITION, ICON_DEFINITION } from "src/utils/constants";
 
 export abstract class Roller<T> extends Events {

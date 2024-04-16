@@ -1,10 +1,8 @@
 /* import lexer from "lex"; */
 
 import * as moo from "moo";
-import DiceRollerPlugin from "src/main";
-import { Conditional } from "src/types";
+import type { Conditional } from "src/types";
 import { Parser } from "./parser";
-import copy from "fast-copy";
 
 export const TAG_REGEX =
     /(?:\d+[Dd])?#(?:[\p{Letter}\p{Emoji_Presentation}\w/-]+)(?:\|(?:[+-]))?(?:\|(?:[^+-]+))?/u;

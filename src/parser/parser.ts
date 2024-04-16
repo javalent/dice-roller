@@ -1,4 +1,4 @@
-import { LexicalToken } from "./lexer";
+import type { LexicalToken } from "./lexer";
 
 export class Parser {
     table: any;

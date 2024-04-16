@@ -1,12 +1,12 @@
 import { Notice, setIcon } from "obsidian";
 import type DiceRollerPlugin from "src/main";
-import { LexicalToken } from "src/parser/lexer";
+import type { LexicalToken } from "src/parser/lexer";
 import {
-    ResultMapInterface,
-    Conditional,
+    type ResultMapInterface,
+    type Conditional,
     Round,
     ExpectedValue,
-    ResultInterface
+    type ResultInterface
 } from "src/types";
 import { _insertIntoMap } from "src/utils/util";
 import { GenericRoller, Roller } from "./roller";

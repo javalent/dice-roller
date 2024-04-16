@@ -1,7 +1,7 @@
-import { Component, MarkdownRenderer, Notice, Pos, TFile } from "obsidian";
+import { Component, MarkdownRenderer, Notice, TFile } from "obsidian";
 
 import { TABLE_REGEX } from "src/utils/constants";
-import { LinkRoller, StackRoller, TagRoller } from ".";
+import { StackRoller } from ".";
 import { GenericFileRoller } from "./roller";
 
 class SubRollerResult {
