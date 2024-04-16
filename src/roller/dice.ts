@@ -13,6 +13,7 @@ import { GenericRoller, Roller } from "./roller";
 import DiceRenderer from "src/renderer/renderer";
 import { DiceShape } from "src/renderer/shapes";
 import { Icons } from "src/utils/icons";
+import type { DiceRollerSettings } from "src/settings/settings.types";
 
 interface Modifier {
     conditionals: Conditional[];
@@ -1150,18 +1151,18 @@ export class StackRoller extends GenericRoller<number> {
     }
 
     constructor(
-        public plugin: DiceRollerPlugin,
+        public data: DiceRollerSettings,
         public original: string,
         public lexemes: LexicalToken[],
         public renderer: DiceRenderer,
-        showDice = plugin.data.showDice,
+        showDice = data.showDice,
         fixedText: string,
-        expectedValue = plugin.data.initialDisplay,
-        displayFormulaAfter = plugin.data.displayFormulaAfter,
-        round = plugin.data.round,
-        signed = plugin.data.signed
+        expectedValue = data.initialDisplay,
+        displayFormulaAfter = data.displayFormulaAfter,
+        round = data.round,
+        signed = data.signed
     ) {
-        super(plugin, original, lexemes, showDice);
+        super(data, original, lexemes, showDice);
 
         if (displayFormulaAfter) {
             this.containerEl.createSpan({

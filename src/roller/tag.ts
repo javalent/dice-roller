@@ -1,9 +1,11 @@
-import { Component, MarkdownRenderer, Notice } from "obsidian";
+import { App, Component, MarkdownRenderer, Notice } from "obsidian";
 import DiceRollerPlugin from "src/main";
 import type { LexicalToken } from "src/parser/lexer";
 import { TAG_REGEX, DATAVIEW_REGEX } from "src/utils/constants";
 import { GenericRoller } from "./roller";
 import { SectionRoller } from "./section";
+import type { DiceRollerSettings } from "src/settings/settings.types";
+import { DataviewManager } from "src/api/api.dataview";
 
 abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
     base: string;
@@ -24,18 +26,17 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
     chosen: any;
     loaded: boolean = false;
     constructor(
-        public plugin: DiceRollerPlugin,
+        public data: DiceRollerSettings,
         public original: string,
         public lexeme: LexicalToken,
         public source: string,
-        showDice = plugin.data.showDice
+        public app: App,
+        showDice = data.showDice
     ) {
-        super(plugin, original, [lexeme], showDice);
-
-        this.guardDataview();
+        super(data, original, [lexeme], showDice);
     }
     guardDataview() {
-        if (!this.plugin.canUseDataview) {
+        if (!DataviewManager.canUseDataview) {
             new Notice(
                 "A query can only be rolled with the Dataview plugin enabled."
             );
@@ -46,6 +47,7 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
     }
 
     initialize() {
+        this.guardDataview();
         const {
             roll = 1,
             query,
@@ -60,7 +62,7 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
             this.types = this.types.replace("link", "");
         }
 
-        if (!this.isLink && this.plugin.data.displayAsEmbed) {
+        if (!this.isLink && this.data.displayAsEmbed) {
             this.containerEl.addClasses(["has-embed", "markdown-embed"]);
         }
         this.getFiles();
@@ -73,14 +75,14 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
         return `|${this.types}`;
     }
     async getFiles() {
-        if (!this.plugin.dataviewAPI) {
+        if (!DataviewManager.canUseDataview) {
             new Notice(
                 "Dice Roller: Dataview must be installed and enabled to use query rollers."
             );
             return;
         }
-        await this.plugin.dataviewReady();
-        const query = await this.plugin.dataviewAPI.query(this.query);
+        await DataviewManager.dataviewReady();
+        const query = await DataviewManager.api.query(this.query);
         if (!query.successful) {
             throw new Error(
                 "No files found with that query. Is the query correct?\n\n" +
@@ -115,7 +117,7 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
             promises.push(
                 new Promise<void>(async (resolve) => {
                     const roller = new SectionRoller(
-                        this.plugin,
+                        this.data,
                         link,
                         {
                             ...this.lexeme,
@@ -123,6 +125,7 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
                             type: "section"
                         },
                         this.source,
+                        this.app,
                         false
                     );
                     /* await roller.roll(); */
@@ -138,7 +141,7 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
     result: SectionRoller;
     async build() {
         this.resultEl.empty();
-        if (this.plugin.data.displayResultsInline) {
+        if (this.data.displayResultsInline) {
             this.resultEl.createSpan({
                 text: this.inlineText
             });
@@ -162,10 +165,10 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
                 return a;
             }, []);
             MarkdownRenderer.render(
-                this.plugin.app,
+                this.app,
                 text.join(" "),
                 this.resultEl,
-                this.plugin.app.workspace.getActiveFile()?.path,
+                this.app.workspace.getActiveFile()?.path,
                 new Component()
             );
         } else {
@@ -176,20 +179,20 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
                     });
                     link.onclick = async (evt) => {
                         evt.stopPropagation();
-                        this.plugin.app.workspace.openLinkText(
+                        this.app.workspace.openLinkText(
                             result.path,
-                            this.plugin.app.workspace.getActiveFile()?.path,
+                            this.app.workspace.getActiveFile()?.path,
                             evt.getModifierState("Control")
                         );
                     };
     
                     link.onmouseenter = async (evt) => {
-                        this.plugin.app.workspace.trigger(
+                        this.app.workspace.trigger(
                             "link-hover",
                             this, //not sure
                             link, //targetEl
                             result.path, //linkText
-                            this.plugin.app.workspace.getActiveFile()?.path //source
+                            this.app.workspace.getActiveFile()?.path //source
                         );
                     };
                     if (results.length > 1 && r != results.length - 1) {
@@ -261,13 +264,14 @@ export class DataViewRoller extends DataViewEnabledRoller {
     }
     regex = DATAVIEW_REGEX;
     constructor(
-        public plugin: DiceRollerPlugin,
+        public data: DiceRollerSettings,
         public original: string,
         public lexeme: LexicalToken,
         public source: string,
-        showDice = plugin.data.showDice
+        app: App,
+        showDice = data.showDice
     ) {
-        super(plugin, original, lexeme, source, showDice);
+        super(data, original, lexeme, source, app, showDice);
 
         this.initialize();
     }
@@ -279,13 +283,14 @@ export class TagRoller extends DataViewEnabledRoller {
     }
     regex = TAG_REGEX;
     constructor(
-        public plugin: DiceRollerPlugin,
+        public data: DiceRollerSettings,
         public original: string,
         public lexeme: LexicalToken,
         public source: string,
-        showDice = plugin.data.showDice
+        app: App,
+        showDice = data.showDice
     ) {
-        super(plugin, original, lexeme, source, showDice);
+        super(data, original, lexeme, source, app, showDice);
 
         this.initialize();
     }

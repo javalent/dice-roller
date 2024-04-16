@@ -8,34 +8,26 @@ import {
     editorLivePreviewField
 } from "obsidian";
 
-import { getAPI } from "obsidian-dataview";
-
 import { around } from "monkey-around";
 
-import {
-    StackRoller,
-    TableRoller,
-    SectionRoller,
-    TagRoller,
-    LineRoller,
-    DataViewRoller
-} from "./roller";
+import { StackRoller } from "./roller";
 
 import SettingTab from "./settings/settings";
 
 import { ArrayRoller, BasicRoller } from "./roller/roller";
 import DiceView, { VIEW_TYPE } from "./view/view";
 import DiceRenderer, { type RendererData } from "./renderer/renderer";
-import { Lexer, type LexicalToken } from "./parser/lexer";
-import { Round, ExpectedValue, type RollerOptions } from "./types";
+import { Lexer } from "./parser/lexer";
+import { type RollerOptions } from "./types";
 import { inlinePlugin } from "./live-preview";
-import API from "./api/api";
+import { API } from "./api/api";
 import { isTemplateFolder } from "./utils/util";
 import type { DiceRollerSettings } from "./settings/settings.types";
 import { DEFAULT_SETTINGS } from "./settings/settings.const";
+import { DataviewManager } from "./api/api.dataview";
 
 export default class DiceRollerPlugin extends Plugin {
-    api = new API();
+    api = API;
 
     data: DiceRollerSettings;
 
@@ -60,9 +52,10 @@ export default class DiceRollerPlugin extends Plugin {
         console.log("DiceRoller plugin loaded");
         this.data = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 
-        this.api.initialize(this);
-
         this.renderer = new DiceRenderer(this.getRendererData());
+        this.api.initialize(this);
+        this.addChild(DataviewManager.initialize(this.app));
+
         Lexer.setDefaultFace(this.data.defaultFace);
         Lexer.setDefaultRoll(this.data.defaultRoll);
 
@@ -160,8 +153,6 @@ export default class DiceRollerPlugin extends Plugin {
 
         this.app.workspace.onLayoutReady(async () => {
             this.addDiceView(true);
-            await this.registerDataviewInlineFields();
-            /* this.addChild(this.renderer); */
         });
 
         this.app.workspace.trigger("dice-roller:loaded");
@@ -463,29 +454,6 @@ export default class DiceRollerPlugin extends Plugin {
         }
     }
 
-    get canUseDataview() {
-        return this.app.plugins.getPlugin("dataview") != null;
-    }
-    get dataview() {
-        return this.app.plugins.getPlugin("dataview");
-    }
-    get dataviewAPI() {
-        return getAPI();
-    }
-    async dataviewReady() {
-        return new Promise((resolve) => {
-            if (!this.canUseDataview) resolve(false);
-            if (this.dataview.api) {
-                resolve(true);
-            }
-            this.registerEvent(
-                this.app.metadataCache.on("dataview:api-ready", () => {
-                    resolve(true);
-                })
-            );
-        });
-    }
-
     get view() {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE);
         const leaf = leaves.length ? leaves[0] : null;
@@ -500,7 +468,7 @@ export default class DiceRollerPlugin extends Plugin {
     } */
 
     async getArrayRoller(options: any[], rolls = 1) {
-        const roller = new ArrayRoller(this, options, rolls);
+        const roller = new ArrayRoller(this.data, options, rolls);
 
         await roller.roll();
         return roller;
@@ -526,51 +494,6 @@ export default class DiceRollerPlugin extends Plugin {
         });
     } */
 
-    async registerDataviewInlineFields() {
-        if (!this.canUseDataview) return;
-
-        await this.dataviewReady();
-
-        const pages = this.dataview.index.pages;
-
-        pages.forEach(({ fields }) => {
-            for (const [key, value] of fields) {
-                if (
-                    typeof value !== "number" ||
-                    Number.isNaN(value) ||
-                    value == undefined
-                )
-                    continue;
-                this.inline.set(key, value);
-            }
-        });
-
-        Lexer.setInlineFields(this.inline);
-        this.registerEvent(
-            this.app.metadataCache.on(
-                "dataview:metadata-change",
-                (type, file) => {
-                    if (type === "update") {
-                        const page = this.dataview.api.page(file.path);
-
-                        if (!page) return;
-
-                        for (let key in page) {
-                            let value = page[key];
-                            if (
-                                typeof value !== "number" ||
-                                Number.isNaN(value) ||
-                                value == undefined
-                            )
-                                continue;
-                            this.inline.set(key, value);
-                        }
-                        Lexer.setInlineFields(this.inline);
-                    }
-                }
-            )
-        );
-    }
     async renderRoll(roller: StackRoller) {
         await roller.roll(true);
     }
@@ -593,213 +516,21 @@ export default class DiceRollerPlugin extends Plugin {
 
         await this.saveData(this.data);
     }
-    get dataview_regex(): RegExp {
-        const fields = Array.from(this.inline.keys());
-
-        if (!fields.length) return null;
-
-        return new RegExp(`(${fields.join("|")})`, "g");
-    }
 
     async getRoller(
         raw: string,
         source: string = "",
-        options: RollerOptions = API.RollerOptions(this.data)
+        options?: RollerOptions
     ): Promise<BasicRoller> {
-        const {
-            content,
-            showDice,
-            showParens,
-            showFormula,
-            expectedValue,
-            round,
-            shouldRender,
-            text,
-            signed
-        } = this.api.getParametersForRoller(raw, options);
-
-        const lexemes = Lexer.parse(content);
-
-        const type = this.api.getTypeFromLexemes(lexemes);
-        switch (type) {
-            case "dice": {
-                const roller = new StackRoller(
-                    this,
-                    content,
-                    lexemes,
-                    this.renderer,
-                    showDice,
-                    text,
-                    expectedValue,
-                    showParens,
-                    round,
-                    signed
-                );
-                roller.showFormula = showFormula;
-                roller.shouldRender = shouldRender;
-                roller.showRenderNotice = this.data.showRenderNotice;
-
-                return roller;
-            }
-            case "table": {
-                const roller = new TableRoller(
-                    this,
-                    content,
-                    lexemes[0],
-                    source,
-                    showDice
-                );
-                await roller.init;
-                return roller;
-            }
-            case "section": {
-                return new SectionRoller(
-                    this,
-                    content,
-                    lexemes[0],
-                    source,
-                    showDice
-                );
-            }
-            case "dataview": {
-                if (!this.canUseDataview) {
-                    throw new Error(
-                        "Tags are only supported with the Dataview plugin installed."
-                    );
-                }
-                return new DataViewRoller(
-                    this,
-                    content,
-                    lexemes[0],
-                    source,
-                    showDice
-                );
-            }
-            case "tag": {
-                if (!this.canUseDataview) {
-                    throw new Error(
-                        "Tags are only supported with the Dataview plugin installed."
-                    );
-                }
-                return new TagRoller(
-                    this,
-                    content,
-                    lexemes[0],
-                    source,
-                    showDice
-                );
-            }
-            case "line": {
-                return new LineRoller(
-                    this,
-                    content,
-                    lexemes[0],
-                    source,
-                    showDice
-                );
-            }
-        }
+        return this.api.getRoller(raw, source, options);
     }
 
     getRollerSync(
         raw: string,
         source: string,
-        options: RollerOptions = API.RollerOptions(this.data)
+        options?: RollerOptions
     ): BasicRoller {
-        const {
-            content,
-            showDice,
-            showParens,
-            showFormula,
-            expectedValue,
-            shouldRender,
-            text,
-            round,
-            signed
-        } = this.api.getParametersForRoller(raw, options);
-
-        const lexemes = Lexer.parse(content);
-
-        const type = this.api.getTypeFromLexemes(lexemes);
-
-        switch (type) {
-            case "dice": {
-                const roller = new StackRoller(
-                    this,
-                    content,
-                    lexemes,
-                    this.renderer,
-                    showDice,
-                    text,
-                    expectedValue,
-                    showParens,
-                    round,
-                    signed
-                );
-                roller.shouldRender = shouldRender;
-                roller.showFormula = showFormula;
-                roller.showRenderNotice = this.data.showRenderNotice;
-
-                return roller;
-            }
-            case "table": {
-                const roller = new TableRoller(
-                    this,
-                    content,
-                    lexemes[0],
-                    source,
-                    showDice
-                );
-                roller.init;
-                return roller;
-            }
-            case "section": {
-                return new SectionRoller(
-                    this,
-                    content,
-                    lexemes[0],
-                    source,
-                    showDice
-                );
-            }
-            case "dataview": {
-                if (!this.canUseDataview) {
-                    throw new Error(
-                        "Tags are only supported with the Dataview plugin installed."
-                    );
-                }
-                return new DataViewRoller(
-                    this,
-                    content,
-                    lexemes[0],
-                    source,
-                    showDice
-                );
-            }
-            case "tag": {
-                if (!this.canUseDataview) {
-                    throw new Error(
-                        "Tags are only supported with the Dataview plugin installed."
-                    );
-                }
-                return new TagRoller(
-                    this,
-                    content,
-                    lexemes[0],
-                    source,
-                    showDice
-                );
-            }
-            case "line": {
-                return new LineRoller(
-                    this,
-                    content,
-                    lexemes[0],
-                    source,
-                    showDice
-                );
-            }
-        }
+        return this.api.getRollerSync(raw, source, options);
     }
 
     onunload() {

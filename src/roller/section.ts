@@ -45,22 +45,12 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
     content: string;
     levels: string[];
 
-    constructor(
-        public plugin: DiceRollerPlugin,
-        public original: string,
-        public lexeme: LexicalToken,
-        source: string,
-        public inline: boolean = true,
-        showDice = plugin.data.showDice
-    ) {
-        super(plugin, original, lexeme, source, showDice);
-    }
     get tooltip() {
         return `${this.original}\n${this.path}`;
     }
     async build() {
         this.resultEl.empty();
-        if (this.plugin.data.displayResultsInline && this.inline) {
+        if (this.data.displayResultsInline && this.inline) {
             this.resultEl.createSpan({
                 text: this.inlineText
             });
@@ -74,7 +64,7 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
 
             return;
         }
-        if (this.plugin.data.copyContentButton) {
+        if (this.data.copyContentButton) {
             this.copy.removeClass("no-show");
         }
 
@@ -91,7 +81,7 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
             const ret = this.resultEl.createDiv({
                 cls: this.getEmbedClass()
             });
-            if (!this.plugin.data.displayResultsInline) {
+            if (!this.data.displayResultsInline) {
                 const type = "type" in result ? result.type : "List Item";
                 ret.setAttrs({
                     "aria-label": `${this.file.basename}: ${type}`
@@ -112,7 +102,7 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
                 this.source,
                 new Component()
             );
-            if (this.plugin.data.copyContentButton && this.results.length > 1) {
+            if (this.data.copyContentButton && this.results.length > 1) {
                 let copy = ret.createDiv({
                     cls: "dice-content-copy dice-roller-button",
                     attr: { "aria-label": "Copy Contents" }
@@ -168,7 +158,7 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
                 this.result.position.end.offset
             )}`;
             this.watch = false;
-            this.plugin.app.vault.modify(this.file, content);
+            this.app.vault.modify(this.file, content);
             return blockID;
         }
         return block[0];
@@ -195,11 +185,11 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
             );
     }
     async getOptions() {
-        this.cache = this.plugin.app.metadataCache.getFileCache(this.file);
+        this.cache = this.app.metadataCache.getFileCache(this.file);
         if (!this.cache || !this.cache.sections) {
             throw new Error("Could not read file cache.");
         }
-        this.content = await this.plugin.app.vault.cachedRead(this.file);
+        this.content = await this.app.vault.cachedRead(this.file);
 
         this.options = this.cache.sections.filter(({ type, position }) => {
             if (!this.types) return !["yaml", "thematicBreak"].includes(type);

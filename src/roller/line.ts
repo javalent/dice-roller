@@ -1,6 +1,4 @@
 import { MarkdownRenderer, Component, Notice, setIcon } from "obsidian";
-import DiceRollerPlugin from "src/main";
-import type { LexicalToken } from "src/parser/lexer";
 import { SECTION_REGEX } from "src/utils/constants";
 import { GenericEmbeddedRoller } from "./roller";
 import { Icons } from "src/utils/icons";
@@ -13,22 +11,12 @@ export class LineRoller extends GenericEmbeddedRoller<string> {
     types: string[];
     content: string;
 
-    constructor(
-        public plugin: DiceRollerPlugin,
-        public original: string,
-        public lexeme: LexicalToken,
-        source: string,
-        inline: boolean = true,
-        showDice = plugin.data.showDice
-    ) {
-        super(plugin, original, lexeme, source, showDice);
-    }
     get tooltip() {
         return `${this.original}\n${this.path}`;
     }
     async build() {
         this.resultEl.empty();
-        if (this.plugin.data.displayResultsInline && this.inline) {
+        if (this.data.displayResultsInline && this.inline) {
             this.resultEl.createSpan({
                 text: this.inlineText
             });
@@ -42,7 +30,7 @@ export class LineRoller extends GenericEmbeddedRoller<string> {
 
             return;
         }
-        if (this.plugin.data.copyContentButton) {
+        if (this.data.copyContentButton) {
             this.copy.removeClass("no-show");
         }
 
@@ -74,7 +62,7 @@ export class LineRoller extends GenericEmbeddedRoller<string> {
                 this.source,
                 new Component()
             );
-            if (this.plugin.data.copyContentButton && this.results.length > 1) {
+            if (this.data.copyContentButton && this.results.length > 1) {
                 let copy = ret.createDiv({
                     cls: "dice-content-copy dice-roller-button",
                     attr: { "aria-label": "Copy Contents" }
@@ -106,7 +94,7 @@ export class LineRoller extends GenericEmbeddedRoller<string> {
         this.types = types?.split(",");
     }
     async getOptions() {
-        this.content = await this.plugin.app.vault.cachedRead(this.file);
+        this.content = await this.app.vault.cachedRead(this.file);
         if (!this.content) {
             throw new Error("Could not read file cache.");
         }

@@ -9,7 +9,7 @@ import {
 import DiceRollerPlugin from "src/main";
 import { StackRoller } from "src/roller";
 import { ExpectedValue, type RollerOptions } from "../types";
-import API from "../api/api";
+import { API } from "../api/api";
 import { type DiceIcon, IconManager } from "./view.icons";
 import { Icons } from "src/utils/icons";
 
@@ -220,7 +220,9 @@ export default class DiceView extends ItemView {
             return;
         }
         this.rollButton.setDisabled(true);
-        const opts: RollerOptions = { ...API.RollerOptions(this.plugin) };
+        const opts: RollerOptions = {
+            ...API.getRollerOptions(this.plugin.data)
+        };
         if (opts.expectedValue == ExpectedValue.None) {
             opts.expectedValue = ExpectedValue.Roll;
         }

@@ -71,7 +71,6 @@ class LexerClass {
                     } = match.match(
                         /(?<roll>\d+)?[Dd](?<faces>%|F|-?\d+|\[\d+(?:[ \t]*[,-][ \t]*\d+)+\])?/
                     ).groups;
-                    console.log("🚀 ~ file: lexer.ts:73 ~ faces:", faces);
                     return `${roll}d${faces}`;
                 }
             },
