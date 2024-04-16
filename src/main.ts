@@ -1,8 +1,7 @@
 import {
-    Plugin,
     type MarkdownPostProcessorContext,
+    Plugin,
     Notice,
-    addIcon,
     MarkdownView,
     TFile,
     WorkspaceLeaf,
@@ -11,14 +10,9 @@ import {
 
 import { getAPI } from "obsidian-dataview";
 
-import { faDice } from "@fortawesome/free-solid-svg-icons";
-import { faCopy } from "@fortawesome/free-regular-svg-icons";
-import { icon } from "@fortawesome/fontawesome-svg-core";
-
 import { around } from "monkey-around";
 import { decode } from "he";
 
-import { COPY_DEFINITION, ICON_DEFINITION } from "./utils/constants";
 import {
     StackRoller,
     TableRoller,
@@ -159,14 +153,6 @@ export default class DiceRollerPlugin extends Plugin {
                 }
             }
         });
-
-        const ICON_SVG = icon(faDice).html[0];
-
-        addIcon(ICON_DEFINITION, ICON_SVG);
-
-        const COPY_SVG = icon(faCopy).html[0];
-
-        addIcon(COPY_DEFINITION, COPY_SVG);
 
         this.registerMarkdownPostProcessor(this.postprocessor.bind(this));
         this.registerEditorExtension([inlinePlugin(this)]);
@@ -764,7 +750,7 @@ export default class DiceRollerPlugin extends Plugin {
                 roller.showFormula = showFormula;
                 roller.shouldRender = shouldRender;
                 roller.showRenderNotice = this.data.showRenderNotice;
-                
+
                 return roller;
             }
             case "table": {
@@ -865,7 +851,7 @@ export default class DiceRollerPlugin extends Plugin {
                 roller.shouldRender = shouldRender;
                 roller.showFormula = showFormula;
                 roller.showRenderNotice = this.data.showRenderNotice;
-                
+
                 return roller;
             }
             case "table": {

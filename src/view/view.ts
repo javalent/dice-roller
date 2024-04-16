@@ -1,5 +1,4 @@
 import {
-    addIcon,
     ButtonComponent,
     ExtraButtonComponent,
     ItemView,
@@ -9,26 +8,12 @@ import {
 } from "obsidian";
 import DiceRollerPlugin from "src/main";
 import { StackRoller } from "src/roller";
-import { COPY_DEFINITION, ICON_DEFINITION } from "src/utils/constants";
 import { ExpectedValue, type RollerOptions } from "../types";
 import API from "../api/api";
 import { type DiceIcon, IconManager } from "./view.icons";
+import { Icons } from "src/utils/icons";
 
 export const VIEW_TYPE = "DICE_ROLLER_VIEW";
-
-addIcon(
-    "dice-roller-save",
-    `<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" data-prefix="far" data-icon="save" class="svg-inline--fa fa-save fa-w-14" role="img" viewBox="0 0 448 512"><path fill="currentColor" d="M433.941 129.941l-83.882-83.882A48 48 0 0 0 316.118 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V163.882a48 48 0 0 0-14.059-33.941zM272 80v80H144V80h128zm122 352H54a6 6 0 0 1-6-6V86a6 6 0 0 1 6-6h42v104c0 13.255 10.745 24 24 24h176c13.255 0 24-10.745 24-24V83.882l78.243 78.243a6 6 0 0 1 1.757 4.243V426a6 6 0 0 1-6 6zM224 232c-48.523 0-88 39.477-88 88s39.477 88 88 88 88-39.477 88-88-39.477-88-88-88zm0 128c-22.056 0-40-17.944-40-40s17.944-40 40-40 40 17.944 40 40-17.944 40-40 40z"/></svg>`
-);
-
-addIcon(
-    "dice-roller-plus",
-    `<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" data-prefix="far" data-icon="plus-square" class="svg-inline--fa fa-plus-square fa-w-14" role="img" viewBox="0 0 448 512"><path fill="currentColor" d="M352 240v32c0 6.6-5.4 12-12 12h-88v88c0 6.6-5.4 12-12 12h-32c-6.6 0-12-5.4-12-12v-88h-88c-6.6 0-12-5.4-12-12v-32c0-6.6 5.4-12 12-12h88v-88c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v88h88c6.6 0 12 5.4 12 12zm96-160v352c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V80c0-26.5 21.5-48 48-48h352c26.5 0 48 21.5 48 48zm-48 346V86c0-3.3-2.7-6-6-6H54c-3.3 0-6 2.7-6 6v340c0 3.3 2.7 6 6 6h340c3.3 0 6-2.7 6-6z"/></svg>`
-);
-addIcon(
-    "dice-roller-minus",
-    `<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" data-prefix="far" data-icon="minus-square" class="svg-inline--fa fa-minus-square fa-w-14" role="img" viewBox="0 0 448 512"><path fill="currentColor" d="M108 284c-6.6 0-12-5.4-12-12v-32c0-6.6 5.4-12 12-12h232c6.6 0 12 5.4 12 12v32c0 6.6-5.4 12-12 12H108zM448 80v352c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V80c0-26.5 21.5-48 48-48h352c26.5 0 48 21.5 48 48zm-48 346V86c0-3.3-2.7-6-6-6H54c-3.3 0-6 2.7-6 6v340c0 3.3 2.7 6 6 6h340c3.3 0 6-2.7 6-6z"/></svg>`
-);
 
 export default class DiceView extends ItemView {
     noResultsEl: HTMLSpanElement;
@@ -71,7 +56,7 @@ export default class DiceView extends ItemView {
         const headerEl = resultsEl.createDiv("dice-roller-results-header");
         headerEl.createEl("h4", { text: "Results" });
         new ExtraButtonComponent(headerEl.createDiv("clear-all"))
-            .setIcon("trash")
+            .setIcon(Icons.DELETE)
             .setTooltip("Clear All")
             .onClick(() => {
                 this.resultEl.empty();
@@ -110,12 +95,10 @@ export default class DiceView extends ItemView {
 
         const advDis = this.gridEl.createDiv("advantage-disadvantage");
 
-        new ExtraButtonComponent(advDis)
-            .setIcon("dice-roller-minus")
-            .onClick(() => {
-                this.#add -= 1;
-                this.setFormula();
-            });
+        new ExtraButtonComponent(advDis).setIcon(Icons.MINUS).onClick(() => {
+            this.#add -= 1;
+            this.setFormula();
+        });
         const adv = new ButtonComponent(advDis)
             .setButtonText("ADV")
             .onClick(() => {
@@ -146,12 +129,10 @@ export default class DiceView extends ItemView {
                 this.setFormula();
             });
 
-        new ExtraButtonComponent(advDis)
-            .setIcon("dice-roller-plus")
-            .onClick(() => {
-                this.#add += 1;
-                this.setFormula();
-            });
+        new ExtraButtonComponent(advDis).setIcon(Icons.PLUS).onClick(() => {
+            this.#add += 1;
+            this.setFormula();
+        });
 
         if (this.customFormulas.length) {
             const customs = this.gridEl.createDiv(
@@ -166,13 +147,13 @@ export default class DiceView extends ItemView {
                 );
                 const formulaEl = containerEl.createDiv("dice-custom-formula");
                 new ExtraButtonComponent(formulaEl)
-                    .setIcon(ICON_DEFINITION)
+                    .setIcon(Icons.DICE)
                     .setTooltip("Roll")
                     .onClick(() => this.roll(formula));
                 formulaEl.createSpan({ text: formula });
 
                 new ExtraButtonComponent(containerEl)
-                    .setIcon("trash")
+                    .setIcon(Icons.DELETE)
                     .setTooltip("Remove")
                     .onClick(() => {
                         this.plugin.data.customFormulas =
@@ -280,13 +261,13 @@ export default class DiceView extends ItemView {
 
         const buttons = this.formulaEl.createDiv("action-buttons");
         this.saveButton = new ExtraButtonComponent(buttons)
-            .setIcon("plus-with-circle")
+            .setIcon(Icons.SAVE)
             .setTooltip("Save Formula")
             .onClick(() => this.save());
         this.saveButton.extraSettingsEl.addClass("dice-roller-roll");
 
         this.rollButton = new ButtonComponent(buttons)
-            .setIcon(ICON_DEFINITION)
+            .setIcon(Icons.DICE)
             .setCta()
             .setTooltip("Roll")
             .onClick(() => this.roll());
@@ -320,7 +301,7 @@ export default class DiceView extends ItemView {
         const context = result.createDiv("result-context");
 
         context.createEl("em", { text: new Date().toLocaleString() });
-        new ExtraButtonComponent(context).setIcon("trash").onClick(() => {
+        new ExtraButtonComponent(context).setIcon(Icons.DELETE).onClick(() => {
             result.detach();
             if (this.resultEl.children.length === 0) {
                 this.resultEl.prepend(this.noResultsEl);
@@ -328,7 +309,7 @@ export default class DiceView extends ItemView {
         });
 
         const copy = new ExtraButtonComponent(context)
-            .setIcon(COPY_DEFINITION)
+            .setIcon(Icons.COPY)
             .setTooltip("Copy Result")
             .onClick(async () => {
                 await navigator.clipboard.writeText(`${roller.result}`);
@@ -336,7 +317,7 @@ export default class DiceView extends ItemView {
         copy.extraSettingsEl.addClass("dice-content-copy");
 
         const reroll = new ExtraButtonComponent(context)
-            .setIcon(ICON_DEFINITION)
+            .setIcon(Icons.DICE)
             .setTooltip("Roll Again")
             .onClick(() => this.roll(roller.original));
         reroll.extraSettingsEl.addClass("dice-result-reroll");
@@ -351,7 +332,7 @@ export default class DiceView extends ItemView {
         return VIEW_TYPE;
     }
     getIcon() {
-        return ICON_DEFINITION;
+        return Icons.DICE;
     }
     async onClose() {
         await super.onClose();

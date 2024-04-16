@@ -24,9 +24,6 @@
     "devDependencies": {
         "@codemirror/language": "https://github.com/lishid/cm-language",
         "@dimforge/rapier3d": "^0.11.2",
-        "@fortawesome/fontawesome-svg-core": "^1.2.32",
-        "@fortawesome/free-regular-svg-icons": "^5.15.4",
-        "@fortawesome/free-solid-svg-icons": "^5.15.4",
         "@popperjs/core": "^2.11.8",
         "@rollup/plugin-commonjs": "^15.1.0",
         "@rollup/plugin-node-resolve": "^9.0.0",
@@ -50,6 +47,7 @@
         "moo": "^0.5.1",
         "obsidian": "^1.4.11",
         "obsidian-dataview": "^0.4.25",
+        "obsidian-overload": "^1.167.0",
         "obsidian-utilities": "^1.1.4",
         "random-word-slugs": "^0.1.7",
         "rollup": "^2.32.1",

@@ -10,8 +10,9 @@ import {
 } from "obsidian";
 import DiceRollerPlugin from "src/main";
 import type { LexicalToken } from "src/parser/lexer";
-import { COPY_DEFINITION, SECTION_REGEX } from "src/utils/constants";
+import { SECTION_REGEX } from "src/utils/constants";
 import { GenericEmbeddedRoller } from "./roller";
+import { Icons } from "src/utils/icons";
 
 type RollerCache = SectionCache | ListItemCache;
 
@@ -124,7 +125,7 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
                             new Notice("Result copied to clipboard.");
                         });
                 });
-                setIcon(copy, COPY_DEFINITION);
+                setIcon(copy, Icons.COPY);
             }
         }
     }

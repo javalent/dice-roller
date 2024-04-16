@@ -1,8 +1,9 @@
 import { MarkdownRenderer, Component, Notice, setIcon } from "obsidian";
 import DiceRollerPlugin from "src/main";
 import type { LexicalToken } from "src/parser/lexer";
-import { COPY_DEFINITION, SECTION_REGEX } from "src/utils/constants";
+import { SECTION_REGEX } from "src/utils/constants";
 import { GenericEmbeddedRoller } from "./roller";
+import { Icons } from "src/utils/icons";
 
 export class LineRoller extends GenericEmbeddedRoller<string> {
     async getReplacer() {
@@ -84,7 +85,7 @@ export class LineRoller extends GenericEmbeddedRoller<string> {
                         new Notice("Result copied to clipboard.");
                     });
                 });
-                setIcon(copy, COPY_DEFINITION);
+                setIcon(copy, Icons.COPY);
             }
         }
     }

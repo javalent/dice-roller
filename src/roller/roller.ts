@@ -1,7 +1,7 @@
 import { type CachedMetadata, Events, Notice, setIcon, TFile } from "obsidian";
 import DiceRollerPlugin from "src/main";
 import type { LexicalToken } from "src/parser/lexer";
-import { COPY_DEFINITION, ICON_DEFINITION } from "src/utils/constants";
+import { Icons } from "src/utils/icons";
 
 export abstract class Roller<T> extends Events {
     abstract roll(): Promise<T> | T;
@@ -54,7 +54,7 @@ abstract class BareRoller<T> extends Roller<T> {
             this.iconEl = this.containerEl.createSpan({
                 cls: "dice-roller-button"
             });
-            setIcon(this.iconEl, ICON_DEFINITION);
+            setIcon(this.iconEl, Icons.DICE);
             this.iconEl.onclick = this.onClick.bind(this);
         } else {
             this.containerEl.addClass("no-icon");
@@ -164,7 +164,7 @@ export abstract class GenericEmbeddedRoller<T> extends GenericFileRoller<T> {
                     new Notice("Result copied to clipboard.");
                 });
         });
-        setIcon(this.copy, COPY_DEFINITION);
+        setIcon(this.copy, Icons.COPY);
     }
 }
 export class ArrayRoller<T = any> extends BareRoller<T> {

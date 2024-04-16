@@ -12,6 +12,7 @@ import { _insertIntoMap } from "src/utils/util";
 import { GenericRoller, Roller } from "./roller";
 import DiceRenderer from "src/renderer/renderer";
 import { DiceShape } from "src/renderer/shapes";
+import { Icons } from "src/utils/icons";
 
 interface Modifier {
     conditionals: Conditional[];
@@ -1208,7 +1209,7 @@ export class StackRoller extends GenericRoller<number> {
     }
     setSpinner() {
         this.resultEl.empty();
-        setIcon(this.resultEl.createDiv("should-spin"), "loader-2");
+        setIcon(this.resultEl.createDiv("should-spin"), Icons.LOADING);
     }
     async renderDice() {
         this.isRendering = true;
