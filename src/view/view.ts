@@ -39,6 +39,15 @@ export default class DiceView extends ItemView {
         this.contentEl.addClass("dice-roller-view");
 
         this.addChild(this.#icons);
+
+        this.plugin.app.workspace.on(
+            "dice-roller:new-result",
+            (roller: StackRoller) => {
+                if (this.plugin.data.addToView) {
+                    this.addResult(roller);
+                }
+            }
+        );
     }
     async onOpen() {
         //build ui

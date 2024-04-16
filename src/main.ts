@@ -224,10 +224,10 @@ export default class DiceRollerPlugin extends Plugin {
                     );
                     if (roller instanceof StackRoller) {
                         if (roller.shouldRender) roller.hasRunOnce = true;
-                        roller.on("new-result", () => {
+                        /* roller.on("new-result", () => {
                             if (this.data.addToView)
                                 this.view?.addResult(roller);
-                        });
+                        }); */
                     }
 
                     modPromises.push(
@@ -316,10 +316,10 @@ export default class DiceRollerPlugin extends Plugin {
                     }
                     if (roller instanceof StackRoller) {
                         roller.shouldRender = shouldRender;
-                        roller.on("new-result", () => {
+                        /* roller.on("new-result", () => {
                             if (this.data.addToView)
                                 this.view?.addResult(roller);
-                        });
+                        }); */
                     }
 
                     node.replaceWith(roller.containerEl);
@@ -543,6 +543,6 @@ export default class DiceRollerPlugin extends Plugin {
             delete window.__THREE__;
         }
         this.renderer.unload();
-        this.app.workspace.trigger("dice-roller:unload");
+        this.app.workspace.trigger("dice-roller:unloaded");
     }
 }

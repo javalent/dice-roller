@@ -1,4 +1,4 @@
-import { Notice, setIcon } from "obsidian";
+import { App, Notice, setIcon } from "obsidian";
 import type { LexicalToken } from "src/lexer/lexer";
 import {
     type ResultMapInterface,
@@ -1154,6 +1154,7 @@ export class StackRoller extends GenericRoller<number> {
         public original: string,
         public lexemes: LexicalToken[],
         public renderer: DiceRenderer,
+        public app: App,
         showDice = data.showDice,
         fixedText: string,
         expectedValue = data.initialDisplay,
@@ -1423,6 +1424,7 @@ export class StackRoller extends GenericRoller<number> {
         }
 
         this.trigger("new-result");
+        this.app.workspace.trigger("dice-roller:new-result", this);
         this.hasRunOnce = true;
         return this.result;
     }
