@@ -1,20 +1,18 @@
 import {
     addIcon,
     ButtonComponent,
-    debounce,
     ExtraButtonComponent,
     ItemView,
     Notice,
     TextAreaComponent,
-    TextComponent,
     WorkspaceLeaf
 } from "obsidian";
 import DiceRollerPlugin from "src/main";
 import { StackRoller } from "src/roller";
 import { COPY_DEFINITION, ICON_DEFINITION } from "src/utils/constants";
-import { ExpectedValue, RollerOptions } from "../types";
+import { ExpectedValue, type RollerOptions } from "../types";
 import API from "../api/api";
-import { DiceIcon, IconManager, IconShapes } from "./view.icons";
+import { type DiceIcon, IconManager } from "./view.icons";
 
 export const VIEW_TYPE = "DICE_ROLLER_VIEW";
 
@@ -246,20 +244,23 @@ export default class DiceView extends ItemView {
             opts.expectedValue = ExpectedValue.Roll;
         }
         try {
-            const roller =
-                await this.plugin.getRoller(formula, "view", opts)
-                    .catch((e) => { throw e });
+            const roller = await this.plugin
+                .getRoller(formula, "view", opts)
+                .catch((e) => {
+                    throw e;
+                });
             if (!(roller instanceof StackRoller)) {
-                throw new Error("The Dice Tray only supports dice rolls.")
+                throw new Error("The Dice Tray only supports dice rolls.");
             }
             roller.iconEl.detach();
             roller.containerEl.onclick = null;
             roller.buildDiceTree();
             if (!roller.dice.length) {
-                throw new Error("No dice.")
+                throw new Error("No dice.");
             }
-            await roller.roll(this.plugin.data.renderer)
-                .catch((e) => { throw e });
+            await roller.roll(this.plugin.data.renderer).catch((e) => {
+                throw e;
+            });
             this.addResult(roller);
         } catch (e) {
             new Notice("Invalid Formula: " + e.message);
