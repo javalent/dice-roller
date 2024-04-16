@@ -21,6 +21,7 @@ import { generateSlug } from "random-word-slugs";
 import { FontSuggestionModal } from "src/suggester/fonts";
 import { FolderInputSuggest } from "obsidian-utilities";
 import { Icons } from "src/utils/icons";
+import { Lexer } from "src/parser/lexer";
 
 declare var require: (id: "get-fonts") => { getFonts: () => Promise<string[]> };
 
@@ -240,7 +241,7 @@ export default class SettingTab extends PluginSettingTab {
                     }
 
                     this.plugin.data.defaultFace = Number(t.inputEl.value);
-                    this.plugin.parser.setDefaultFace(
+                    Lexer.setDefaultFace(
                         this.plugin.data.defaultFace
                     );
                     await this.plugin.saveSettings();

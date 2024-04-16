@@ -28,7 +28,7 @@ export interface LexicalToken extends Partial<moo.Token> {
     value: string;
 }
 
-export default class Lexer {
+class LexerClass {
     lexer = moo.compile({
         WS: [{ match: /[ \t]+/u }, { match: /[{}]+/u }],
         table: TABLE_REGEX,
@@ -96,6 +96,8 @@ export default class Lexer {
     });
     parser: Parser;
     inline: Map<string, number> = new Map();
+    defaultFace: number;
+    defaultRoll: number;
     clampInfinite(match: string) {
         if (/i$/.test(match)) return "100";
         return match.replace(/^\D+/g, "");
@@ -109,7 +111,7 @@ export default class Lexer {
     public setDefaultFace(face: number) {
         this.defaultFace = face;
     }
-    constructor(public defaultRoll: number, public defaultFace: number) {
+    constructor() {
         const exponent = {
             precedence: 3,
             associativity: "right"
@@ -195,3 +197,5 @@ export default class Lexer {
         return clone;
     }
 }
+
+export const Lexer = new LexerClass();

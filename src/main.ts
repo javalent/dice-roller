@@ -11,7 +11,6 @@ import {
 import { getAPI } from "obsidian-dataview";
 
 import { around } from "monkey-around";
-import { decode } from "he";
 
 import {
     StackRoller,
@@ -27,7 +26,7 @@ import SettingTab from "./settings/settings";
 import { ArrayRoller, BasicRoller } from "./roller/roller";
 import DiceView, { VIEW_TYPE } from "./view/view";
 import DiceRenderer, { type RendererData } from "./renderer/renderer";
-import Lexer, { type LexicalToken } from "./parser/lexer";
+import { Lexer, type LexicalToken } from "./parser/lexer";
 import { Round, ExpectedValue, type RollerOptions } from "./types";
 import { inlinePlugin } from "./live-preview";
 import API from "./api/api";
@@ -36,7 +35,7 @@ import type { DiceRollerSettings } from "./settings/settings.types";
 import { DEFAULT_SETTINGS } from "./settings/settings.const";
 
 export default class DiceRollerPlugin extends Plugin {
-    api = new API(this);
+    api = new API();
 
     data: DiceRollerSettings;
 
@@ -44,7 +43,6 @@ export default class DiceRollerPlugin extends Plugin {
 
     inline: Map<string, number> = new Map();
 
-    parser: Lexer;
     persistingFiles: Set<string> = new Set();
     renderer: DiceRenderer;
 
@@ -62,8 +60,11 @@ export default class DiceRollerPlugin extends Plugin {
         console.log("DiceRoller plugin loaded");
         this.data = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 
+        this.api.initialize(this);
+
         this.renderer = new DiceRenderer(this.getRendererData());
-        this.parser = new Lexer(this.data.defaultRoll, this.data.defaultFace);
+        Lexer.setDefaultFace(this.data.defaultFace);
+        Lexer.setDefaultRoll(this.data.defaultRoll);
 
         this.addSettingTab(new SettingTab(this.app, this));
 
@@ -544,7 +545,7 @@ export default class DiceRollerPlugin extends Plugin {
             }
         });
 
-        this.parser.setInlineFields(this.inline);
+        Lexer.setInlineFields(this.inline);
         this.registerEvent(
             this.app.metadataCache.on(
                 "dataview:metadata-change",
@@ -564,7 +565,7 @@ export default class DiceRollerPlugin extends Plugin {
                                 continue;
                             this.inline.set(key, value);
                         }
-                        this.parser.setInlineFields(this.inline);
+                        Lexer.setInlineFields(this.inline);
                     }
                 }
             )
@@ -573,15 +574,7 @@ export default class DiceRollerPlugin extends Plugin {
     async renderRoll(roller: StackRoller) {
         await roller.roll(true);
     }
-    public async parseDice(content: string, source: string) {
-        const roller = await this.getRoller(content, source);
-        return { result: await roller.roll(), roller };
-    }
-    public parseDiceSync(content: string, source: string) {
-        const roller = this.getRollerSync(content, source);
-        if (!(roller instanceof StackRoller)) return;
-        return { result: roller.result, roller };
-    }
+
     clearEmpties(o: Record<any, any>) {
         for (var k in o) {
             if (!o[k] || typeof o[k] !== "object") {
@@ -608,115 +601,10 @@ export default class DiceRollerPlugin extends Plugin {
         return new RegExp(`(${fields.join("|")})`, "g");
     }
 
-    getParametersForRoller(
-        content: string,
-        options: RollerOptions
-    ): { content: string } & RollerOptions {
-        content = content.replace(/\\\|/g, "|");
-
-        let showDice = options?.showDice ?? true;
-        let shouldRender = options?.shouldRender ?? this.data.renderAllDice;
-        let showFormula =
-            options?.showFormula ?? this.data.displayResultsInline;
-        let showParens = options?.showParens ?? this.data.displayFormulaAfter;
-        let expectedValue: ExpectedValue =
-            options?.expectedValue ?? this.data.initialDisplay;
-        let text: string = options?.text ?? "";
-        let round = options?.round ?? this.data.round;
-        let signed = options?.signed ?? this.data.signed;
-
-        const regextext = /\|text\((.*)\)/;
-
-        //Flags always take precedence.
-        if (content.includes("|nodice")) {
-            showDice = false;
-        }
-        if (content.includes("|render")) {
-            shouldRender = true;
-        }
-        if (content.includes("|norender")) {
-            shouldRender = false;
-        }
-        if (content.includes("|form")) {
-            showFormula = true;
-        }
-        if (content.includes("|noform")) {
-            showFormula = false;
-        }
-        if (content.includes("|avg")) {
-            expectedValue = ExpectedValue.Average;
-        }
-        if (content.includes("|none")) {
-            expectedValue = ExpectedValue.None;
-        }
-        if (content.includes("|text(")) {
-            let [, matched] = content.match(regextext) ?? [null, ""];
-            text = matched;
-        }
-        if (content.includes("|paren")) {
-            showParens = true;
-        }
-        if (content.includes("|noparen")) {
-            showParens = false;
-        }
-
-        if (content.includes("|round")) {
-            round = Round.Normal;
-        }
-        if (content.includes("|noround")) {
-            round = Round.None;
-        }
-        if (content.includes("|ceil")) {
-            round = Round.Up;
-        }
-        if (content.includes("|floor")) {
-            round = Round.Down;
-        }
-        if (content.includes("|signed")) {
-            signed = true;
-        }
-
-        content = decode(
-            //remove flags...
-            content
-                .replace("|nodice", "")
-                .replace("|render", "")
-                .replace("|norender", "")
-                .replace("|noform", "")
-                .replace("|form", "")
-                .replace("|noparen", "")
-                .replace("|paren", "")
-                .replace("|avg", "")
-                .replace("|none", "")
-                .replace("|round", "")
-                .replace("|noround", "")
-                .replace("|ceil", "")
-                .replace("|floor", "")
-                .replace("|signed", "")
-                .replace(regextext, "")
-        );
-
-        if (content in this.data.formulas) {
-            content = this.data.formulas[content];
-        }
-
-        return {
-            content,
-            showDice,
-            showParens,
-            showFormula,
-            expectedValue,
-            shouldRender,
-            text,
-            round,
-            signed
-        };
-    }
-
     async getRoller(
         raw: string,
         source: string = "",
-        options: RollerOptions = API.RollerOptions(this)
+        options: RollerOptions = API.RollerOptions(this.data)
     ): Promise<BasicRoller> {
         const {
             content,
@@ -728,11 +616,11 @@ export default class DiceRollerPlugin extends Plugin {
             shouldRender,
             text,
             signed
-        } = this.getParametersForRoller(raw, options);
+        } = this.api.getParametersForRoller(raw, options);
 
-        const lexemes = this.parse(content);
+        const lexemes = Lexer.parse(content);
 
-        const type = this.getTypeFromLexemes(lexemes);
+        const type = this.api.getTypeFromLexemes(lexemes);
         switch (type) {
             case "dice": {
                 const roller = new StackRoller(
@@ -816,7 +704,7 @@ export default class DiceRollerPlugin extends Plugin {
     getRollerSync(
         raw: string,
         source: string,
-        options: RollerOptions = API.RollerOptions(this)
+        options: RollerOptions = API.RollerOptions(this.data)
     ): BasicRoller {
         const {
             content,
@@ -828,11 +716,11 @@ export default class DiceRollerPlugin extends Plugin {
             text,
             round,
             signed
-        } = this.getParametersForRoller(raw, options);
+        } = this.api.getParametersForRoller(raw, options);
 
-        const lexemes = this.parse(content);
+        const lexemes = Lexer.parse(content);
 
-        const type = this.getTypeFromLexemes(lexemes);
+        const type = this.api.getTypeFromLexemes(lexemes);
 
         switch (type) {
             case "dice": {
@@ -914,28 +802,6 @@ export default class DiceRollerPlugin extends Plugin {
         }
     }
 
-    getTypeFromLexemes(lexemes: LexicalToken[]) {
-        if (lexemes.some(({ type }) => type === "table")) {
-            return "table";
-        }
-        if (lexemes.some(({ type }) => type === "section")) {
-            return "section";
-        }
-        if (lexemes.some(({ type }) => type === "dataview")) {
-            return "dataview";
-        }
-        if (lexemes.some(({ type }) => type === "tag")) {
-            return "tag";
-        }
-        if (lexemes.some(({ type }) => type === "link")) {
-            return "link";
-        }
-        if (lexemes.some(({ type }) => type === "line")) {
-            return "line";
-        }
-        return "dice";
-    }
-
     onunload() {
         console.log("DiceRoller unloaded");
         this.app.workspace
@@ -947,8 +813,5 @@ export default class DiceRollerPlugin extends Plugin {
         }
         this.renderer.unload();
         this.app.workspace.trigger("dice-roller:unload");
-    }
-    parse(input: string): LexicalToken[] {
-        return this.parser.parse(input);
     }
 }
