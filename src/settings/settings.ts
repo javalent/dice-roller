@@ -16,7 +16,7 @@ import {
 import { Round, ExpectedValue } from "src/types";
 import { ICON_DEFINITION } from "src/utils/constants";
 import type DiceRoller from "../main";
-import { DEFAULT_SETTINGS } from "../main";
+import { DEFAULT_SETTINGS } from "src/settings/settings.const";
 import { DiceIcon, IconManager, IconShapes } from "src/view/view.icons";
 import { generateSlug } from "random-word-slugs";
 import { FontSuggestionModal } from "src/suggester/fonts";

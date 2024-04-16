@@ -1,6 +1,6 @@
-import DiceRollerPlugin from "src/main";
-import { BasicRoller } from "src/roller/roller";
-import { ExpectedValue, RollerOptions, Round } from "src/types";
+import type DiceRollerPlugin from "src/main";
+import type { BasicRoller } from "src/roller/roller";
+import { ExpectedValue, type RollerOptions, Round } from "src/types";
 
 export default class API {
     constructor(private plugin: DiceRollerPlugin) {}

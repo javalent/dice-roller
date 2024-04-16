@@ -1,6 +1,6 @@
 import {
     Plugin,
-    MarkdownPostProcessorContext,
+    type MarkdownPostProcessorContext,
     Notice,
     addIcon,
     MarkdownView,
@@ -9,9 +9,7 @@ import {
     editorLivePreviewField
 } from "obsidian";
 
-import { getAPI, Link } from "obsidian-dataview";
-
-import type { Plugins } from "../../obsidian-overload/index";
+import { getAPI } from "obsidian-dataview";
 
 import { faDice } from "@fortawesome/free-solid-svg-icons";
 import { faCopy } from "@fortawesome/free-regular-svg-icons";
@@ -26,7 +24,6 @@ import {
     TableRoller,
     SectionRoller,
     TagRoller,
-    LinkRoller,
     LineRoller,
     DataViewRoller
 } from "./roller";
@@ -35,177 +32,14 @@ import SettingTab from "./settings/settings";
 
 import { ArrayRoller, BasicRoller } from "./roller/roller";
 import DiceView, { VIEW_TYPE } from "./view/view";
-import DiceRenderer, { RendererData } from "./renderer/renderer";
-import Lexer, { LexicalToken } from "./parser/lexer";
-import { Round, ExpectedValue, RollerOptions } from "./types";
+import DiceRenderer, { type RendererData } from "./renderer/renderer";
+import Lexer, { type LexicalToken } from "./parser/lexer";
+import { Round, ExpectedValue, type RollerOptions } from "./types";
 import { inlinePlugin } from "./live-preview";
 import API from "./api/api";
-import { DEFAULT_ICONS, DiceIcon } from "./view/view.icons";
-import copy from "fast-copy";
 import { isTemplateFolder } from "./utils/util";
-/* import GenesysView, { GENESYS_VIEW_TYPE } from "./view/genesys"; */
-
-/** Functional return type for error handling. */
-export declare class Success<T, E> {
-    value: T;
-    successful: true;
-    constructor(value: T);
-    map<U>(f: (a: T) => U): Result<U, E>;
-    flatMap<U>(f: (a: T) => Result<U, E>): Result<U, E>;
-    orElse(_value: T): T;
-    orElseThrow(_message?: (e: E) => string): T;
-}
-/** Functional return type for error handling. */
-export declare class Failure<T, E> {
-    error: E;
-    successful: false;
-    constructor(error: E);
-    map<U>(_f: (a: T) => U): Result<U, E>;
-    flatMap<U>(_f: (a: T) => Result<U, E>): Result<U, E>;
-    orElse(value: T): T;
-    orElseThrow(message?: (e: E) => string): T;
-}
-export declare type Result<T, E> = Success<T, E> | Failure<T, E>;
-/** Monadic 'Result' type which encapsulates whether a procedure succeeded or failed, as well as it's return value. */
-export declare namespace Result {
-    function success<T, E>(value: T): Result<T, E>;
-    function failure<T, E>(error: E): Result<T, E>;
-    function flatMap2<T1, T2, O, E>(
-        first: Result<T1, E>,
-        second: Result<T2, E>,
-        f: (a: T1, b: T2) => Result<O, E>
-    ): Result<O, E>;
-    function map2<T1, T2, O, E>(
-        first: Result<T1, E>,
-        second: Result<T2, E>,
-        f: (a: T1, b: T2) => O
-    ): Result<O, E>;
-}
-
-declare module "obsidian-dataview" {
-    interface DataviewAPI {
-        query(source: string): Promise<Result<{ values: Link[] }, string>>;
-    }
-}
-
-//expose dataview plugin for tags
-declare module "obsidian" {
-    interface App {
-        plugins: {
-            getPlugin<T extends keyof Plugins>(plugin: T): Plugins[T];
-        };
-    }
-    interface Workspace {
-        on(
-            name: "dice-roller:render-dice",
-            callback: (roll: string) => void
-        ): EventRef;
-        on(
-            name: "dice-roller:rendered-result",
-            callback: (result: number) => void
-        ): EventRef;
-        on(
-            name: "dice-roller:settings-change",
-            callback: (data: DiceRollerSettings) => void
-        ): EventRef;
-    }
-    interface MetadataCache {
-        on(name: "dataview:api-ready", callback: () => void): EventRef;
-        on(
-            name: "dataview:metadata-change",
-            callback: (type: "update", file: TFile) => void
-        ): EventRef;
-    }
-}
-
-declare global {
-    interface Window {
-        __THREE__: string;
-    }
-}
-interface DiceRollerSettings {
-    showFudgeIcon: boolean;
-    rollLinksForTags: boolean;
-    copyContentButton: boolean;
-    displayResultsInline: boolean;
-    displayLookupRoll: boolean;
-    displayFormulaForMod: boolean;
-    displayFormulaAfter: boolean;
-    escapeDiceMod: boolean;
-    signed: boolean;
-    formulas: Record<string, string>;
-    persistResults: boolean;
-
-    showDice: boolean;
-    results: {
-        [path: string]: {
-            [line: string]: {
-                [index: string]: Record<string, any>;
-            };
-        };
-    };
-    defaultRoll: number;
-    defaultFace: number;
-    renderer: boolean;
-    renderAllDice: boolean;
-    addToView: boolean;
-    renderTime: number;
-    colorfulDice: boolean;
-    scaler: number;
-    diceColor: string;
-    textColor: string;
-    textFont: string;
-    showLeafOnStartup: boolean;
-    customFormulas: string[];
-
-    displayAsEmbed: boolean;
-
-    round: Round;
-
-    initialDisplay: ExpectedValue;
-
-    icons: DiceIcon[];
-
-    showRenderNotice: boolean;
-    diceModTemplateFolders: Record<string, boolean>;
-    replaceDiceModInLivePreview: boolean;
-}
-
-export const DEFAULT_SETTINGS: DiceRollerSettings = {
-    showFudgeIcon: false,
-    rollLinksForTags: false,
-    copyContentButton: true,
-    customFormulas: [],
-    displayFormulaForMod: true,
-    displayResultsInline: false,
-    displayFormulaAfter: false,
-    escapeDiceMod: true,
-    signed: false,
-    displayLookupRoll: true,
-    formulas: {},
-    persistResults: false,
-    results: {},
-    defaultRoll: 1,
-    defaultFace: 100,
-    renderer: false,
-    renderAllDice: false,
-    addToView: false,
-    renderTime: 2000,
-    colorfulDice: false,
-    scaler: 1,
-    diceColor: "#202020",
-    textColor: "#ffffff",
-    textFont: "Arial",
-    showLeafOnStartup: true,
-    showDice: true,
-    displayAsEmbed: true,
-    round: Round.None,
-    initialDisplay: ExpectedValue.Roll,
-    icons: copy(DEFAULT_ICONS),
-    showRenderNotice: true,
-    diceModTemplateFolders: {},
-    replaceDiceModInLivePreview: true
-};
+import type { DiceRollerSettings } from "./settings/settings.types";
+import { DEFAULT_SETTINGS } from "./settings/settings.const";
 
 export default class DiceRollerPlugin extends Plugin {
     api = new API(this);
@@ -216,20 +50,9 @@ export default class DiceRollerPlugin extends Plugin {
 
     inline: Map<string, number> = new Map();
 
-    operators: Record<string, (a: number, b: number) => number> = {
-        "+": (a: number, b: number): number => a + b,
-        "-": (a: number, b: number): number => a - b,
-        "*": (a: number, b: number): number => a * b,
-        "/": (a: number, b: number): number => a / b,
-        "^": (a: number, b: number): number => {
-            return Math.pow(a, b);
-        }
-    };
     parser: Lexer;
     persistingFiles: Set<string> = new Set();
     renderer: DiceRenderer;
-
-    existingDice: WeakSet<StackRoller> = new WeakSet();
 
     getRendererData(): RendererData {
         return {
@@ -761,7 +584,6 @@ export default class DiceRollerPlugin extends Plugin {
             )
         );
     }
-
     async renderRoll(roller: StackRoller) {
         await roller.roll(true);
     }
@@ -942,7 +764,7 @@ export default class DiceRollerPlugin extends Plugin {
                 roller.showFormula = showFormula;
                 roller.shouldRender = shouldRender;
                 roller.showRenderNotice = this.data.showRenderNotice;
-                this.existingDice.add(roller);
+                
                 return roller;
             }
             case "table": {
@@ -1043,7 +865,7 @@ export default class DiceRollerPlugin extends Plugin {
                 roller.shouldRender = shouldRender;
                 roller.showFormula = showFormula;
                 roller.showRenderNotice = this.data.showRenderNotice;
-                this.existingDice.add(roller);
+                
                 return roller;
             }
             case "table": {
