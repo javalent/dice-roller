@@ -1,7 +1,7 @@
 import { Component, type App } from "obsidian";
 import { getAPI } from "obsidian-dataview";
 import type { DvAPIInterface } from "obsidian-dataview/lib/typings/api";
-import { Lexer } from "src/parser/lexer";
+import { Lexer } from "src/lexer/lexer";
 
 class DVManager extends Component {
     app: App;

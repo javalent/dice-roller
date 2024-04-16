@@ -8,7 +8,7 @@ import {
     App
 } from "obsidian";
 
-import type { LexicalToken } from "src/parser/lexer";
+import type { LexicalToken } from "src/lexer/lexer";
 import type { DiceRollerSettings } from "src/settings/settings.types";
 import { Icons } from "src/utils/icons";
 

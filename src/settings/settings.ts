@@ -11,7 +11,6 @@ import {
     Setting,
     TextComponent,
     TFolder,
-    ToggleComponent
 } from "obsidian";
 import { Round, ExpectedValue } from "src/types";
 import type DiceRoller from "../main";
@@ -21,7 +20,7 @@ import { generateSlug } from "random-word-slugs";
 import { FontSuggestionModal } from "src/suggester/fonts";
 import { FolderInputSuggest } from "obsidian-utilities";
 import { Icons } from "src/utils/icons";
-import { Lexer } from "src/parser/lexer";
+import { Lexer } from "src/lexer/lexer";
 
 declare var require: (id: "get-fonts") => { getFonts: () => Promise<string[]> };
 

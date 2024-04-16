@@ -1,6 +1,6 @@
 import { App, Component, MarkdownRenderer, Notice } from "obsidian";
 import DiceRollerPlugin from "src/main";
-import type { LexicalToken } from "src/parser/lexer";
+import type { LexicalToken } from "src/lexer/lexer";
 import { TAG_REGEX, DATAVIEW_REGEX } from "src/utils/constants";
 import { GenericRoller } from "./roller";
 import { SectionRoller } from "./section";

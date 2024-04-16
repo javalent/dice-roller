@@ -17,7 +17,7 @@ import SettingTab from "./settings/settings";
 import { ArrayRoller, BasicRoller } from "./roller/roller";
 import DiceView, { VIEW_TYPE } from "./view/view";
 import DiceRenderer, { type RendererData } from "./renderer/renderer";
-import { Lexer } from "./parser/lexer";
+import { Lexer } from "./lexer/lexer";
 import { type RollerOptions } from "./types";
 import { inlinePlugin } from "./live-preview";
 import { API } from "./api/api";

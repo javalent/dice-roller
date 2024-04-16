@@ -4,7 +4,7 @@ import type { DiceRollerSettings } from "src/settings/settings.types";
 import { ExpectedValue, type RollerOptions, Round } from "src/types";
 
 import { decode } from "he";
-import { Lexer, type LexicalToken } from "src/parser/lexer";
+import { Lexer, type LexicalToken } from "src/lexer/lexer";
 import type { App } from "obsidian";
 import type DiceRenderer from "src/renderer/renderer";
 import {

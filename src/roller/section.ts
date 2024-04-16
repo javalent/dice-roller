@@ -8,8 +8,6 @@ import {
     Notice,
     setIcon
 } from "obsidian";
-import DiceRollerPlugin from "src/main";
-import type { LexicalToken } from "src/parser/lexer";
 import { SECTION_REGEX } from "src/utils/constants";
 import { GenericEmbeddedRoller } from "./roller";
 import { Icons } from "src/utils/icons";

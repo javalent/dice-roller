@@ -1,5 +1,5 @@
 import type { SectionCache } from "obsidian";
-import type { LexicalToken } from "src/parser/lexer";
+import type { LexicalToken } from "src/lexer/lexer";
 
 export interface RollerOptions {
     showDice?: boolean;

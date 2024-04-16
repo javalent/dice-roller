@@ -1,6 +1,5 @@
 import { Notice, setIcon } from "obsidian";
-import type DiceRollerPlugin from "src/main";
-import type { LexicalToken } from "src/parser/lexer";
+import type { LexicalToken } from "src/lexer/lexer";
 import {
     type ResultMapInterface,
     type Conditional,
