@@ -8,6 +8,7 @@
         "inlineSources": true,
         "module": "ESNext",
         "target": "ES2020",
+        "verbatimModuleSyntax": true,
         "allowJs": true,
         "noImplicitAny": true,
         "moduleResolution": "node",
