@@ -1,14 +1,4 @@
-import {
-    type MarkdownPostProcessorContext,
-    Plugin,
-    Notice,
-    MarkdownView,
-    TFile,
-    WorkspaceLeaf,
-    editorLivePreviewField
-} from "obsidian";
-
-import { around } from "monkey-around";
+import { Plugin, Notice, WorkspaceLeaf } from "obsidian";
 
 import { StackRoller } from "./roller";
 
@@ -19,9 +9,8 @@ import DiceView, { VIEW_TYPE } from "./view/view";
 import DiceRenderer, { type RendererData } from "./renderer/renderer";
 import { Lexer } from "./lexer/lexer";
 import { type RollerOptions } from "./types";
-import { inlinePlugin } from "./live-preview";
+import { inlinePlugin } from "./processor/live-preview";
 import { API } from "./api/api";
-import { isTemplateFolder } from "./utils/util";
 import type { DiceRollerSettings } from "./settings/settings.types";
 import { DEFAULT_SETTINGS } from "./settings/settings.const";
 import { DataviewManager } from "./api/api.dataview";
@@ -79,7 +68,7 @@ export default class DiceRollerPlugin extends Plugin {
                     return;
                 }
                 try {
-                    this.renderRoll(roller);
+                    await roller.roll(true);
                 } catch (e) {
                     new Notice("There was an error rendering the roll.");
                     console.error(e);
@@ -144,13 +133,6 @@ export default class DiceRollerPlugin extends Plugin {
             return leaf.view;
     } */
 
-    async getArrayRoller(options: any[], rolls = 1) {
-        const roller = new ArrayRoller(this.data, options, rolls);
-
-        await roller.roll();
-        return roller;
-    }
-
     async addDiceView(startup = false) {
         if (startup && !this.data.showLeafOnStartup) return;
         if (this.app.workspace.getLeavesOfType(VIEW_TYPE).length) {
@@ -169,10 +151,6 @@ export default class DiceRollerPlugin extends Plugin {
             type: GENESYS_VIEW_TYPE
         });
     } */
-
-    async renderRoll(roller: StackRoller) {
-        await roller.roll(true);
-    }
 
     clearEmpties(o: Record<any, any>) {
         for (var k in o) {
@@ -193,19 +171,41 @@ export default class DiceRollerPlugin extends Plugin {
         await this.saveData(this.data);
     }
 
+    /**
+     * @deprecated
+     */
+    async getArrayRoller(options: any[], rolls = 1) {
+        new Notice(
+            "Using the Dice Roller plugin directly will be deprecated in a future version. Please use `window.DiceRoller` instead."
+        );
+        return this.api.getArrayRoller(options, rolls);
+    }
+
+    /**
+     * @deprecated
+     */
     async getRoller(
         raw: string,
         source: string = "",
         options?: RollerOptions
     ): Promise<BasicRoller> {
+        new Notice(
+            "Using the Dice Roller plugin directly will be deprecated in a future version. Please use `window.DiceRoller` instead."
+        );
         return this.api.getRoller(raw, source, options);
     }
 
+    /**
+     * @deprecated
+     */
     getRollerSync(
         raw: string,
         source: string,
         options?: RollerOptions
     ): BasicRoller {
+        new Notice(
+            "Using the Dice Roller plugin directly will be deprecated in a future version. Please use `window.DiceRoller` instead."
+        );
         return this.api.getRollerSync(raw, source, options);
     }
 

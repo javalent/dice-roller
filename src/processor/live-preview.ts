@@ -35,17 +35,18 @@ import {
     ViewUpdate,
     WidgetType
 } from "@codemirror/view";
-import { EditorSelection, Range, EditorState } from "@codemirror/state";
+import { EditorSelection, Range } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
 import {
     TFile,
     editorEditorField,
     editorLivePreviewField,
-    editorViewField
+    editorInfoField
 } from "obsidian";
-import DiceRollerPlugin from "./main";
-import { BasicRoller } from "./roller/roller";
-import { isTemplateFolder } from "./utils/util";
+import DiceRollerPlugin from "../main";
+import { BasicRoller } from "../roller/roller";
+import { isTemplateFolder } from "../utils/util";
+import { API } from "src/api/api";
 
 function selectionAndRangeOverlap(
     selection: EditorSelection,
@@ -62,8 +63,6 @@ function selectionAndRangeOverlap(
 }
 
 function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
-    // still doesn't work as expected for tables and callouts
-
     const currentFile = this.app.workspace.getActiveFile();
     if (!currentFile) return;
 
@@ -103,10 +102,7 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                     );
 
                     const currentFile = app.workspace.getActiveFile();
-                    const roller = plugin.getRollerSync(
-                        content,
-                        currentFile.path
-                    );
+                    const roller = API.getRollerSync(content, currentFile.path);
 
                     roller.roll().then(async () => {
                         const replacer = await roller.getReplacer();
@@ -132,7 +128,7 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                 let [, content] = original.match(
                     /^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/
                 );
-                const roller = plugin.getRollerSync(content, currentFile.path);
+                const roller = API.getRollerSync(content, currentFile.path);
 
                 const widget = new InlineWidget(
                     original,
@@ -201,7 +197,7 @@ export class InlineWidget extends WidgetType {
                     //@ts-ignore
                     const { editor } = this.view.state
                         .field(editorEditorField)
-                        .state.field(editorViewField);
+                        .state.field(editorInfoField);
                     editor.setCursor(editor.offsetToPos(currentPos));
                 }
                 return false;

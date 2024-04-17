@@ -189,7 +189,7 @@ export default class DiceView extends ItemView {
             const diceFormula = /^(?:1)?d(\d|%|F)+$/.test(icon.formula)
                 ? `${Math.abs(amount)}${icon.formula.replace(/^1/, "")}`
                 : `${Math.abs(amount)} * (${icon.formula})`;
-            const roller = this.plugin.getRollerSync(icon.formula, "view");
+            const roller = API.getRollerSync(icon.formula, "view");
             if (!(roller instanceof StackRoller)) continue;
             roller.buildDiceTree();
             roller.calculate();
