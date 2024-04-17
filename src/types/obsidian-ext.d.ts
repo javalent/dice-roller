@@ -1,14 +1,8 @@
-import { Plugins } from "obsidian-overload";
 import type { StackRoller } from "src/roller";
 import type { DiceRollerSettings } from "src/settings/settings.types";
 
 //expose dataview plugin for tags
 declare module "obsidian" {
-    interface App {
-        plugins: {
-            getPlugin<T extends keyof Plugins>(plugin: T): Plugins[T];
-        };
-    }
     interface Workspace {
         on(
             name: "dice-roller:render-dice",

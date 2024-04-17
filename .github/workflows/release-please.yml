@@ -116,10 +116,3 @@ jobs:
         if: ${{ needs.release-please.outputs.release_created }}
         uses: javalent/workflows/.github/workflows/publish.yml@main
         secrets: inherit
-
-    upgrade-overload:
-        needs: publish
-        uses: javalent/obsidian-overload/.github/workflows/upgrade.yml@main
-        secrets: inherit
-        with:
-            module: obsidian-dice-roller
