@@ -1,8 +1,9 @@
-import { Component, MarkdownRenderer, Notice, Pos, TFile } from "obsidian";
+import { Component, MarkdownRenderer, Notice, TFile } from "obsidian";
 
 import { TABLE_REGEX } from "src/utils/constants";
-import { LinkRoller, StackRoller, TagRoller } from ".";
+import { StackRoller } from ".";
 import { GenericFileRoller } from "./roller";
+import { API } from "src/api/api";
 
 class SubRollerResult {
     result: string = "";
@@ -52,7 +53,7 @@ export class TableRoller extends GenericFileRoller<string> {
     async build() {
         this.resultEl.empty();
         const result = [this.result];
-        if (this.plugin.data.displayResultsInline) {
+        if (this.data.displayResultsInline) {
             result.unshift(this.inlineText);
         }
         const div = createSpan();
@@ -128,10 +129,7 @@ export class TableRoller extends GenericFileRoller<string> {
                 const formula = foundRoller[1].trim();
 
                 // Create sub roller with formula
-                const subRoller = await this.plugin.getRoller(
-                    formula,
-                    this.source
-                );
+                const subRoller = await API.getRoller(formula, this.source);
                 // Roll it
                 await subRoller.roll();
                 // Get sub result
@@ -169,7 +167,7 @@ export class TableRoller extends GenericFileRoller<string> {
 
         if (this.rollsFormula) {
             try {
-                const roller = await this.plugin.getRoller(
+                const roller = await API.getRoller(
                     this.rollsFormula,
                     this.source
                 );
@@ -282,7 +280,7 @@ export class TableRoller extends GenericFileRoller<string> {
     }
 
     async getOptions() {
-        this.cache = this.plugin.app.metadataCache.getFileCache(this.file);
+        this.cache = this.app.metadataCache.getFileCache(this.file);
 
         if (
             !this.cache ||
@@ -299,7 +297,7 @@ export class TableRoller extends GenericFileRoller<string> {
             (s) => s.position == this.cache.blocks[this.block].position
         );
         const position = this.cache.blocks[this.block].position;
-        const text = await this.plugin.app.vault.cachedRead(this.file);
+        const text = await this.app.vault.cachedRead(this.file);
         this.content = text.slice(position.start.offset, position.end.offset);
 
         if (section && section.type === "list") {
@@ -314,7 +312,7 @@ export class TableRoller extends GenericFileRoller<string> {
                     Array.from(table.columns.keys())[0]
                 )
             ) {
-                const roller = await this.plugin.getRoller(
+                const roller = await API.getRoller(
                     Array.from(table.columns.keys())[0]
                         .split(":")
                         .pop()

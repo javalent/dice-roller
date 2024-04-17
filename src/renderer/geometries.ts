@@ -1,11 +1,13 @@
 import { Body, ConvexPolyhedron, Vec3 } from "cannon-es";
-import { Float32BufferAttribute } from "three/src/core/BufferAttribute";
-import { BufferGeometry } from "three/src/core/BufferGeometry";
-import { MeshPhongMaterial } from "three/src/materials/MeshPhongMaterial";
-import { Sphere } from "three/src/math/Sphere";
-import { Vector3 } from "three/src/math/Vector3";
-import { Mesh } from "three/src/objects/Mesh";
-import { Texture } from "three/src/textures/Texture";
+import {
+    BufferGeometry,
+    Float32BufferAttribute,
+    Mesh,
+    MeshPhongMaterial,
+    Texture,
+    Sphere,
+    Vector3
+} from "three";
 /* import {
     BufferGeometry,
     Float32BufferAttribute,
@@ -25,7 +27,7 @@ const MATERIAL_OPTIONS = {
 const DEFAULT_DICE_OPTIONS: DiceOptions = {
     diceColor: "#202020",
     textColor: "#ffffff",
-    textFont: "Arial",
+    textFont: "Arial"
 };
 
 interface DiceOptions {
@@ -464,7 +466,10 @@ class D20DiceGeometry extends DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options: Partial<DiceOptions> = { diceColor: "#171120", textColor: "#FF0000" },
+        options: Partial<DiceOptions> = {
+            diceColor: "#171120",
+            textColor: "#FF0000"
+        },
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -514,7 +519,10 @@ class D12DiceGeometry extends DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options: Partial<DiceOptions> = { diceColor: "#7339BE", textColor: "#FFFFFF" },
+        options: Partial<DiceOptions> = {
+            diceColor: "#7339BE",
+            textColor: "#FFFFFF"
+        },
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -581,7 +589,10 @@ class D10DiceGeometry extends DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options: Partial<DiceOptions> = { diceColor: "#c74749", textColor: "#FFFFFF" },
+        options: Partial<DiceOptions> = {
+            diceColor: "#c74749",
+            textColor: "#FFFFFF"
+        },
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -632,7 +643,10 @@ class D100DiceGeometry extends DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options: Partial<DiceOptions> = { diceColor: "#7a2c2d", textColor: "#FFFFFF" },
+        options: Partial<DiceOptions> = {
+            diceColor: "#7a2c2d",
+            textColor: "#FFFFFF"
+        },
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -678,7 +692,10 @@ class D8DiceGeometry extends DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options: Partial<DiceOptions> = { diceColor: "#5eb0c5", textColor: "#FFFFFF" },
+        options: Partial<DiceOptions> = {
+            diceColor: "#5eb0c5",
+            textColor: "#FFFFFF"
+        },
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -715,7 +732,10 @@ class D6DiceGeometry extends DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options: Partial<DiceOptions> = { diceColor: "#d68316", textColor: "#FFFFFF" },
+        options: Partial<DiceOptions> = {
+            diceColor: "#d68316",
+            textColor: "#FFFFFF"
+        },
         scaler: number
     ) {
         super(w, h, options, scaler);
@@ -782,7 +802,10 @@ class D4DiceGeometry extends DiceGeometry {
     constructor(
         w: number,
         h: number,
-        options: Partial<DiceOptions> = { diceColor: "#93b139", textColor: "#FFFFFF" },
+        options: Partial<DiceOptions> = {
+            diceColor: "#93b139",
+            textColor: "#FFFFFF"
+        },
         scaler: number
     ) {
         super(w, h, options, scaler);

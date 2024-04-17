@@ -11,17 +11,16 @@ import {
     Setting,
     TextComponent,
     TFolder,
-    ToggleComponent
 } from "obsidian";
-import { Round, ExpectedValue } from "src/types";
-import { ICON_DEFINITION } from "src/utils/constants";
+import { Round, ExpectedValue } from "src/types/api";
 import type DiceRoller from "../main";
 import { DEFAULT_SETTINGS } from "src/settings/settings.const";
-import { DiceIcon, IconManager, IconShapes } from "src/view/view.icons";
+import { type DiceIcon, IconManager, IconShapes } from "src/view/view.icons";
 import { generateSlug } from "random-word-slugs";
 import { FontSuggestionModal } from "src/suggester/fonts";
-import { FolderSuggestionModal } from "src/suggester/folder";
 import { FolderInputSuggest } from "obsidian-utilities";
+import { Icons } from "src/utils/icons";
+import { Lexer } from "src/lexer/lexer";
 
 declare var require: (id: "get-fonts") => { getFonts: () => Promise<string[]> };
 
@@ -38,8 +37,6 @@ declare global {
     }
 }
 
-const SUBFOLDER_ICON = "folder-tree";
-const PARENT_FOLDER_ICON = "folder-closed";
 
 export default class SettingTab extends PluginSettingTab {
     iconsEl: HTMLDivElement;
@@ -173,7 +170,7 @@ export default class SettingTab extends PluginSettingTab {
 
         setIcon(
             summary.createDiv("collapser").createDiv("handle"),
-            "chevron-right"
+            Icons.COLLAPSE
         );
     }
     buildDisplay(containerEl: HTMLDetailsElement) {
@@ -214,7 +211,7 @@ export default class SettingTab extends PluginSettingTab {
                     parent.createSpan({ cls: "dice-roller-result", text: "3" });
                     setIcon(
                         parent.createSpan("dice-roller-button"),
-                        ICON_DEFINITION
+                        Icons.DICE
                     );
                     e.createSpan({
                         text: " (1d6). This only affects Dice Rollers."
@@ -243,7 +240,7 @@ export default class SettingTab extends PluginSettingTab {
                     }
 
                     this.plugin.data.defaultFace = Number(t.inputEl.value);
-                    this.plugin.parser.setDefaultFace(
+                    Lexer.setDefaultFace(
                         this.plugin.data.defaultFace
                     );
                     await this.plugin.saveSettings();
@@ -448,7 +445,7 @@ export default class SettingTab extends PluginSettingTab {
             );
         });
         const button = new ExtraButtonComponent(addEl.createDiv("actions"))
-            .setIcon("plus-with-circle")
+            .setIcon(Icons.SAVE)
             .setDisabled(true)
             .onClick(async () => {
                 if (!toAdd.text || !toAdd.formula) return;
@@ -480,14 +477,16 @@ export default class SettingTab extends PluginSettingTab {
         rowEl.createDiv({ cls: "formula", text: instance.formula });
 
         const actions = rowEl.createDiv("actions");
-        new ExtraButtonComponent(actions).setIcon("edit").onClick(() => {
+        new ExtraButtonComponent(actions).setIcon(Icons.EDIT).onClick(() => {
             this.buildEditIcon(rowEl, index, instance);
         });
-        new ExtraButtonComponent(actions).setIcon("trash").onClick(async () => {
-            this.plugin.data.icons.splice(index, 1);
-            await this.plugin.view.buildButtons();
-            this.buildIcons();
-        });
+        new ExtraButtonComponent(actions)
+            .setIcon(Icons.DELETE)
+            .onClick(async () => {
+                this.plugin.data.icons.splice(index, 1);
+                await this.plugin.view.buildButtons();
+                this.buildIcons();
+            });
     }
     buildEditIcon(rowEl: HTMLElement, index: number, instance: DiceIcon) {
         rowEl.empty();
@@ -521,7 +520,7 @@ export default class SettingTab extends PluginSettingTab {
             });
         const actionsEl = rowEl.createDiv("actions");
         const button = new ExtraButtonComponent(actionsEl)
-            .setIcon("checkmark")
+            .setIcon(Icons.DONE)
             .setDisabled(toAdd.text.length === 0 || toAdd.formula.length === 0)
             .onClick(async () => {
                 if (!toAdd.text || !toAdd.formula) return;
@@ -530,9 +529,11 @@ export default class SettingTab extends PluginSettingTab {
                 this.buildStaticIcon(rowEl, index);
                 await this.plugin.view.buildButtons();
             });
-        new ExtraButtonComponent(actionsEl).setIcon("cross").onClick(() => {
-            this.buildStaticIcon(rowEl, index);
-        });
+        new ExtraButtonComponent(actionsEl)
+            .setIcon(Icons.CANCEL)
+            .onClick(() => {
+                this.buildStaticIcon(rowEl, index);
+            });
         const drop = new DropdownComponent(dropEl);
         for (const [type, display] of Object.entries(IconShapes)) {
             drop.addOption(display, display);
@@ -579,7 +580,7 @@ export default class SettingTab extends PluginSettingTab {
                 });
             })
             .addExtraButton((b) => {
-                b.setIcon("reset")
+                b.setIcon(Icons.RESET)
                     .setTooltip("Reset to Default")
                     .onClick(async () => {
                         this.plugin.data.renderTime =
@@ -630,10 +631,10 @@ export default class SettingTab extends PluginSettingTab {
                     t,
                     await this.getFonts()
                 );
-                folderModal.onClose = () => {
-                    t.setValue(folderModal.item);
+                folderModal.onSelect(({ item }) => {
+                    t.setValue(item);
                     set();
-                };
+                });
                 t.setValue(this.plugin.data.textFont);
                 t.inputEl.onblur = async () => {
                     set();
@@ -745,7 +746,7 @@ export default class SettingTab extends PluginSettingTab {
             setting
                 .addExtraButton((b) =>
                     b
-                        .setIcon("pencil")
+                        .setIcon(Icons.EDIT)
                         .setTooltip("Edit")
                         .onClick(async () => {
                             const edited = await this.buildFormulaForm(addNew, {
@@ -764,7 +765,7 @@ export default class SettingTab extends PluginSettingTab {
                 )
                 .addExtraButton((b) =>
                     b
-                        .setIcon("trash")
+                        .setIcon(Icons.DELETE)
                         .setTooltip("Delete")
                         .onClick(async () => {
                             delete this.plugin.data.formulas[alias];
@@ -811,7 +812,7 @@ export default class SettingTab extends PluginSettingTab {
                 )
                 .addExtraButton((b) =>
                     b
-                        .setIcon("cross")
+                        .setIcon(Icons.CANCEL)
                         .setTooltip("Cancel")
                         .onClick(() => {
                             formulaEl.detach();
@@ -945,22 +946,22 @@ export default class SettingTab extends PluginSettingTab {
                     }
                 });
                 if (useSubfolders) {
-                    setIcon(container, SUBFOLDER_ICON);
+                    setIcon(container, Icons.SUBFOLDER);
                     container.createSpan({ text: "Includes Subfolders" });
                 } else {
-                    setIcon(container, PARENT_FOLDER_ICON);
+                    setIcon(container, Icons.PARENT_FOLDER);
                     container.createSpan({ text: "Root Only" });
                 }
             })
         );
         setting
             .addExtraButton((b) =>
-                b.setIcon("wrench").onClick(() => {
+                b.setIcon(Icons.EDIT).onClick(() => {
                     this.buildEditPath(rowEl, folder);
                 })
             )
             .addExtraButton((b) =>
-                b.setIcon("trash").onClick(async () => {
+                b.setIcon(Icons.DELETE).onClick(async () => {
                     delete this.plugin.data.diceModTemplateFolders[folder];
                     await this.plugin.saveSettings();
                     this.#needsSort = true;
@@ -982,17 +983,17 @@ export default class SettingTab extends PluginSettingTab {
         const sub = new ExtraButtonComponent(input).onClick(() => {
             temp.useSubfolders = !temp.useSubfolders;
             if (temp.useSubfolders) {
-                sub.setIcon(SUBFOLDER_ICON).setTooltip("Including Subfolders");
+                sub.setIcon(Icons.SUBFOLDER).setTooltip("Including Subfolders");
             } else {
-                sub.setIcon(PARENT_FOLDER_ICON).setTooltip(
+                sub.setIcon(Icons.PARENT_FOLDER).setTooltip(
                     "Not Including Subfolders"
                 );
             }
         });
         if (this.plugin.data.diceModTemplateFolders[folder] ?? true) {
-            sub.setIcon(SUBFOLDER_ICON).setTooltip("Including Subfolders");
+            sub.setIcon(Icons.SUBFOLDER).setTooltip("Including Subfolders");
         } else {
-            sub.setIcon(PARENT_FOLDER_ICON).setTooltip(
+            sub.setIcon(Icons.PARENT_FOLDER).setTooltip(
                 "Not Including Subfolders"
             );
         }
@@ -1004,7 +1005,7 @@ export default class SettingTab extends PluginSettingTab {
             );
         }
         const add = new ExtraButtonComponent(actions)
-            .setIcon(folder ? "check" : "plus-with-circle")
+            .setIcon(folder ? Icons.DONE : Icons.SAVE)
             .setDisabled(!folder)
             .onClick(async () => {
                 this.plugin.data.diceModTemplateFolders[temp.folder] =
@@ -1019,7 +1020,7 @@ export default class SettingTab extends PluginSettingTab {
             });
         if (folder) {
             new ExtraButtonComponent(actions)
-                .setIcon("cross")
+                .setIcon(Icons.CANCEL)
                 .onClick(() => this.buildStaticPath(rowEl, folder));
         }
 

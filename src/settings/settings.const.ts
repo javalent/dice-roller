@@ -1,7 +1,7 @@
-import { Round, ExpectedValue } from "../types";
+import { Round, ExpectedValue } from "../types/api";
 import { DEFAULT_ICONS } from "../view/view.icons";
 import copy from "fast-copy";
-import { DiceRollerSettings } from "./settings.types";
+import type { DiceRollerSettings } from "./settings.types";
 
 export const DEFAULT_SETTINGS: DiceRollerSettings = {
     showFudgeIcon: false,

@@ -1,5 +1,5 @@
-import { Round, ExpectedValue } from "../types";
-import { DiceIcon } from "../view/view.icons";
+import { Round, ExpectedValue } from "../types/api";
+import type { DiceIcon } from "../view/view.icons";
 
 export interface DiceRollerSettings {
     showFudgeIcon: boolean;

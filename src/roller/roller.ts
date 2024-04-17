@@ -1,14 +1,17 @@
 import {
-    CachedMetadata,
-    EventRef,
+    type CachedMetadata,
     Events,
     Notice,
     setIcon,
-    TFile
+    TFile,
+    MetadataCache,
+    App,
+    type EventRef
 } from "obsidian";
-import DiceRollerPlugin from "src/main";
-import { LexicalToken } from "src/parser/lexer";
-import { COPY_DEFINITION, ICON_DEFINITION } from "src/utils/constants";
+
+import type { LexicalToken } from "src/lexer/lexer";
+import type { DiceRollerSettings } from "src/settings/settings.types";
+import { Icons } from "src/utils/icons";
 
 export abstract class Roller<T> extends Events {
     abstract roll(): Promise<T> | T;
@@ -20,23 +23,56 @@ export abstract class Roller<T> extends Events {
         return Math.floor(rand * (max - min + 1)) + min;
     }
 }
-
+interface BareRoller<T> {
+    on(name: "loaded", callback: () => void): EventRef;
+    trigger(name: "loaded"): void;
+    on(name: "new-result", callback: () => void): EventRef;
+    trigger(name: "new-result"): void;
+}
 abstract class BareRoller<T> extends Roller<T> {
+    constructor(
+        public data: DiceRollerSettings,
+        public original = "",
+        showDice = data.showDice
+    ) {
+        super();
+        if (!this.original) this.original = "";
+        this.containerEl = createSpan({
+            cls: "dice-roller",
+            attr: {
+                "aria-label-position": "top",
+                "data-dice": this.original
+            }
+        });
+        this.resultEl = this.containerEl.createSpan("dice-roller-result");
+        if (showDice) {
+            this.iconEl = this.containerEl.createSpan({
+                cls: "dice-roller-button"
+            });
+            setIcon(this.iconEl, Icons.DICE);
+            this.iconEl.onclick = this.onClick.bind(this);
+        } else {
+            this.containerEl.addClass("no-icon");
+        }
+
+        this.containerEl.onclick = this.onClick.bind(this);
+    }
     rolls: number;
     loaded: boolean = false;
+    onLoad(callback: () => void) {
+        if (this.loaded) {
+            callback();
+        } else {
+            this.on("loaded", () => callback());
+        }
+    }
     abstract build(): Promise<void>;
     abstract get tooltip(): string;
-    containerEl = createSpan({
-        cls: "dice-roller",
-        attr: {
-            "aria-label-position": "top",
-            "data-dice": this.original
-        }
-    });
-    resultEl = this.containerEl.createSpan("dice-roller-result");
+    containerEl: HTMLSpanElement;
+    resultEl: HTMLSpanElement;
     iconEl: HTMLSpanElement;
     setTooltip() {
-        if (this.plugin.data.displayResultsInline) return;
+        if (this.data.displayResultsInline) return;
         this.containerEl.setAttrs({
             "aria-label": this.tooltip
         });
@@ -50,24 +86,6 @@ abstract class BareRoller<T> extends Roller<T> {
     async render() {
         this.setTooltip();
         await this.build();
-    }
-    constructor(
-        public plugin: DiceRollerPlugin,
-        public original = "",
-        showDice = plugin.data.showDice
-    ) {
-        super();
-        if (showDice) {
-            this.iconEl = this.containerEl.createSpan({
-                cls: "dice-roller-button"
-            });
-            setIcon(this.iconEl, ICON_DEFINITION);
-            this.iconEl.onclick = this.onClick.bind(this);
-        } else {
-            this.containerEl.addClass("no-icon");
-        }
-
-        this.containerEl.onclick = this.onClick.bind(this);
     }
 
     async onClick(evt: MouseEvent) {
@@ -87,12 +105,12 @@ export abstract class BasicRoller<T = any> extends BareRoller<T> {
         return `${this.tooltip.split("\n").join(" -> ")} -> `;
     }
     constructor(
-        public plugin: DiceRollerPlugin,
+        public data: DiceRollerSettings,
         public original: string,
         public lexemes: LexicalToken[],
-        public showDice = plugin.data.showDice
+        public showDice = data.showDice
     ) {
-        super(plugin, original, showDice);
+        super(data, original, showDice);
     }
 
     abstract toResult(): { type: string; result: any };
@@ -112,20 +130,21 @@ export abstract class GenericFileRoller<T> extends GenericRoller<T> {
     results: T[];
     init: Promise<void>;
     constructor(
-        public plugin: DiceRollerPlugin,
+        public data: DiceRollerSettings,
         public original: string,
         public lexeme: LexicalToken,
         public source: string,
-        showDice = plugin.data.showDice
+        public app: App,
+        showDice = data.showDice
     ) {
-        super(plugin, original, [lexeme], showDice);
+        super(data, original, [lexeme], showDice);
 
         this.getPath();
         this.init = this.getFile();
     }
     abstract getPath(): void;
     async getFile() {
-        this.file = this.plugin.app.metadataCache.getFirstLinkpathDest(
+        this.file = this.app.metadataCache.getFirstLinkpathDest(
             this.path,
             this.source
         );
@@ -143,18 +162,19 @@ export abstract class GenericEmbeddedRoller<T> extends GenericFileRoller<T> {
     copy: HTMLDivElement;
     abstract transformResultsToString(): string;
     getEmbedClass() {
-        return this.plugin.data.displayAsEmbed ? "markdown-embed" : "";
+        return this.data.displayAsEmbed ? "markdown-embed" : "";
     }
     constructor(
-        public plugin: DiceRollerPlugin,
+        public data: DiceRollerSettings,
         public original: string,
         public lexeme: LexicalToken,
         source: string,
+        public app: App,
         public inline: boolean = true,
-        showDice = plugin.data.showDice
+        showDice = data.showDice
     ) {
-        super(plugin, original, lexeme, source, showDice);
-        if (this.plugin.data.displayAsEmbed) {
+        super(data, original, lexeme, source, app, showDice);
+        if (this.data.displayAsEmbed) {
             this.containerEl.addClasses(["has-embed", "markdown-embed"]);
             this.resultEl.addClass("internal-embed");
         }
@@ -171,11 +191,11 @@ export abstract class GenericEmbeddedRoller<T> extends GenericFileRoller<T> {
                     new Notice("Result copied to clipboard.");
                 });
         });
-        setIcon(this.copy, COPY_DEFINITION);
+        setIcon(this.copy, Icons.COPY);
     }
 }
 export class ArrayRoller<T = any> extends BareRoller<T> {
-    result: any;
+    declare result: any;
     results: any[];
     get tooltip() {
         return `${this.options.toString()}\n\n${this.results.toString()}`;
@@ -201,10 +221,10 @@ export class ArrayRoller<T = any> extends BareRoller<T> {
         this.resultEl.setText(this.results.toString());
     }
     constructor(
-        plugin: DiceRollerPlugin,
+        data: DiceRollerSettings,
         public options: any[],
         public rolls: number
     ) {
-        super(plugin, ``);
+        super(data, ``);
     }
 }

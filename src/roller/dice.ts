@@ -1,18 +1,29 @@
-import { Notice, setIcon } from "obsidian";
-import type DiceRollerPlugin from "src/main";
-import { LexicalToken } from "src/parser/lexer";
-import {
-    ResultMapInterface,
-    Conditional,
-    Round,
-    ExpectedValue,
-    ResultInterface
-} from "src/types";
+import { App, Notice, setIcon } from "obsidian";
+import type { LexicalToken } from "src/lexer/lexer";
+
 import { _insertIntoMap } from "src/utils/util";
 import { GenericRoller, Roller } from "./roller";
 import DiceRenderer from "src/renderer/renderer";
 import { DiceShape } from "src/renderer/shapes";
+import { Icons } from "src/utils/icons";
+import type { DiceRollerSettings } from "src/settings/settings.types";
+import { Round, ExpectedValue } from "src/types/api";
 
+export interface Conditional {
+    operator: string;
+    comparer: string | number;
+    lexemes: LexicalToken[];
+    value: string;
+    result?: number;
+}
+
+export type ResultMapInterface<T> = Map<number, ResultInterface<T>>;
+export type ResultInterface<T> = {
+    usable: boolean;
+    value: T;
+    display: string;
+    modifiers?: Set<string>;
+};
 interface Modifier {
     conditionals: Conditional[];
     data: number;
@@ -749,7 +760,7 @@ class BasicStackRoller extends Roller<number> {
     ) {
         super();
     }
-    result: number;
+    declare result: number;
     operators: Record<string, (...args: number[]) => number> = {
         "+": (a: number, b: number): number => a + b,
         "-": (a: number, b: number): number => a - b,
@@ -992,7 +1003,8 @@ export class StackRoller extends GenericRoller<number> {
     signed: boolean;
     showRenderNotice: boolean;
     async getReplacer() {
-        return `${this.result}`;
+        let inline = this.showFormula ? `${this.inlineText} ` : "";
+        return `${inline}${this.result}`;
     }
     stunted: string = "";
     private _tooltip: string;
@@ -1149,18 +1161,19 @@ export class StackRoller extends GenericRoller<number> {
     }
 
     constructor(
-        public plugin: DiceRollerPlugin,
+        public data: DiceRollerSettings,
         public original: string,
         public lexemes: LexicalToken[],
         public renderer: DiceRenderer,
-        showDice = plugin.data.showDice,
+        public app: App,
+        showDice = data.showDice,
         fixedText: string,
-        expectedValue = plugin.data.initialDisplay,
-        displayFormulaAfter = plugin.data.displayFormulaAfter,
-        round = plugin.data.round,
-        signed = plugin.data.signed
+        expectedValue = data.initialDisplay,
+        displayFormulaAfter = data.displayFormulaAfter,
+        round = data.round,
+        signed = data.signed
     ) {
-        super(plugin, original, lexemes, showDice);
+        super(data, original, lexemes, showDice);
 
         if (displayFormulaAfter) {
             this.containerEl.createSpan({
@@ -1208,7 +1221,7 @@ export class StackRoller extends GenericRoller<number> {
     }
     setSpinner() {
         this.resultEl.empty();
-        setIcon(this.resultEl.createDiv("should-spin"), "loader-2");
+        setIcon(this.resultEl.createDiv("should-spin"), Icons.LOADING);
     }
     async renderDice() {
         this.isRendering = true;
@@ -1422,6 +1435,7 @@ export class StackRoller extends GenericRoller<number> {
         }
 
         this.trigger("new-result");
+        this.app.workspace.trigger("dice-roller:new-result", this);
         this.hasRunOnce = true;
         return this.result;
     }

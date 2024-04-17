@@ -1,10 +1,7 @@
 /* import lexer from "lex"; */
 
 import * as moo from "moo";
-import DiceRollerPlugin from "src/main";
-import { Conditional } from "src/types";
-import { Parser } from "./parser";
-import copy from "fast-copy";
+import type { Conditional } from "src/roller";
 
 export const TAG_REGEX =
     /(?:\d+[Dd])?#(?:[\p{Letter}\p{Emoji_Presentation}\w/-]+)(?:\|(?:[+-]))?(?:\|(?:[^+-]+))?/u;
@@ -23,6 +20,86 @@ export const OMITTED_REGEX =
 export const CONDITIONAL_REGEX =
     /(?:=|=!|<|>|<=|>=|=<|=>|-=|=-)(?:\d+(?:[Dd](?:%|F|-?\d+|\[\d+(?:[ \t]*[,-][ \t]*\d+)+\]|\b))?)/u;
 
+type ParseContext = {
+    associativity: "left" | "right";
+    precedence: number;
+};
+
+class Parser {
+    table: Record<string, ParseContext>;
+    constructor(table: Record<string, ParseContext>) {
+        this.table = table;
+    }
+    parse(input: LexicalToken[]) {
+        const length = input.length,
+            table = this.table,
+            output = [],
+            stack = [];
+        let index = 0;
+
+        while (index < length) {
+            let token = input[index++];
+
+            switch (token.value) {
+                case "(":
+                    stack.unshift(token);
+                    break;
+                case ")":
+                    if (
+                        input[index] &&
+                        input[index].type == "dice" &&
+                        /^d/.test(input[index].value)
+                    ) {
+                        input[index].parenedDice = true;
+                    }
+                    while (stack.length) {
+                        token = stack.shift();
+                        if (token.value === "(") break;
+                        else {
+                            output.push(token);
+                        }
+                    }
+
+                    if (token.value !== "(")
+                        throw new Error("Mismatched parentheses.");
+                    break;
+                default:
+                    if (table.hasOwnProperty(token.value)) {
+                        while (stack.length) {
+                            const punctuator = stack[0];
+
+                            if (punctuator.value === "(") break;
+
+                            const operator = table[token.value],
+                                precedence = operator.precedence,
+                                antecedence =
+                                    table[punctuator.value].precedence;
+
+                            if (
+                                precedence > antecedence ||
+                                (precedence === antecedence &&
+                                    operator.associativity === "right")
+                            )
+                                break;
+                            else output.push(stack.shift());
+                        }
+
+                        stack.unshift(token);
+                    } else {
+                        output.push(token);
+                    }
+            }
+        }
+
+        while (stack.length) {
+            const token = stack.shift();
+            if (token.value !== "(") output.push(token);
+            else throw new Error("Mismatched parentheses.");
+        }
+
+        return output;
+    }
+}
 export interface LexicalToken extends Partial<moo.Token> {
     conditions?: Conditional[];
     parenedDice?: boolean;
@@ -30,7 +107,31 @@ export interface LexicalToken extends Partial<moo.Token> {
     value: string;
 }
 
-export default class Lexer {
+class LexerClass {
+    constructor() {
+        this.parser = new Parser({
+            "+": {
+                precedence: 1,
+                associativity: "left"
+            },
+            "-": {
+                precedence: 1,
+                associativity: "left"
+            },
+            "*": {
+                precedence: 2,
+                associativity: "left"
+            },
+            "/": {
+                precedence: 2,
+                associativity: "left"
+            },
+            "^": {
+                precedence: 3,
+                associativity: "right"
+            }
+        });
+    }
     lexer = moo.compile({
         WS: [{ match: /[ \t]+/u }, { match: /[{}]+/u }],
         table: TABLE_REGEX,
@@ -73,7 +174,6 @@ export default class Lexer {
                     } = match.match(
                         /(?<roll>\d+)?[Dd](?<faces>%|F|-?\d+|\[\d+(?:[ \t]*[,-][ \t]*\d+)+\])?/
                     ).groups;
-                    console.log("🚀 ~ file: lexer.ts:73 ~ faces:", faces);
                     return `${roll}d${faces}`;
                 }
             },
@@ -98,6 +198,8 @@ export default class Lexer {
     });
     parser: Parser;
     inline: Map<string, number> = new Map();
+    defaultFace: number;
+    defaultRoll: number;
     clampInfinite(match: string) {
         if (/i$/.test(match)) return "100";
         return match.replace(/^\D+/g, "");
@@ -105,35 +207,15 @@ export default class Lexer {
     public setInlineFields(fields: Map<string, number>) {
         this.inline = fields;
     }
+    public setDefaults(roll: number, face: number) {
+        this.defaultRoll = roll;
+        this.defaultFace = face;
+    }
     public setDefaultRoll(roll: number) {
         this.defaultRoll = roll;
     }
     public setDefaultFace(face: number) {
         this.defaultFace = face;
-    }
-    constructor(public defaultRoll: number, public defaultFace: number) {
-        const exponent = {
-            precedence: 3,
-            associativity: "right"
-        };
-
-        const factor = {
-            precedence: 2,
-            associativity: "left"
-        };
-
-        const term = {
-            precedence: 1,
-            associativity: "left"
-        };
-
-        this.parser = new Parser({
-            "+": term,
-            "-": term,
-            "*": factor,
-            "/": factor,
-            "^": exponent
-        });
     }
     parse(input: string): LexicalToken[] {
         const tokens = Array.from(this.lexer.reset(input));
@@ -197,3 +279,5 @@ export default class Lexer {
         return clone;
     }
 }
+
+export const Lexer = new LexerClass();

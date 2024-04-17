@@ -28,24 +28,25 @@
  * */
 
 import {
+    type DecorationSet,
     Decoration,
-    DecorationSet,
     EditorView,
     ViewPlugin,
     ViewUpdate,
     WidgetType
 } from "@codemirror/view";
-import { EditorSelection, Range, EditorState } from "@codemirror/state";
+import { EditorSelection, Range } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
 import {
     TFile,
     editorEditorField,
     editorLivePreviewField,
-    editorViewField
+    editorInfoField
 } from "obsidian";
-import DiceRollerPlugin from "./main";
-import { BasicRoller } from "./roller/roller";
-import { isTemplateFolder } from "./utils/util";
+import DiceRollerPlugin from "../main";
+import { BasicRoller } from "../roller/roller";
+import { isTemplateFolder } from "../utils/util";
+import { API } from "src/api/api";
 
 function selectionAndRangeOverlap(
     selection: EditorSelection,
@@ -62,8 +63,6 @@ function selectionAndRangeOverlap(
 }
 
 function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
-    // still doesn't work as expected for tables and callouts
-
     const currentFile = this.app.workspace.getActiveFile();
     if (!currentFile) return;
 
@@ -85,16 +84,14 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                 const end = node.to;
                 // don't continue if current cursor position and inline code node (including formatting
                 // symbols) overlap
-                if (selectionAndRangeOverlap(selection, start, end )) return;
-
+                if (selectionAndRangeOverlap(selection, start, end)) return;
 
                 const original = view.state.doc.sliceString(start, end).trim();
 
-                const isTemplate =
-                    isTemplateFolder(
-                        plugin.data.diceModTemplateFolders,
-                        currentFile
-                    )
+                const isTemplate = isTemplateFolder(
+                    plugin.data.diceModTemplateFolders,
+                    currentFile
+                );
                 if (
                     /^dice\-mod:\s*([\s\S]+)\s*?/.test(original) &&
                     !isTemplate &&
@@ -105,24 +102,11 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                     );
 
                     const currentFile = app.workspace.getActiveFile();
-                    const roller = plugin.getRollerSync(
-                        content,
-                        currentFile.path
-                    );
-                    let showFormula = plugin.data.displayFormulaForMod;
-
-                    if (content.includes("|noform")) {
-                        showFormula = false;
-                    }
-                    if (content.includes("|form")) {
-                        showFormula = true;
-                    }
+                    const roller = API.getRollerSync(content, currentFile.path);
 
                     roller.roll().then(async () => {
                         const replacer = await roller.getReplacer();
-                        const insert = showFormula
-                            ? `${roller.inlineText} **${replacer}**`
-                            : `${replacer}`;
+                        const insert = `${replacer}`;
 
                         if (plugin.data.escapeDiceMod) {
                             insert.replace(/([\*\[\]])/g, "\\$1");
@@ -139,11 +123,12 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                     return;
                 }
 
-                if (!/^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/.test(original)) return;
+                if (!/^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/.test(original))
+                    return;
                 let [, content] = original.match(
                     /^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/
                 );
-                const roller = plugin.getRollerSync(content, currentFile.path);
+                const roller = API.getRollerSync(content, currentFile.path);
 
                 const widget = new InlineWidget(
                     original,
@@ -153,7 +138,7 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                     currentFile
                 );
 
-                plugin.addToFileMap(currentFile, roller);
+                plugin.processor.trackRoller(currentFile, roller);
                 widgets.push(
                     Decoration.replace({
                         widget,
@@ -183,7 +168,7 @@ export class InlineWidget extends WidgetType {
         if (other.rawQuery === this.rawQuery) {
             return true;
         }
-        this.plugin.fileMap.get(this.file)?.remove(other.roller);
+        this.plugin.processor.fileMap.get(this.file)?.remove(other.roller);
         return false;
     }
 
@@ -212,7 +197,7 @@ export class InlineWidget extends WidgetType {
                     //@ts-ignore
                     const { editor } = this.view.state
                         .field(editorEditorField)
-                        .state.field(editorViewField);
+                        .state.field(editorInfoField);
                     editor.setCursor(editor.offsetToPos(currentPos));
                 }
                 return false;

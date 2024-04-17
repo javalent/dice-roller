@@ -1,11 +1,177 @@
 import type DiceRollerPlugin from "src/main";
-import type { BasicRoller } from "src/roller/roller";
-import { ExpectedValue, type RollerOptions, Round } from "src/types";
+import { ArrayRoller, type BasicRoller } from "src/roller/roller";
+import type { DiceRollerSettings } from "src/settings/settings.types";
+import { ExpectedValue, Round } from "src/types/api";
 
-export default class API {
-    constructor(private plugin: DiceRollerPlugin) {}
-    get renderer() {
-        return this.plugin.renderer;
+import { decode } from "he";
+import { Lexer, type LexicalToken } from "src/lexer/lexer";
+import type { App } from "obsidian";
+import type DiceRenderer from "src/renderer/renderer";
+import {
+    StackRoller,
+    TableRoller,
+    SectionRoller,
+    DataViewRoller,
+    TagRoller,
+    LineRoller
+} from "src/roller";
+import { DataviewManager } from "./api.dataview";
+
+export * from "src/types/api";
+export interface RollerOptions {
+    showDice?: boolean;
+    shouldRender?: boolean;
+    showFormula?: boolean;
+    expectedValue?: ExpectedValue;
+    round?: Round;
+    text?: string;
+    showParens?: boolean;
+    formulaAfter?: boolean;
+    signed?: boolean;
+}
+
+declare global {
+    interface Window {
+        DiceRoller: APIInstance;
+    }
+}
+class APIInstance {
+    app: App;
+    data: DiceRollerSettings;
+    renderer: DiceRenderer;
+
+    initialize(plugin: DiceRollerPlugin) {
+        this.data = plugin.data;
+        this.app = plugin.app;
+        this.renderer = plugin.renderer;
+        window["DiceRoller"] = this;
+        plugin.register(() => delete window["DiceRoller"]);
+    }
+
+    #getTypeFromLexemes(lexemes: LexicalToken[]) {
+        if (lexemes.some(({ type }) => type === "table")) {
+            return "table";
+        }
+        if (lexemes.some(({ type }) => type === "section")) {
+            return "section";
+        }
+        if (lexemes.some(({ type }) => type === "dataview")) {
+            return "dataview";
+        }
+        if (lexemes.some(({ type }) => type === "tag")) {
+            return "tag";
+        }
+        if (lexemes.some(({ type }) => type === "link")) {
+            return "link";
+        }
+        if (lexemes.some(({ type }) => type === "line")) {
+            return "line";
+        }
+        return "dice";
+    }
+    getParametersForRoller(
+        content: string,
+        options: RollerOptions
+    ): { content: string } & RollerOptions {
+        content = content.replace(/\\\|/g, "|");
+
+        let showDice = options?.showDice ?? true;
+        let shouldRender = options?.shouldRender ?? this.data.renderAllDice;
+        let showFormula =
+            options?.showFormula ?? this.data.displayResultsInline;
+        let showParens = options?.showParens ?? this.data.displayFormulaAfter;
+        let expectedValue: ExpectedValue =
+            options?.expectedValue ?? this.data.initialDisplay;
+        let text: string = options?.text ?? "";
+        let round = options?.round ?? this.data.round;
+        let signed = options?.signed ?? this.data.signed;
+
+        const regextext = /\|text\((.*)\)/;
+
+        //Flags always take precedence.
+        if (content.includes("|nodice")) {
+            showDice = false;
+        }
+        if (content.includes("|render")) {
+            shouldRender = true;
+        }
+        if (content.includes("|norender")) {
+            shouldRender = false;
+        }
+        if (content.includes("|form")) {
+            showFormula = true;
+        }
+        if (content.includes("|noform")) {
+            showFormula = false;
+        }
+        if (content.includes("|avg")) {
+            expectedValue = ExpectedValue.Average;
+        }
+        if (content.includes("|none")) {
+            expectedValue = ExpectedValue.None;
+        }
+        if (content.includes("|text(")) {
+            let [, matched] = content.match(regextext) ?? [null, ""];
+            text = matched;
+        }
+        if (content.includes("|paren")) {
+            showParens = true;
+        }
+        if (content.includes("|noparen")) {
+            showParens = false;
+        }
+
+        if (content.includes("|round")) {
+            round = Round.Normal;
+        }
+        if (content.includes("|noround")) {
+            round = Round.None;
+        }
+        if (content.includes("|ceil")) {
+            round = Round.Up;
+        }
+        if (content.includes("|floor")) {
+            round = Round.Down;
+        }
+        if (content.includes("|signed")) {
+            signed = true;
+        }
+
+        content = decode(
+            //remove flags...
+            content
+                .replace("|nodice", "")
+                .replace("|render", "")
+                .replace("|norender", "")
+                .replace("|noform", "")
+                .replace("|form", "")
+                .replace("|noparen", "")
+                .replace("|paren", "")
+                .replace("|avg", "")
+                .replace("|none", "")
+                .replace("|round", "")
+                .replace("|noround", "")
+                .replace("|ceil", "")
+                .replace("|floor", "")
+                .replace("|signed", "")
+                .replace(regextext, "")
+        );
+
+        if (content in this.data.formulas) {
+            content = this.data.formulas[content];
+        }
+
+        return {
+            content,
+            showDice,
+            showParens,
+            showFormula,
+            expectedValue,
+            shouldRender,
+            text,
+            round,
+            signed
+        };
     }
 
     sources: Map<string, RollerOptions> = new Map();
@@ -14,22 +180,223 @@ export default class API {
         this.sources.set(source, options);
     }
 
-    getRollerSync(roll: string, source?: string): BasicRoller {
-        const options =
-            this.sources.get(source) ?? API.RollerOptions(this.plugin);
-        return this.plugin.getRollerSync(roll, source, options);
+    getRollerSync(
+        raw: string,
+        source: string,
+        options: RollerOptions = this.getRollerOptions(this.data)
+    ): BasicRoller {
+        const {
+            content,
+            showDice,
+            showParens,
+            showFormula,
+            expectedValue,
+            shouldRender,
+            text,
+            round,
+            signed
+        } = this.getParametersForRoller(raw, options);
+
+        const lexemes = Lexer.parse(content);
+
+        const type = this.#getTypeFromLexemes(lexemes);
+
+        switch (type) {
+            case "dice": {
+                const roller = new StackRoller(
+                    this.data,
+                    content,
+                    lexemes,
+                    this.renderer,
+                    this.app,
+                    showDice,
+                    text,
+                    expectedValue,
+                    showParens,
+                    round,
+                    signed
+                );
+                roller.shouldRender = shouldRender;
+                roller.showFormula = showFormula;
+                roller.showRenderNotice = this.data.showRenderNotice;
+
+                return roller;
+            }
+            case "table": {
+                const roller = new TableRoller(
+                    this.data,
+                    content,
+                    lexemes[0],
+                    source,
+                    this.app,
+                    showDice
+                );
+                roller.init;
+                return roller;
+            }
+            case "section": {
+                return new SectionRoller(
+                    this.data,
+                    content,
+                    lexemes[0],
+                    source,
+                    this.app,
+                    showDice
+                );
+            }
+            case "dataview": {
+                if (!DataviewManager.canUseDataview) {
+                    throw new Error(
+                        "Tags are only supported with the Dataview plugin installed."
+                    );
+                }
+                return new DataViewRoller(
+                    this.data,
+                    content,
+                    lexemes[0],
+                    source,
+                    this.app,
+                    showDice
+                );
+            }
+            case "tag": {
+                if (!DataviewManager.canUseDataview) {
+                    throw new Error(
+                        "Tags are only supported with the Dataview plugin installed."
+                    );
+                }
+                return new TagRoller(
+                    this.data,
+                    content,
+                    lexemes[0],
+                    source,
+                    this.app,
+                    showDice
+                );
+            }
+            case "line": {
+                return new LineRoller(
+                    this.data,
+                    content,
+                    lexemes[0],
+                    source,
+                    this.app,
+                    showDice
+                );
+            }
+        }
     }
 
-    async getRoller(roll: string, source?: string): Promise<BasicRoller> {
-        const options =
-            this.sources.get(source) ?? API.RollerOptions(this.plugin);
-        return this.plugin.getRoller(roll, source, options);
+    async getRoller(
+        raw: string,
+        source: string = "",
+        options: RollerOptions = this.getRollerOptions(this.data)
+    ): Promise<BasicRoller> {
+        const {
+            content,
+            showDice,
+            showParens,
+            showFormula,
+            expectedValue,
+            round,
+            shouldRender,
+            text,
+            signed
+        } = this.getParametersForRoller(raw, options);
+
+        const lexemes = Lexer.parse(content);
+
+        const type = this.#getTypeFromLexemes(lexemes);
+        switch (type) {
+            case "dice": {
+                const roller = new StackRoller(
+                    this.data,
+                    content,
+                    lexemes,
+                    this.renderer,
+                    this.app,
+                    showDice,
+                    text,
+                    expectedValue,
+                    showParens,
+                    round,
+                    signed
+                );
+                roller.showFormula = showFormula;
+                roller.shouldRender = shouldRender;
+                roller.showRenderNotice = this.data.showRenderNotice;
+
+                return roller;
+            }
+            case "table": {
+                const roller = new TableRoller(
+                    this.data,
+                    content,
+                    lexemes[0],
+                    source,
+                    this.app,
+                    showDice
+                );
+                await roller.init;
+                return roller;
+            }
+            case "section": {
+                return new SectionRoller(
+                    this.data,
+                    content,
+                    lexemes[0],
+                    source,
+                    this.app,
+                    showDice
+                );
+            }
+            case "dataview": {
+                if (!DataviewManager.canUseDataview) {
+                    throw new Error(
+                        "Tags are only supported with the Dataview plugin installed."
+                    );
+                }
+                return new DataViewRoller(
+                    this.data,
+                    content,
+                    lexemes[0],
+                    source,
+                    this.app,
+                    showDice
+                );
+            }
+            case "tag": {
+                if (!DataviewManager.canUseDataview) {
+                    throw new Error(
+                        "Tags are only supported with the Dataview plugin installed."
+                    );
+                }
+                return new TagRoller(
+                    this.data,
+                    content,
+                    lexemes[0],
+                    source,
+                    this.app,
+                    showDice
+                );
+            }
+            case "line": {
+                return new LineRoller(
+                    this.data,
+                    content,
+                    lexemes[0],
+                    source,
+                    this.app,
+                    showDice
+                );
+            }
+        }
     }
 
     getRollerString(roll: string, source?: string): string {
         if (!source) return roll;
         const options =
-            this.sources.get(source) ?? API.RollerOptions(this.plugin);
+            this.sources.get(source) ?? this.getRollerOptions(this.data);
         if ("showDice" in options) {
             roll += options.showDice ? "" : "|nodice";
         }
@@ -77,17 +444,28 @@ export default class API {
         }
         return roll;
     }
+    async getArrayRoller(options: any[], rolls = 1) {
+        const roller = new ArrayRoller(this.data, options, rolls);
 
-    static RollerOptions(plugin: DiceRollerPlugin): RollerOptions {
+        await roller.roll();
+        return roller;
+    }
+    public async parseDice(content: string, source: string = "") {
+        const roller = await this.getRoller(content, source);
+        return { result: await roller.roll(), roller };
+    }
+    getRollerOptions(data: DiceRollerSettings): RollerOptions {
         return {
-            showDice: plugin.data.showDice,
-            shouldRender: plugin.data.renderAllDice,
-            showFormula: plugin.data.displayResultsInline,
-            showParens: plugin.data.displayFormulaAfter,
-            expectedValue: plugin.data.initialDisplay,
-            round: plugin.data.round,
+            showDice: data.showDice,
+            shouldRender: data.renderAllDice,
+            showFormula: data.displayResultsInline,
+            showParens: data.displayFormulaAfter,
+            expectedValue: data.initialDisplay,
+            round: data.round,
             text: null,
-            signed: plugin.data.signed
+            signed: data.signed
         };
     }
 }
+
+export const API = new APIInstance();

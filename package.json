@@ -1,22 +1,14 @@
 {
-    "name": "obsidian-dice-roller",
-    "version": "10.5.0",
+    "name": "@javalent/dice-roller",
+    "version": "10.5.3",
     "description": "Inline dice rolling for Obsidian.md",
-    "main": "",
-    "types": "./@types/index.d.ts",
+    "main": "./dist/api.js",
+    "types": "./dist/api.d.ts",
     "scripts": {
         "dev": "node esbuild.config.mjs",
         "build": "node esbuild.config.mjs production",
-        "test": "vitest",
-        "web:dev": "set NODE_OPTIONS=--openssl-legacy-provider && webpack --config webpack.dev.js -w",
-        "web:build": "webpack",
-        "rollup:dev": "rollup --config rollup.config-dev.js -w",
-        "rollup:build": "rollup --config rollup.config.js",
-        "push": "git push --follow-tags origin"
-    },
-    "standard-version": {
-        "t": "",
-        "releaseCommitMessageFormat": "Dice Roller Release: v{{currentTag}}"
+        "rollup": "tsup ./src/api/api.ts --dts-only && tsup ./src/types/api.ts",
+        "test": "vitest"
     },
     "keywords": [],
     "author": "Jeremy Valentine",
@@ -24,9 +16,6 @@
     "devDependencies": {
         "@codemirror/language": "https://github.com/lishid/cm-language",
         "@dimforge/rapier3d": "^0.11.2",
-        "@fortawesome/fontawesome-svg-core": "^1.2.32",
-        "@fortawesome/free-regular-svg-icons": "^5.15.4",
-        "@fortawesome/free-solid-svg-icons": "^5.15.4",
         "@popperjs/core": "^2.11.8",
         "@rollup/plugin-commonjs": "^15.1.0",
         "@rollup/plugin-node-resolve": "^9.0.0",
@@ -50,7 +39,7 @@
         "moo": "^0.5.1",
         "obsidian": "^1.4.11",
         "obsidian-dataview": "^0.4.25",
-        "obsidian-utilities": "^1.1.3",
+        "obsidian-utilities": "^1.1.4",
         "random-word-slugs": "^0.1.7",
         "rollup": "^2.32.1",
         "rollup-plugin-css-only": "^3.1.0",
@@ -58,13 +47,11 @@
         "three": "^0.137.0",
         "ts-loader": "^9.2.6",
         "tslib": "^2.0.3",
-        "typescript": "^4.0.3",
+        "tsup": "^8.0.2",
+        "typescript": "^5.4.5",
         "vite-tsconfig-paths": "^4.2.0",
         "vitest": "^0.33.0",
         "webpack": "^5.53.0",
         "webpack-cli": "^4.8.0"
-    },
-    "dependencies": {
-        "obsidian-dice-roller": "^8.13.12"
     }
 }
