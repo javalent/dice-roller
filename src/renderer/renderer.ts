@@ -120,6 +120,13 @@ export default class DiceRenderer extends Component {
             alpha: true,
             antialias: true
         });
+        this.factory = new DiceFactory(this.WIDTH, this.HEIGHT, {
+            diceColor: this.data.diceColor,
+            textColor: this.data.textColor,
+            colorfulDice: this.data.colorfulDice,
+            scaler: this.data.scaler,
+            textFont: this.data.textFont
+        });
     }
     getDiceForRoller(roller: DiceRoller): DiceShape[] {
         return this.factory.getDiceForRoller(roller, this.getVector());
@@ -145,16 +152,11 @@ export default class DiceRenderer extends Component {
             });
         });
     }
-    factory = new DiceFactory(this.WIDTH, this.HEIGHT, {
-        diceColor: this.data.diceColor,
-        textColor: this.data.textColor,
-        colorfulDice: this.data.colorfulDice,
-        scaler: this.data.scaler,
-        textFont: this.data.textFont
-    });
+    factory: DiceFactory;
 
     onload() {
         this.loaded = true;
+
         this.addChild(this.factory);
 
         this.container.empty();

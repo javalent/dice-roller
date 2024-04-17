@@ -1,4 +1,4 @@
-import { Round, ExpectedValue } from "../types";
+import { Round, ExpectedValue } from "../types/api";
 import { DEFAULT_ICONS } from "../view/view.icons";
 import copy from "fast-copy";
 import type { DiceRollerSettings } from "./settings.types";

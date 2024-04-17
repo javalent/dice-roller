@@ -30,6 +30,33 @@ interface BareRoller<T> {
     trigger(name: "new-result"): void;
 }
 abstract class BareRoller<T> extends Roller<T> {
+    constructor(
+        public data: DiceRollerSettings,
+        public original = "",
+        showDice = data.showDice
+    ) {
+        super();
+        if (!this.original) this.original = "";
+        this.containerEl = createSpan({
+            cls: "dice-roller",
+            attr: {
+                "aria-label-position": "top",
+                "data-dice": this.original
+            }
+        });
+        this.resultEl = this.containerEl.createSpan("dice-roller-result");
+        if (showDice) {
+            this.iconEl = this.containerEl.createSpan({
+                cls: "dice-roller-button"
+            });
+            setIcon(this.iconEl, Icons.DICE);
+            this.iconEl.onclick = this.onClick.bind(this);
+        } else {
+            this.containerEl.addClass("no-icon");
+        }
+
+        this.containerEl.onclick = this.onClick.bind(this);
+    }
     rolls: number;
     loaded: boolean = false;
     onLoad(callback: () => void) {
@@ -41,14 +68,8 @@ abstract class BareRoller<T> extends Roller<T> {
     }
     abstract build(): Promise<void>;
     abstract get tooltip(): string;
-    containerEl = createSpan({
-        cls: "dice-roller",
-        attr: {
-            "aria-label-position": "top",
-            "data-dice": this.original
-        }
-    });
-    resultEl = this.containerEl.createSpan("dice-roller-result");
+    containerEl: HTMLSpanElement;
+    resultEl: HTMLSpanElement;
     iconEl: HTMLSpanElement;
     setTooltip() {
         if (this.data.displayResultsInline) return;
@@ -65,24 +86,6 @@ abstract class BareRoller<T> extends Roller<T> {
     async render() {
         this.setTooltip();
         await this.build();
-    }
-    constructor(
-        public data: DiceRollerSettings,
-        public original = "",
-        showDice = data.showDice
-    ) {
-        super();
-        if (showDice) {
-            this.iconEl = this.containerEl.createSpan({
-                cls: "dice-roller-button"
-            });
-            setIcon(this.iconEl, Icons.DICE);
-            this.iconEl.onclick = this.onClick.bind(this);
-        } else {
-            this.containerEl.addClass("no-icon");
-        }
-
-        this.containerEl.onclick = this.onClick.bind(this);
     }
 
     async onClick(evt: MouseEvent) {
@@ -192,7 +195,7 @@ export abstract class GenericEmbeddedRoller<T> extends GenericFileRoller<T> {
     }
 }
 export class ArrayRoller<T = any> extends BareRoller<T> {
-    result: any;
+    declare result: any;
     results: any[];
     get tooltip() {
         return `${this.options.toString()}\n\n${this.results.toString()}`;

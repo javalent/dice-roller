@@ -2,9 +2,9 @@ import esbuild from "esbuild";
 import process from "process";
 import builtins from "builtin-modules";
 import path from "path";
-import fs from "fs";
 import { copyFile } from "fs/promises";
 import { config } from "dotenv";
+import { build } from "tsup";
 
 config();
 
@@ -80,6 +80,15 @@ if (prod) {
             console.error(x);
         }
         process.exit(1);
+    });
+    await build({
+        entry: ["./src/api/api.ts"],
+        dts: {
+            only: true
+        }
+    });
+    await build({
+        entry: ["./src/types/api.ts"]
     });
 } else {
     let ctx = await esbuild.context(parameters);

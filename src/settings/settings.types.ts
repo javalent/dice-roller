@@ -1,4 +1,4 @@
-import { Round, ExpectedValue } from "../types";
+import { Round, ExpectedValue } from "../types/api";
 import type { DiceIcon } from "../view/view.icons";
 
 export interface DiceRollerSettings {

@@ -1,7 +1,7 @@
 /* import lexer from "lex"; */
 
 import * as moo from "moo";
-import type { Conditional } from "src/types";
+import type { Conditional } from "src/roller";
 
 export const TAG_REGEX =
     /(?:\d+[Dd])?#(?:[\p{Letter}\p{Emoji_Presentation}\w/-]+)(?:\|(?:[+-]))?(?:\|(?:[^+-]+))?/u;

@@ -1,19 +1,29 @@
 import { App, Notice, setIcon } from "obsidian";
 import type { LexicalToken } from "src/lexer/lexer";
-import {
-    type ResultMapInterface,
-    type Conditional,
-    Round,
-    ExpectedValue,
-    type ResultInterface
-} from "src/types";
+
 import { _insertIntoMap } from "src/utils/util";
 import { GenericRoller, Roller } from "./roller";
 import DiceRenderer from "src/renderer/renderer";
 import { DiceShape } from "src/renderer/shapes";
 import { Icons } from "src/utils/icons";
 import type { DiceRollerSettings } from "src/settings/settings.types";
+import { Round, ExpectedValue } from "src/types/api";
 
+export interface Conditional {
+    operator: string;
+    comparer: string | number;
+    lexemes: LexicalToken[];
+    value: string;
+    result?: number;
+}
+
+export type ResultMapInterface<T> = Map<number, ResultInterface<T>>;
+export type ResultInterface<T> = {
+    usable: boolean;
+    value: T;
+    display: string;
+    modifiers?: Set<string>;
+};
 interface Modifier {
     conditionals: Conditional[];
     data: number;
@@ -750,7 +760,7 @@ class BasicStackRoller extends Roller<number> {
     ) {
         super();
     }
-    result: number;
+    declare result: number;
     operators: Record<string, (...args: number[]) => number> = {
         "+": (a: number, b: number): number => a + b,
         "-": (a: number, b: number): number => a - b,

@@ -1,16 +1,11 @@
-/* import {
-    BufferGeometry,
-    Material,
-    Mesh,
-    Quaternion as ThreeQuaternion,
-    Vector3
-} from "three"; */
 import { Body, Mat3, Vec3, Quaternion } from "cannon-es";
-import { BufferGeometry } from "three/src/core/BufferGeometry";
-import { Material } from "three/src/materials/Material";
-import { Vector3 } from "three/src/math/Vector3";
-import { Mesh } from "three/src/objects/Mesh";
-import type { Quaternion as ThreeQuaternion } from "three/src/math/Quaternion";
+import {
+    BufferGeometry,
+    Vector3,
+    type Mesh,
+    type Material,
+    type Quaternion as ThreeQuaternion
+} from "three";
 
 interface DiceVector {
     pos: { x: number; y: number; z: number };

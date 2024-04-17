@@ -1,5 +1,5 @@
 import { TFile } from "obsidian";
-import type { ResultInterface, ResultMapInterface } from "src/types";
+import type { ResultInterface, ResultMapInterface } from "src/roller/dice";
 
 const MATCH = /^\|?([\s\S]+?)\|?$/;
 const SPLIT = /\|/;

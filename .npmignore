@@ -1,3 +1,5 @@
 **/*
-!@types/obsidian/obsidian.d.ts
+!types/**/*
 !index.ts
+!tsconfig.json
+!dist/**/*

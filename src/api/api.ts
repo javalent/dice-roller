@@ -1,7 +1,7 @@
 import type DiceRollerPlugin from "src/main";
 import { ArrayRoller, type BasicRoller } from "src/roller/roller";
 import type { DiceRollerSettings } from "src/settings/settings.types";
-import { ExpectedValue, type RollerOptions, Round } from "src/types";
+import { ExpectedValue, Round } from "src/types/api";
 
 import { decode } from "he";
 import { Lexer, type LexicalToken } from "src/lexer/lexer";
@@ -16,6 +16,19 @@ import {
     LineRoller
 } from "src/roller";
 import { DataviewManager } from "./api.dataview";
+
+export * from "src/types/api";
+export interface RollerOptions {
+    showDice?: boolean;
+    shouldRender?: boolean;
+    showFormula?: boolean;
+    expectedValue?: ExpectedValue;
+    round?: Round;
+    text?: string;
+    showParens?: boolean;
+    formulaAfter?: boolean;
+    signed?: boolean;
+}
 
 declare global {
     interface Window {
@@ -166,8 +179,6 @@ class APIInstance {
     registerSource(source: string, options: RollerOptions): void {
         this.sources.set(source, options);
     }
-
-    plugin: DiceRollerPlugin;
 
     getRollerSync(
         raw: string,

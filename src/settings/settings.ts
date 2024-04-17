@@ -12,7 +12,7 @@ import {
     TextComponent,
     TFolder,
 } from "obsidian";
-import { Round, ExpectedValue } from "src/types";
+import { Round, ExpectedValue } from "src/types/api";
 import type DiceRoller from "../main";
 import { DEFAULT_SETTINGS } from "src/settings/settings.const";
 import { type DiceIcon, IconManager, IconShapes } from "src/view/view.icons";
