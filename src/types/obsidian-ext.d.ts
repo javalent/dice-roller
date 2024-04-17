@@ -38,4 +38,11 @@ declare module "obsidian" {
             callback: (type: "update", file: TFile) => void
         ): EventRef;
     }
+
+    interface MarkdownEditView {
+        sourceMode: boolean;
+    }
+    interface MarkdownView {
+        editMode?: MarkdownEditView;
+    }
 }

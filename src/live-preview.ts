@@ -28,8 +28,8 @@
  * */
 
 import {
+    type DecorationSet,
     Decoration,
-    DecorationSet,
     EditorView,
     ViewPlugin,
     ViewUpdate,
@@ -85,16 +85,14 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                 const end = node.to;
                 // don't continue if current cursor position and inline code node (including formatting
                 // symbols) overlap
-                if (selectionAndRangeOverlap(selection, start, end )) return;
-
+                if (selectionAndRangeOverlap(selection, start, end)) return;
 
                 const original = view.state.doc.sliceString(start, end).trim();
 
-                const isTemplate =
-                    isTemplateFolder(
-                        plugin.data.diceModTemplateFolders,
-                        currentFile
-                    )
+                const isTemplate = isTemplateFolder(
+                    plugin.data.diceModTemplateFolders,
+                    currentFile
+                );
                 if (
                     /^dice\-mod:\s*([\s\S]+)\s*?/.test(original) &&
                     !isTemplate &&
@@ -109,20 +107,10 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                         content,
                         currentFile.path
                     );
-                    let showFormula = plugin.data.displayFormulaForMod;
-
-                    if (content.includes("|noform")) {
-                        showFormula = false;
-                    }
-                    if (content.includes("|form")) {
-                        showFormula = true;
-                    }
 
                     roller.roll().then(async () => {
                         const replacer = await roller.getReplacer();
-                        const insert = showFormula
-                            ? `${roller.inlineText} **${replacer}**`
-                            : `${replacer}`;
+                        const insert = `${replacer}`;
 
                         if (plugin.data.escapeDiceMod) {
                             insert.replace(/([\*\[\]])/g, "\\$1");
@@ -139,7 +127,8 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                     return;
                 }
 
-                if (!/^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/.test(original)) return;
+                if (!/^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/.test(original))
+                    return;
                 let [, content] = original.match(
                     /^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/
                 );
@@ -153,7 +142,7 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                     currentFile
                 );
 
-                plugin.addToFileMap(currentFile, roller);
+                plugin.processor.trackRoller(currentFile, roller);
                 widgets.push(
                     Decoration.replace({
                         widget,
@@ -183,7 +172,7 @@ export class InlineWidget extends WidgetType {
         if (other.rawQuery === this.rawQuery) {
             return true;
         }
-        this.plugin.fileMap.get(this.file)?.remove(other.roller);
+        this.plugin.processor.fileMap.get(this.file)?.remove(other.roller);
         return false;
     }
 

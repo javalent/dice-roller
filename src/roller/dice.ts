@@ -993,7 +993,8 @@ export class StackRoller extends GenericRoller<number> {
     signed: boolean;
     showRenderNotice: boolean;
     async getReplacer() {
-        return `${this.result}`;
+        let inline = this.showFormula ? `${this.inlineText} ` : "";
+        return `${inline}${this.result}`;
     }
     stunted: string = "";
     private _tooltip: string;

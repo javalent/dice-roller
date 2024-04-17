@@ -5,7 +5,8 @@ import {
     setIcon,
     TFile,
     MetadataCache,
-    App
+    App,
+    type EventRef
 } from "obsidian";
 
 import type { LexicalToken } from "src/lexer/lexer";
@@ -22,10 +23,22 @@ export abstract class Roller<T> extends Events {
         return Math.floor(rand * (max - min + 1)) + min;
     }
 }
-
+interface BareRoller<T> {
+    on(name: "loaded", callback: () => void): EventRef;
+    trigger(name: "loaded"): void;
+    on(name: "new-result", callback: () => void): EventRef;
+    trigger(name: "new-result"): void;
+}
 abstract class BareRoller<T> extends Roller<T> {
     rolls: number;
     loaded: boolean = false;
+    onLoad(callback: () => void) {
+        if (this.loaded) {
+            callback();
+        } else {
+            this.on("loaded", () => callback());
+        }
+    }
     abstract build(): Promise<void>;
     abstract get tooltip(): string;
     containerEl = createSpan({

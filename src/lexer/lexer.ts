@@ -207,6 +207,10 @@ class LexerClass {
     public setInlineFields(fields: Map<string, number>) {
         this.inline = fields;
     }
+    public setDefaults(roll: number, face: number) {
+        this.defaultRoll = roll;
+        this.defaultFace = face;
+    }
     public setDefaultRoll(roll: number) {
         this.defaultRoll = roll;
     }
