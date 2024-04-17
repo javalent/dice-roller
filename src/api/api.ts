@@ -1,5 +1,5 @@
 import type DiceRollerPlugin from "src/main";
-import type { BasicRoller } from "src/roller/roller";
+import { ArrayRoller, type BasicRoller } from "src/roller/roller";
 import type { DiceRollerSettings } from "src/settings/settings.types";
 import { ExpectedValue, type RollerOptions, Round } from "src/types";
 
@@ -16,6 +16,12 @@ import {
     LineRoller
 } from "src/roller";
 import { DataviewManager } from "./api.dataview";
+
+declare global {
+    interface Window {
+        DiceRoller: APIInstance;
+    }
+}
 class APIInstance {
     app: App;
     data: DiceRollerSettings;
@@ -25,6 +31,8 @@ class APIInstance {
         this.data = plugin.data;
         this.app = plugin.app;
         this.renderer = plugin.renderer;
+        window["DiceRoller"] = this;
+        plugin.register(() => delete window["DiceRoller"]);
     }
 
     #getTypeFromLexemes(lexemes: LexicalToken[]) {
@@ -425,7 +433,16 @@ class APIInstance {
         }
         return roll;
     }
+    async getArrayRoller(options: any[], rolls = 1) {
+        const roller = new ArrayRoller(this.data, options, rolls);
 
+        await roller.roll();
+        return roller;
+    }
+    public async parseDice(content: string, source: string = "") {
+        const roller = await this.getRoller(content, source);
+        return { result: await roller.roll(), roller };
+    }
     getRollerOptions(data: DiceRollerSettings): RollerOptions {
         return {
             showDice: data.showDice,
