@@ -25,6 +25,7 @@ jobs:
               id: release
               with:
                   command: manifest
+                  release-type: node
 
     upload-build:
         runs-on: ubuntu-latest
