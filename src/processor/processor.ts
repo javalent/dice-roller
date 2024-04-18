@@ -21,6 +21,7 @@ export default class DiceProcessor extends Component {
     initialize(plugin: DiceRollerPlugin) {
         this.app = plugin.app;
         this.data = plugin.data;
+
         plugin.addCommand({
             id: "reroll",
             name: "Re-roll Dice",
@@ -159,16 +160,6 @@ export default class DiceProcessor extends Component {
                     } else {
                         await roller.roll();
                     }
-
-                    if (roller instanceof StackRoller) {
-                        roller.on("new-result", () => {
-                            this.app.workspace.trigger(
-                                "dice-roller:new-result",
-                                roller
-                            );
-                        });
-                    }
-
                     node.replaceWith(roller.containerEl);
                 });
 
