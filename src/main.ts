@@ -15,6 +15,8 @@ import type { DiceRollerSettings } from "./settings/settings.types";
 import { DEFAULT_SETTINGS } from "./settings/settings.const";
 import { DataviewManager } from "./api/api.dataview";
 import DiceProcessor from "./processor/processor";
+import copy from "fast-copy";
+import { compare } from "compare-versions";
 
 export default class DiceRollerPlugin extends Plugin {
     api = API;
@@ -35,7 +37,7 @@ export default class DiceRollerPlugin extends Plugin {
     }
     async onload() {
         console.log("DiceRoller plugin loaded");
-        this.data = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        await this.loadSettings();
 
         this.renderer = new DiceRenderer(this.getRendererData());
         this.api.initialize(this);
@@ -52,7 +54,7 @@ export default class DiceRollerPlugin extends Plugin {
 
         this.registerEvent(
             this.app.workspace.on("dice-roller:render-dice", async (roll) => {
-                const roller = await this.getRoller(roll, "external");
+                const roller = await API.getRoller(roll, "external");
 
                 if (!(roller instanceof StackRoller)) {
                     new Notice("The Dice View only supports dice rolls.");
@@ -121,22 +123,30 @@ export default class DiceRollerPlugin extends Plugin {
         });
     }
 
-    clearEmpties(o: Record<any, any>) {
-        for (var k in o) {
-            if (!o[k] || typeof o[k] !== "object") {
-                continue;
-            }
+    async loadSettings() {
+        const data = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        let dirty = false;
+        console.log(compare("11.0.0", null ?? "0.0.0", ">"));
+        if (typeof data.version !== "string") {
+            delete data.version;
+        }
+        if (compare("11.0.0", data.version ?? "0.0.0", ">")) {
+            delete data["persistResults"];
+            delete data["results"];
+            dirty = true;
+        }
+        if (compare(data.version ?? "0.0.0", this.manifest.version, "!=")) {
+            data.version = this.manifest.version;
+            dirty = true;
+        }
 
-            this.clearEmpties(o[k]);
-            if (Object.keys(o[k]).length === 0) {
-                delete o[k];
-            }
+        this.data = copy(data);
+
+        if (dirty) {
+            await this.saveSettings();
         }
     }
-
     async saveSettings() {
-        this.clearEmpties(this.data.results);
-
         await this.saveData(this.data);
     }
 

@@ -228,34 +228,6 @@ abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
     get tooltip() {
         return this.original;
     }
-    toResult() {
-        return {
-            type: "query",
-            random: this.chosen,
-            result: Object.fromEntries(
-                this.results.map((section) => [
-                    section.path,
-                    section.toResult()
-                ])
-            )
-        };
-    }
-    async applyResult(result: any) {
-        if (result.type !== "query") return;
-        if (result.result) {
-            for (let path in result.result) {
-                const section = this.results.find(
-                    (section) => section.path === path
-                );
-                if (!section) continue;
-                section.applyResult(result.result[path]);
-            }
-        }
-        if (result.random) {
-            this.random = result.random;
-        }
-        await this.render();
-    }
 }
 
 export class DataViewRoller extends DataViewEnabledRoller {

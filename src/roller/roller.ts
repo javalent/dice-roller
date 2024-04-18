@@ -112,9 +112,6 @@ export abstract class BasicRoller<T = any> extends BareRoller<T> {
     ) {
         super(data, original, showDice);
     }
-
-    abstract toResult(): { type: string; result: any };
-    abstract applyResult(result: any): Promise<void>;
 }
 
 export abstract class GenericRoller<T> extends BasicRoller {

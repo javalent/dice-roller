@@ -146,17 +146,4 @@ export class LineRoller extends GenericEmbeddedRoller<string> {
             }
         });
     }
-    toResult() {
-        return {
-            type: "section",
-            result: this.results
-        };
-    }
-    async applyResult(result: any) {
-        if (result.type !== "section") return;
-        if (result.result) {
-            this.results = result.result;
-        }
-        await this.render();
-    }
 }

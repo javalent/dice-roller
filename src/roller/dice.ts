@@ -1514,23 +1514,4 @@ export class StackRoller extends GenericRoller<number> {
         }
         this.result = final.result;
     }
-
-    toResult() {
-        return {
-            type: "dice",
-            result: this.result,
-            tooltip: this.tooltip
-        };
-    }
-    async applyResult(result: any) {
-        if (result.type !== "dice") return;
-        if (result.result) {
-            this.result = result.result;
-        }
-        if (result.tooltip) {
-            this._tooltip = result.tooltip;
-        }
-        await this.render();
-    }
-    setResult(result: number[]) {}
 }

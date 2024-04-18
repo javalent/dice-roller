@@ -10,7 +10,7 @@ import {
     setIcon,
     Setting,
     TextComponent,
-    TFolder,
+    TFolder
 } from "obsidian";
 import { Round, ExpectedValue } from "src/types/api";
 import type DiceRoller from "../main";
@@ -36,7 +36,6 @@ declare global {
         };
     }
 }
-
 
 export default class SettingTab extends PluginSettingTab {
     iconsEl: HTMLDivElement;
@@ -143,26 +142,6 @@ export default class SettingTab extends PluginSettingTab {
     }
     buildGenerics(containerEl: HTMLDivElement) {
         containerEl.empty();
-        new Setting(containerEl)
-            .setName("Globally Save Results")
-            .setDesc(
-                createFragment((e) => {
-                    e.createSpan({
-                        text: "Dice results will be saved by default. This can be overridden using "
-                    });
-                    e.createEl("code", { text: `dice-: formula` });
-                    e.createEl("p", {
-                        text: "Please note that the plugin will attempt to save the result but may not be able to."
-                    });
-                })
-            )
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.persistResults);
-                t.onChange(async (v) => {
-                    this.plugin.data.persistResults = v;
-                    await this.plugin.saveSettings();
-                });
-            });
     }
     #buildSummary(containerEl: HTMLDetailsElement, name: string) {
         const summary = containerEl.createEl("summary");
@@ -240,9 +219,7 @@ export default class SettingTab extends PluginSettingTab {
                     }
 
                     this.plugin.data.defaultFace = Number(t.inputEl.value);
-                    Lexer.setDefaultFace(
-                        this.plugin.data.defaultFace
-                    );
+                    Lexer.setDefaultFace(this.plugin.data.defaultFace);
                     await this.plugin.saveSettings();
                 };
             });

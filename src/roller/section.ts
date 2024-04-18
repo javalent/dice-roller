@@ -254,19 +254,6 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
             }
         });
     }
-    toResult() {
-        return {
-            type: "section",
-            result: this.results
-        };
-    }
-    async applyResult(result: any) {
-        if (result.type !== "section") return;
-        if (result.result) {
-            this.results = result.result;
-        }
-        await this.render();
-    }
 }
 
 const samePosition = (pos: Pos, pos2: Pos) => {

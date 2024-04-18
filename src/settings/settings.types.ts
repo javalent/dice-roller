@@ -12,16 +12,7 @@ export interface DiceRollerSettings {
     escapeDiceMod: boolean;
     signed: boolean;
     formulas: Record<string, string>;
-    persistResults: boolean;
-
     showDice: boolean;
-    results: {
-        [path: string]: {
-            [line: string]: {
-                [index: string]: Record<string, any>;
-            };
-        };
-    };
     defaultRoll: number;
     defaultFace: number;
     renderer: boolean;
@@ -47,4 +38,5 @@ export interface DiceRollerSettings {
     showRenderNotice: boolean;
     diceModTemplateFolders: Record<string, boolean>;
     replaceDiceModInLivePreview: boolean;
+    version: string | null;
 }

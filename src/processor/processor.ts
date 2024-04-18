@@ -142,24 +142,10 @@ export default class DiceProcessor extends Component {
             try {
                 //build result map;
                 const roller = await API.getRoller(content, ctx.sourcePath);
-                const savedResult =
-                    this.data.results?.[path]?.[lineStart]?.[index] ?? null;
-                if (
-                    (this.data.persistResults &&
-                        !/dice\-/.test(node.innerText)) ||
-                    /dice\+/.test(node.innerText)
-                ) {
-                    /* this.persistingFiles.add(ctx.sourcePath); */
-                    toPersist[index] = roller;
-                    roller.save = true;
-                }
 
                 roller.onLoad(async () => {
-                    if (roller.save && savedResult) {
-                        await roller.applyResult(savedResult);
-                    } else {
-                        await roller.roll();
-                    }
+                    await roller.roll();
+
                     node.replaceWith(roller.containerEl);
                 });
 

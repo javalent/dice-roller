@@ -15,8 +15,6 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     signed: false,
     displayLookupRoll: true,
     formulas: {},
-    persistResults: false,
-    results: {},
     defaultRoll: 1,
     defaultFace: 100,
     renderer: false,
@@ -36,5 +34,6 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     icons: copy(DEFAULT_ICONS),
     showRenderNotice: true,
     diceModTemplateFolders: {},
-    replaceDiceModInLivePreview: true
+    replaceDiceModInLivePreview: true,
+    version: null
 };
