@@ -18,6 +18,16 @@ import {
 import { DataviewManager } from "./api.dataview";
 
 export * from "src/types/api";
+
+export {
+    type StackRoller,
+    type TableRoller,
+    type SectionRoller,
+    type DataViewRoller,
+    type TagRoller,
+    type LineRoller
+};
+
 export interface RollerOptions {
     showDice?: boolean;
     shouldRender?: boolean;
