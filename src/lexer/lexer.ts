@@ -1,6 +1,9 @@
 /* import lexer from "lex"; */
 
 import * as moo from "moo";
+import type { App } from "obsidian";
+import { API } from "src/api/api";
+import { DataviewManager } from "src/api/api.dataview";
 import type { Conditional } from "src/roller";
 
 export const TAG_REGEX =
@@ -108,6 +111,7 @@ export interface LexicalToken extends Partial<moo.Token> {
 }
 
 class LexerClass {
+    app: App;
     constructor() {
         this.parser = new Parser({
             "+": {
@@ -131,6 +135,10 @@ class LexerClass {
                 associativity: "right"
             }
         });
+    }
+    initialize(app: App): LexerClass {
+        this.app = app;
+        return this;
     }
     lexer = moo.compile({
         WS: [{ match: /[ \t]+/u }, { match: /[{}]+/u }],
@@ -181,10 +189,13 @@ class LexerClass {
             {
                 match: /\b[A-Za-z][A-Za-z0-9_]+\b/u,
                 value: (match) => {
-                    if (this.inline.has(match)) {
-                        return `${this.inline.get(match)}`;
-                    }
-                    return match;
+                    const file = this.app.workspace.getActiveFile();
+                    if (!file) return match;
+
+                    return (
+                        DataviewManager.getFieldValueFromFile(match, file) ??
+                        match
+                    );
                 }
             }
         ],
