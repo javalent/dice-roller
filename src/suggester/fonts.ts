@@ -1,12 +1,5 @@
-import {
-    TFolder,
-    TextComponent,
-    type CachedMetadata,
-    App,
-    type FuzzyMatch,
-    renderMatches
-} from "obsidian";
-import { FuzzyInputSuggest } from "obsidian-utilities";
+import { type FuzzyMatch, renderMatches } from "obsidian";
+import { FuzzyInputSuggest } from "@javalent/utilities";
 
 export class FontSuggestionModal extends FuzzyInputSuggest<string> {
     getItemText(item: string): string {
