@@ -46,10 +46,7 @@ export default class DiceRollerPlugin extends Plugin {
         this.register(() => delete window["DiceRoller"]);
         this.addChild(DataviewManager.initialize(this.app));
 
-        Lexer.initialize(this.app).setDefaults(
-            this.data.defaultFace,
-            this.data.defaultRoll
-        );
+        Lexer.setDefaults(this.data.defaultFace, this.data.defaultRoll);
 
         this.addSettingTab(new SettingTab(this.app, this));
 

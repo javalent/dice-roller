@@ -26,7 +26,9 @@ class DVManager extends Component {
         return this;
     }
 
-    getFieldValueFromFile(field: string, file: TFile): string | null {
+    getFieldValueFromActiveFile(field: string): string | null {
+        const file = this.app.workspace.getActiveFile();
+        if (!file) return null;
         if (!this.canUseDataview || !this.ready) return null;
 
         return this.api.index.pages.get(file.path)?.fields.get(field) ?? null;

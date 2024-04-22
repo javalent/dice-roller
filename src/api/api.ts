@@ -1,11 +1,11 @@
-import { ArrayRoller, type BasicRoller } from "src/roller/roller";
-import type { DiceRollerSettings } from "src/settings/settings.types";
-import { ExpectedValue, Round } from "src/types/api";
+import { ArrayRoller, type BasicRoller } from "../roller/roller";
+import type { DiceRollerSettings } from "../settings/settings.types";
+import { ExpectedValue, Round } from "../types/api";
 
 import { decode } from "he";
-import { Lexer, type LexicalToken } from "src/lexer/lexer";
+import { Lexer, type LexicalToken } from "../lexer/lexer";
 import type { App } from "obsidian";
-import type DiceRenderer from "src/renderer/renderer";
+import type DiceRenderer from "../renderer/renderer";
 import {
     StackRoller,
     TableRoller,
@@ -13,10 +13,10 @@ import {
     DataViewRoller,
     TagRoller,
     LineRoller
-} from "src/roller";
+} from "../roller";
 import { DataviewManager } from "./api.dataview";
 
-export * from "src/types/api";
+export * from "../types/api";
 
 export {
     type StackRoller,
