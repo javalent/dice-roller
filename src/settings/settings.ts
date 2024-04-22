@@ -18,7 +18,7 @@ import { DEFAULT_SETTINGS } from "src/settings/settings.const";
 import { type DiceIcon, IconManager, IconShapes } from "src/view/view.icons";
 import { generateSlug } from "random-word-slugs";
 import { FontSuggestionModal } from "src/suggester/fonts";
-import { FolderInputSuggest } from "obsidian-utilities";
+import { FolderInputSuggest } from "@javalent/utilities";
 import { Icons } from "src/utils/icons";
 import { Lexer } from "src/lexer/lexer";
 

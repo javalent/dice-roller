@@ -1,3 +1,4 @@
+import type { ViewResult } from "src/view/view";
 import { Round, ExpectedValue } from "../types/api";
 import type { DiceIcon } from "../view/view.icons";
 
@@ -39,4 +40,5 @@ export interface DiceRollerSettings {
     diceModTemplateFolders: Record<string, boolean>;
     replaceDiceModInLivePreview: boolean;
     version: string | null;
+    viewResults: ViewResult[];
 }
