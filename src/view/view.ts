@@ -6,14 +6,26 @@ import {
     TextAreaComponent,
     WorkspaceLeaf
 } from "obsidian";
-import DiceRollerPlugin from "src/main";
+import type DiceRollerPlugin from "src/main";
 import { StackRoller } from "src/roller";
 import { ExpectedValue } from "../types/api";
 import { API } from "../api/api";
 import { type DiceIcon, IconManager } from "./view.icons";
 import { Icons } from "src/utils/icons";
+import { nanoid } from "nanoid";
+import DiceTray from "./ui/DiceTray.svelte";
+
+/* import { Details } from "@javalent/utilities"; */
 
 export const VIEW_TYPE = "DICE_ROLLER_VIEW";
+
+export interface ViewResult {
+    original: string;
+    resultText: string;
+    result: string | number;
+    timestamp: number;
+    id: string;
+}
 
 export default class DiceView extends ItemView {
     noResultsEl: HTMLSpanElement;
@@ -40,12 +52,22 @@ export default class DiceView extends ItemView {
 
         this.addChild(this.#icons);
 
+        for (const icon of this.plugin.data.icons) {
+            this.#icons.registerIcon(icon.id, icon.shape, icon.text);
+        }
+
         this.registerEvent(
             this.plugin.app.workspace.on(
                 "dice-roller:new-result",
-                (roller: StackRoller) => {
+                async (roller: StackRoller) => {
                     if (this.plugin.data.addToView) {
-                        this.addResult(roller);
+                        await this.addResult({
+                            result: roller.result,
+                            original: roller.original,
+                            resultText: roller.resultText,
+                            timestamp: new Date().valueOf(),
+                            id: nanoid(12)
+                        });
                     }
                 }
             )
@@ -53,30 +75,38 @@ export default class DiceView extends ItemView {
     }
     async onOpen() {
         //build ui
+
         this.display();
     }
 
     async display() {
         this.contentEl.empty();
+
         this.gridEl = this.contentEl.createDiv("dice-roller-grid");
         this.formulaEl = this.contentEl.createDiv("dice-roller-formula");
 
-        const resultsEl = this.contentEl.createDiv(
-            "dice-roller-results-container"
-        );
-        const headerEl = resultsEl.createDiv("dice-roller-results-header");
-        headerEl.createEl("h4", { text: "Results" });
+        const headerEl = this.contentEl.createDiv("results-header-container");
+        headerEl.createEl("h4", { cls: "results-header", text: "Results" });
         new ExtraButtonComponent(headerEl.createDiv("clear-all"))
             .setIcon(Icons.DELETE)
             .setTooltip("Clear All")
-            .onClick(() => {
+            .onClick(async () => {
                 this.resultEl.empty();
                 this.resultEl.append(this.noResultsEl);
+                this.plugin.data.viewResults = [];
+                await this.plugin.saveSettings();
             });
+        const resultsEl = this.contentEl.createDiv(
+            "dice-roller-results-container"
+        );
         this.resultEl = resultsEl.createDiv("dice-roller-results");
         this.noResultsEl = this.resultEl.createSpan({
             text: "No results yet! Roll some dice to get started :)"
         });
+
+        for (const result of this.plugin.data.viewResults) {
+            this.addResult(result, false);
+        }
 
         this.buildButtons();
         this.buildFormula();
@@ -84,6 +114,7 @@ export default class DiceView extends ItemView {
     #formula: Map<DiceIcon, number> = new Map();
     buildButtons() {
         this.gridEl.empty();
+
         const buttons = this.gridEl.createDiv("dice-buttons");
         for (const icon of this.plugin.data.icons) {
             this.#icons.registerIcon(icon.id, icon.shape, icon.text);
@@ -97,7 +128,7 @@ export default class DiceView extends ItemView {
                     if (!this.#formula.has(icon)) {
                         this.#formula.set(icon, 0);
                     }
-                    let amount = this.#formula.get(icon);
+                    let amount = this.#formula.get(icon) ?? 0;
                     amount += evt.getModifierState("Shift") ? -1 : 1;
                     this.#formula.set(icon, amount);
                     this.setFormula();
@@ -124,6 +155,9 @@ export default class DiceView extends ItemView {
                 }
                 this.setFormula();
             });
+        if (this.#adv) {
+            adv.setCta();
+        }
         const dis = new ButtonComponent(advDis)
             .setButtonText("DIS")
             .onClick(() => {
@@ -140,42 +174,22 @@ export default class DiceView extends ItemView {
                 this.setFormula();
             });
 
+        if (this.#dis) {
+            dis.setCta();
+        }
         new ExtraButtonComponent(advDis).setIcon(Icons.PLUS).onClick(() => {
             this.#add += 1;
             this.setFormula();
         });
 
-        if (this.customFormulas.length) {
-            const customs = this.gridEl.createDiv(
-                "dice-roller-results-container"
-            );
-            const headerEl = customs.createDiv("dice-roller-results-header");
-            headerEl.createEl("h4", { text: "Saved Formulas" });
-
-            for (let formula of this.customFormulas) {
-                const containerEl = customs.createDiv(
-                    "dice-custom-formula-container"
-                );
-                const formulaEl = containerEl.createDiv("dice-custom-formula");
-                new ExtraButtonComponent(formulaEl)
-                    .setIcon(Icons.DICE)
-                    .setTooltip("Roll")
-                    .onClick(() => this.roll(formula));
-                formulaEl.createSpan({ text: formula });
-
-                new ExtraButtonComponent(containerEl)
-                    .setIcon(Icons.DELETE)
-                    .setTooltip("Remove")
-                    .onClick(() => {
-                        this.plugin.data.customFormulas =
-                            this.plugin.data.customFormulas.filter(
-                                (f) => f != formula
-                            );
-                        this.plugin.saveSettings();
-                        this.buildButtons();
-                    });
+        new DiceTray({
+            target: this.gridEl,
+            props: {
+                settings: this.plugin.data,
+                plugin: this.plugin,
+                view: this
             }
-        }
+        });
     }
     setFormula() {
         if (!this.#formula.size && !this.#add) {
@@ -238,11 +252,11 @@ export default class DiceView extends ItemView {
             opts.expectedValue = ExpectedValue.Roll;
         }
         try {
-            const roller = await this.plugin
-                .getRoller(formula, "view", opts)
-                .catch((e) => {
+            const roller = await API.getRoller(formula, "view", opts).catch(
+                (e) => {
                     throw e;
-                });
+                }
+            );
             if (!(roller instanceof StackRoller)) {
                 throw new Error("The Dice Tray only supports dice rolls.");
             }
@@ -255,8 +269,7 @@ export default class DiceView extends ItemView {
             await roller.roll(this.plugin.data.renderer).catch((e) => {
                 throw e;
             });
-            this.addResult(roller);
-        } catch (e) {
+        } catch (e: any) {
             new Notice("Invalid Formula: " + e.message);
         } finally {
             this.rollButton.setDisabled(false);
@@ -268,9 +281,9 @@ export default class DiceView extends ItemView {
     }
     buildFormula() {
         this.formulaEl.empty();
-        this.formulaComponent = new TextAreaComponent(
-            this.formulaEl
-        ).setPlaceholder("Dice Formula");
+        this.formulaComponent = new TextAreaComponent(this.formulaEl)
+            .setPlaceholder("Dice Formula")
+            .onChange((v) => (this.#formula = new Map()));
 
         const buttons = this.formulaEl.createDiv("action-buttons");
         this.saveButton = new ExtraButtonComponent(buttons)
@@ -294,48 +307,79 @@ export default class DiceView extends ItemView {
         this.buildButtons();
         this.plugin.saveSettings();
     }
-    addResult(roller: StackRoller) {
+
+    Formatter = new Intl.DateTimeFormat(
+        localStorage.getItem("language") ?? "en-US",
+        {
+            dateStyle: "medium",
+            timeStyle: "short"
+        }
+    );
+
+    private async addResult(result: ViewResult, save = true) {
         if (this.noResultsEl) {
             this.noResultsEl.detach();
         }
-        const result = createDiv("view-result");
-
-        result.createSpan({
-            text: roller.original
-        });
-        result
-            .createEl("strong", {
-                attr: {
-                    "aria-label": roller.resultText
-                }
-            })
-            .appendChild(roller.containerEl.cloneNode(true));
-
-        const context = result.createDiv("result-context");
-
-        context.createEl("em", { text: new Date().toLocaleString() });
-        new ExtraButtonComponent(context).setIcon(Icons.DELETE).onClick(() => {
-            result.detach();
-            if (this.resultEl.children.length === 0) {
-                this.resultEl.prepend(this.noResultsEl);
-            }
+        const resultEl = createDiv("view-result");
+        const topPaneEl = resultEl.createDiv("result-actions");
+        const reroll = new ExtraButtonComponent(topPaneEl)
+            .setIcon(Icons.DICE)
+            .setTooltip("Roll Again")
+            .onClick(() => this.roll(result.original));
+        reroll.extraSettingsEl.addClass("dice-result-reroll");
+        topPaneEl.createSpan({
+            text: result.original
         });
 
-        const copy = new ExtraButtonComponent(context)
+        const copy = new ExtraButtonComponent(topPaneEl)
             .setIcon(Icons.COPY)
             .setTooltip("Copy Result")
             .onClick(async () => {
-                await navigator.clipboard.writeText(`${roller.result}`);
+                await navigator.clipboard.writeText(`${result.result}`);
             });
         copy.extraSettingsEl.addClass("dice-content-copy");
+        resultEl.createEl("strong", {
+            attr: {
+                "aria-label": result.resultText
+            },
+            text: `${result.result}`
+        });
+        /* .appendChild(roller.containerEl.cloneNode(true)) */
 
-        const reroll = new ExtraButtonComponent(context)
-            .setIcon(Icons.DICE)
-            .setTooltip("Roll Again")
-            .onClick(() => this.roll(roller.original));
-        reroll.extraSettingsEl.addClass("dice-result-reroll");
+        const context = resultEl.createDiv("result-context");
 
-        this.resultEl.prepend(result);
+        context.createEl("em", {
+            cls: "result-timestamp",
+            text: this.Formatter.format(result.timestamp)
+        });
+        new ExtraButtonComponent(context)
+            .setIcon(Icons.DELETE)
+            .onClick(async () => {
+                resultEl.detach();
+                if (this.resultEl.children.length === 0) {
+                    this.resultEl.prepend(this.noResultsEl);
+                }
+
+                this.plugin.data.viewResults.splice(
+                    this.plugin.data.viewResults.findIndex(
+                        (r) => r.id === result.id
+                    ),
+                    1
+                );
+                await this.plugin.saveSettings();
+            });
+
+        this.resultEl.prepend(resultEl);
+        if (save) {
+            console.log("🚀 ~ file: view.ts:372 ~ save:", save);
+
+            this.plugin.data.viewResults.push(result);
+            this.plugin.data.viewResults = this.plugin.data.viewResults.slice(
+                0,
+                100
+            );
+            await this.plugin.saveSettings();
+        }
     }
 
     getDisplayText() {
