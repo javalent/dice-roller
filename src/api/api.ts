@@ -1,4 +1,3 @@
-import type DiceRollerPlugin from "src/main";
 import { ArrayRoller, type BasicRoller } from "src/roller/roller";
 import type { DiceRollerSettings } from "src/settings/settings.types";
 import { ExpectedValue, Round } from "src/types/api";
@@ -50,12 +49,10 @@ class APIInstance {
     data: DiceRollerSettings;
     renderer: DiceRenderer;
 
-    initialize(plugin: DiceRollerPlugin) {
-        this.data = plugin.data;
-        this.app = plugin.app;
-        this.renderer = plugin.renderer;
-        window["DiceRoller"] = this;
-        plugin.register(() => delete window["DiceRoller"]);
+    initialize(data: DiceRollerSettings, app: App, renderer: DiceRenderer) {
+        this.data = data;
+        this.app = app;
+        this.renderer = renderer;
     }
 
     #getTypeFromLexemes(lexemes: LexicalToken[]) {

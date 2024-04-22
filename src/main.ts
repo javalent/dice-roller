@@ -40,7 +40,10 @@ export default class DiceRollerPlugin extends Plugin {
         await this.loadSettings();
 
         this.renderer = new DiceRenderer(this.getRendererData());
-        this.api.initialize(this);
+        this.api.initialize(this.data, this.app, this.renderer);
+
+        window["DiceRoller"] = this.api;
+        this.register(() => delete window["DiceRoller"]);
         this.addChild(DataviewManager.initialize(this.app));
 
         Lexer.setDefaults(this.data.defaultFace, this.data.defaultRoll);
