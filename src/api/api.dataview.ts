@@ -3,6 +3,14 @@ import { getAPI } from "obsidian-dataview";
 import type { DvAPIInterface } from "obsidian-dataview/lib/typings/api";
 import { Lexer } from "src/lexer/lexer";
 
+declare module "obsidian" {
+    interface App {
+        plugins: {
+            getPlugin: (plugin: string) => Plugin;
+        };
+    }
+}
+
 class DVManager extends Component {
     app: App;
     api: DvAPIInterface;

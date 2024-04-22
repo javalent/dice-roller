@@ -24,7 +24,8 @@ export {
     type SectionRoller,
     type DataViewRoller,
     type TagRoller,
-    type LineRoller
+    type LineRoller,
+    type ArrayRoller
 };
 
 export interface RollerOptions {

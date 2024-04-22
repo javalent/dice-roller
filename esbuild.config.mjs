@@ -1,10 +1,11 @@
 import esbuild from "esbuild";
 import process from "process";
 import builtins from "builtin-modules";
+import sveltePlugin from "esbuild-svelte";
+import sveltePreprocess from "svelte-preprocess";
 import path from "path";
 import { copyFile } from "fs/promises";
 import { config } from "dotenv";
-import { build } from "tsup";
 
 config();
 
@@ -50,28 +51,31 @@ const parameters = {
         "@codemirror/tooltip",
         "@codemirror/view",
         "moment",
+        "@javalent/components/svelte",
         ...builtins
     ],
     format: "cjs",
     target: "es2022",
     logLevel: "info",
     sourcemap: prod ? false : "inline",
-    minify: prod,
+    minify: true,
     treeShaking: true,
     outdir: dir,
-
+    conditions: ["svelte"],
+    plugins: [
+        sveltePlugin({
+            compilerOptions: { css: "injected" },
+            preprocess: sveltePreprocess(),
+            filterWarnings: (warning) => {
+                if (warning.code.toLowerCase().startsWith("a11y-")) {
+                    return false;
+                }
+                return true;
+            }
+        })
+    ],
     logOverride: { "empty-import-meta": "silent" }
 };
-
-await esbuild.build(parameters).catch((x) => {
-    if (x.errors) {
-        console.error(x.errors);
-    } else {
-        console.error(x);
-    }
-    process.exit(1);
-});
-
 if (prod) {
     await esbuild.build(parameters).catch((x) => {
         if (x.errors) {
@@ -81,14 +85,9 @@ if (prod) {
         }
         process.exit(1);
     });
-    await build({
-        entry: ["./src/api/api.ts"],
-        dts: {
-            only: true
-        }
-    });
-    await build({
-        entry: ["./src/types/api.ts"]
+    await esbuild.build({
+        entryPoints: ["./src/types/api.ts"],
+        outdir: "./dist"
     });
 } else {
     let ctx = await esbuild.context(parameters);
