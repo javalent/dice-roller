@@ -3,10 +3,10 @@ export enum Icons {
 
     COPY = "copy",
 
-    MINUS = "square-minus",
-    PLUS = "square-plus",
+    MINUS = "minus-square",
+    PLUS = "plus-square",
 
-    SAVE = "plus-with-circle",
+    SAVE = "save",
     EDIT = "edit",
     DONE = "checkmark",
     CANCEL = "cross",
