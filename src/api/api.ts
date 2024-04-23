@@ -45,6 +45,29 @@ declare global {
         DiceRoller: APIInstance;
     }
 }
+declare module "obsidian" {
+    interface Workspace {
+        on(
+            name: "dice-roller:render-dice",
+            callback: (roll: string) => void
+        ): EventRef;
+        on(
+            name: "dice-roller:rendered-result",
+            callback: (result: number) => void
+        ): EventRef;
+        on(
+            name: "dice-roller:settings-change",
+            callback: (data: DiceRollerSettings) => void
+        ): EventRef;
+        on(
+            name: "dice-roller:new-result",
+            callback: (data: StackRoller) => void
+        ): EventRef;
+
+        on(name: "dice-roller:loaded", callback: () => void): EventRef;
+        on(name: "dice-roller:unloaded", callback: () => void): EventRef;
+    }
+}
 class APIInstance {
     app: App;
     data: DiceRollerSettings;
