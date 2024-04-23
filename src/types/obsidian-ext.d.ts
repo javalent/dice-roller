@@ -9,13 +9,6 @@ declare module "obsidian" {
         trigger(name: "dice-roller:loaded"): void;
         trigger(name: "dice-roller:unloaded"): void;
     }
-    interface MetadataCache {
-        on(name: "dataview:api-ready", callback: () => void): EventRef;
-        on(
-            name: "dataview:metadata-change",
-            callback: (type: "update", file: TFile) => void
-        ): EventRef;
-    }
 
     interface MarkdownEditView {
         sourceMode: boolean;
