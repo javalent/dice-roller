@@ -16,7 +16,7 @@
     "devDependencies": {
         "@codemirror/language": "https://github.com/lishid/cm-language",
         "@javalent/components": "^1.0.1",
-        "@javalent/utilities": "file:../obsidian-utilities",
+        "@javalent/utilities": "^1.1.5",
         "@tsconfig/svelte": "^5.0.4",
         "@types/he": "^1.1.2",
         "@types/moo": "^0.5.5",
