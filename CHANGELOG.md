@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0](https://github.com/javalent/dice-roller/compare/10.5.0...11.0.0) (2024-04-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* Dataview field lookups are now based on the **current active file**, not a cached set of fields.
+* Attempting to save dice roller results has been removed.
+
+### Features
+
+* Attempting to save dice roller results has been removed. ([f879462](https://github.com/javalent/dice-roller/commit/f8794625ba9efb56ba1e590136bc37cb495cb004))
+* Dataview field lookups are now based on the **current active file**, not a cached set of fields. ([d424df9](https://github.com/javalent/dice-roller/commit/d424df98760270164b857049754f2e098b14e1ff))
+* Expose DiceRoller API directly on the window as `DiceRoller` ([377a35c](https://github.com/javalent/dice-roller/commit/377a35c3fe755ba584f9dc5d6011dc87bb50430a))
+* Published npm package as `@javalent/dice-roller` ([1fad1f2](https://github.com/javalent/dice-roller/commit/1fad1f253f20ecf1d5579566dc582499b78ef783))
+* Saves last 100 view results across sessions ([7073393](https://github.com/javalent/dice-roller/commit/70733931ace97f205f76bcf3e6893c528c9b428e))
+
+
+### Bug Fixes
+
+* All StackRollers add themselves to the dice view when rolled ([2373977](https://github.com/javalent/dice-roller/commit/237397741f221eeca5f61c656704f66f42a5d2f6))
+* Deprecate the use of main plugin methods. Use the new DiceRoller API instead. ([8cd8524](https://github.com/javalent/dice-roller/commit/8cd8524ea9203b4a19ac104791059a7fda0edaaf))
+* Export Rollers in API definition ([135cb43](https://github.com/javalent/dice-roller/commit/135cb435f4d371b13525205f70bfb3f98d1df9c3))
+* Fixes module building ([5b6210f](https://github.com/javalent/dice-roller/commit/5b6210fb997939b865bb9f7091912fa6d47fe0a3))
+* Fixes some icon definitions ([8a0cc2b](https://github.com/javalent/dice-roller/commit/8a0cc2be27aff9328548ce37a5f7acf47fc42304))
+* Generalize Dataview inline field call ([0337fbd](https://github.com/javalent/dice-roller/commit/0337fbd7108a2bd7e085c3f56ea3e5dde8f41a2b))
+* Made all dice roller objects stateless ([3f4b229](https://github.com/javalent/dice-roller/commit/3f4b2295a008dcf76314d799dac82627b9beba92))
+* Make Lexer stateless and a singleton ([fcf495b](https://github.com/javalent/dice-roller/commit/fcf495b35c542ff981fc6a417a3104a7825cc148))
+* Migrate dice post processor to encapsulated class ([99b2dc9](https://github.com/javalent/dice-roller/commit/99b2dc9b310b0aa981abd7ec7a1973a2e7fe0f1d))
+* Mock DataviewManager due to Obsidian dependency ([56441ee](https://github.com/javalent/dice-roller/commit/56441ee5d3f482050e6348dbefc25dd21b06e6e0))
+* Remove FontAwesome from the plugin ([6570ca0](https://github.com/javalent/dice-roller/commit/6570ca09bc294aeeaefe65b6d4032e8541a776be))
+* Remove need for injecting plugin into the API ([d90519e](https://github.com/javalent/dice-roller/commit/d90519e6201e3f7afc1afb00df42b4b3970e51d5))
+* Remove result duplication ([7080267](https://github.com/javalent/dice-roller/commit/7080267c6bdd3363e00972b0369480db1e6c7888))
+* Remove unused file ([af5ed78](https://github.com/javalent/dice-roller/commit/af5ed78fcafc04bdc5e2af34122edf99c6759c7b))
+* Reworks some aspects of the dice view to be more modular in the future ([d7b42bc](https://github.com/javalent/dice-roller/commit/d7b42bcdc22d0a1804fa549bfb9150885f9e5001))
+* Switches to [@javalent](https://github.com/javalent) scoped utilities module ([d2b44a6](https://github.com/javalent/dice-roller/commit/d2b44a673d7a95584c8a178c6501f4374a355e92))
+* Update lib typings ([9cb018f](https://github.com/javalent/dice-roller/commit/9cb018fc73d690661c654a79d98cf91d22b65ea8))
+
 ## [10.5.0](https://github.com/javalent/dice-roller/compare/10.4.6...10.5.0) (2024-04-15)
 
 

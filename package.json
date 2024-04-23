@@ -1,6 +1,6 @@
 {
     "name": "@javalent/dice-roller",
-    "version": "10.5.7",
+    "version": "11.0.0",
     "description": "Inline dice rolling for Obsidian.md",
     "main": "./dist/api.js",
     "types": "./dist/api/api.d.ts",
