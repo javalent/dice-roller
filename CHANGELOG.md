@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.1](https://github.com/javalent/dice-roller/compare/11.0.0...11.0.1) (2024-04-23)
+
+
+### Bug Fixes
+
+* Fixes @javalent/utilities dependency ([98b2b7d](https://github.com/javalent/dice-roller/commit/98b2b7da40455c6fbba72d821a4b65b6db025039))
+
 ## [11.0.0](https://github.com/javalent/dice-roller/compare/10.5.0...11.0.0) (2024-04-23)
 
 
