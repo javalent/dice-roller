@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.2](https://github.com/javalent/dice-roller/compare/11.0.1...11.0.2) (2024-04-30)
+
+
+### Bug Fixes
+
+* Fixes issue where the default roll was 100 dice ([f69b188](https://github.com/javalent/dice-roller/commit/f69b1888c3076a1925ab9e941262b94591448bcb))
+
 ## [11.0.1](https://github.com/javalent/dice-roller/compare/11.0.0...11.0.1) (2024-04-23)
 
 
