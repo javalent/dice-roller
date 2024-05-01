@@ -175,19 +175,6 @@ class APIInstance {
                     /\|(no)?(dice|render|form|paren|avg|none|round|floor|ceil|signed)/g,
                     ""
                 )
-                /* .replace("|render", "")
-                .replace("|norender", "")
-                .replace("|noform", "")
-                .replace("|form", "")
-                .replace("|noparen", "")
-                .replace("|paren", "")
-                .replace("|avg", "")
-                .replace("|none", "")
-                .replace("|round", "")
-                .replace("|noround", "")
-                .replace("|ceil", "")
-                .replace("|floor", "")
-                .replace("|signed", "") */
                 .replace(regextext, "")
         );
 
