@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.3](https://github.com/javalent/dice-roller/compare/11.0.2...11.0.3) (2024-05-01)
+
+
+### Bug Fixes
+
+* Replace all instances of flags in a dice string, not only one. ([0a6da29](https://github.com/javalent/dice-roller/commit/0a6da2940d4d6d82d283d7253dab7fc58be3af96))
+
 ## [11.0.2](https://github.com/javalent/dice-roller/compare/11.0.1...11.0.2) (2024-04-30)
 
 
