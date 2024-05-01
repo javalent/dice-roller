@@ -171,8 +171,11 @@ class APIInstance {
         content = decode(
             //remove flags...
             content
-                .replace("|nodice", "")
-                .replace("|render", "")
+                .replace(
+                    /\|(no)?(dice|render|form|paren|avg|none|round|floor|ceil|signed)/g,
+                    ""
+                )
+                /* .replace("|render", "")
                 .replace("|norender", "")
                 .replace("|noform", "")
                 .replace("|form", "")
@@ -184,7 +187,7 @@ class APIInstance {
                 .replace("|noround", "")
                 .replace("|ceil", "")
                 .replace("|floor", "")
-                .replace("|signed", "")
+                .replace("|signed", "") */
                 .replace(regextext, "")
         );
 
