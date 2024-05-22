@@ -1,12 +1,12 @@
 import { App, Component, MarkdownRenderer, Notice } from "obsidian";
 import type { LexicalToken } from "src/lexer/lexer";
 import { TAG_REGEX, DATAVIEW_REGEX } from "src/utils/constants";
-import { GenericRoller } from "./roller";
+import { BasicRoller } from "./roller";
 import { SectionRoller } from "./section";
 import type { DiceRollerSettings } from "src/settings/settings.types";
 import { DataviewManager } from "src/api/api.dataview";
 
-abstract class DataViewEnabledRoller extends GenericRoller<SectionRoller> {
+abstract class DataViewEnabledRoller extends BasicRoller<SectionRoller> {
     base: string;
     isLink: boolean = false;
     abstract get query(): string;

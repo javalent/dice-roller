@@ -60,7 +60,15 @@ export default class DiceView extends ItemView {
             this.plugin.app.workspace.on(
                 "dice-roller:new-result",
                 async (roller: StackRoller) => {
-                    if (this.plugin.data.addToView) {
+                    console.log(
+                        "🚀 ~ file: view.ts:63 ~ roller:",
+                        roller.getSource()
+                    );
+
+                    if (
+                        this.plugin.data.addToView ||
+                        roller.getSource() == VIEW_TYPE
+                    ) {
                         await this.addResult({
                             result: roller.result,
                             original: roller.original,
@@ -203,7 +211,7 @@ export default class DiceView extends ItemView {
             const diceFormula = /^(?:1)?d(\d|%|F)+$/.test(icon.formula)
                 ? `${Math.abs(amount)}${icon.formula.replace(/^1/, "")}`
                 : `${Math.abs(amount)} * (${icon.formula})`;
-            const roller = API.getRollerSync(icon.formula, "view");
+            const roller = API.getRollerSync(icon.formula, VIEW_TYPE);
             if (!(roller instanceof StackRoller)) continue;
             roller.buildDiceTree();
             roller.calculate();
@@ -252,7 +260,7 @@ export default class DiceView extends ItemView {
             opts.expectedValue = ExpectedValue.Roll;
         }
         try {
-            const roller = await API.getRoller(formula, "view", opts).catch(
+            const roller = await API.getRoller(formula, VIEW_TYPE, opts).catch(
                 (e) => {
                     throw e;
                 }

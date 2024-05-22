@@ -241,6 +241,7 @@ class APIInstance {
                 roller.showFormula = showFormula;
                 roller.showRenderNotice = this.data.showRenderNotice;
 
+                roller.setSource(source);
                 return roller;
             }
             case "table": {
@@ -347,6 +348,7 @@ class APIInstance {
                 roller.shouldRender = shouldRender;
                 roller.showRenderNotice = this.data.showRenderNotice;
 
+                roller.setSource(source);
                 return roller;
             }
             case "table": {

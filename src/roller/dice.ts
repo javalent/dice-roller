@@ -2,7 +2,7 @@ import { App, Notice, setIcon } from "obsidian";
 import type { LexicalToken } from "src/lexer/lexer";
 
 import { _insertIntoMap } from "src/utils/util";
-import { GenericRoller, Roller } from "./roller";
+import { BasicRoller, Roller } from "./roller";
 import DiceRenderer from "src/renderer/renderer";
 import { DiceShape } from "src/renderer/shapes";
 import { Icons } from "src/utils/icons";
@@ -994,7 +994,7 @@ class BasicStackRoller extends Roller<number> {
     }
 }
 
-export class StackRoller extends GenericRoller<number> {
+export class StackRoller extends BasicRoller<number> {
     result: number;
     fixedText: string;
     displayFixedText: boolean = false;

@@ -98,8 +98,18 @@ abstract class BareRoller<T> extends Roller<T> {
 }
 
 export abstract class BasicRoller<T = any> extends BareRoller<T> {
+    source: string;
     abstract getReplacer(): Promise<string>;
     save: boolean = false;
+    abstract result: T;
+    abstract roll(): Promise<T>;
+
+    public setSource(source: string) {
+        this.source = source;
+    }
+    public getSource(): string {
+        return this.source;
+    }
 
     get inlineText() {
         return `${this.tooltip.split("\n").join(" -> ")} -> `;
@@ -114,12 +124,7 @@ export abstract class BasicRoller<T = any> extends BareRoller<T> {
     }
 }
 
-export abstract class GenericRoller<T> extends BasicRoller {
-    abstract result: T;
-    abstract roll(): Promise<T>;
-}
-
-export abstract class GenericFileRoller<T> extends GenericRoller<T> {
+export abstract class GenericFileRoller<T> extends BasicRoller<T> {
     path: string;
     file: TFile;
     cache: CachedMetadata;

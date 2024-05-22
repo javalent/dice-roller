@@ -77,8 +77,6 @@ export default class SettingTab extends PluginSettingTab {
 
         containerEl.addClass("dice-roller-settings");
 
-        containerEl.createEl("h2", { text: "Dice Roller Settings" });
-
         this.contentEl = this.containerEl.createDiv(
             "dice-roller-settings-content"
         );
@@ -277,7 +275,7 @@ export default class SettingTab extends PluginSettingTab {
                 });
             });
         new Setting(containerEl)
-            .setName("Log Rolls to Dice Tray")
+            .setName("Log All Rolls to Dice Tray")
             .setDesc(
                 createFragment((e) => {
                     e.createSpan({
