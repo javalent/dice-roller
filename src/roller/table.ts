@@ -57,7 +57,8 @@ export class TableRoller extends GenericFileRoller<string> {
             result.unshift(this.inlineText);
         }
         const div = createSpan();
-        await MarkdownRenderer.renderMarkdown(
+        MarkdownRenderer.render(
+            this.app,
             result.join(""),
             div,
             this.source,
