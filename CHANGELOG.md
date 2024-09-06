@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.5](https://github.com/javalent/dice-roller/compare/11.0.4...11.0.5) (2024-09-06)
+
+
+### Bug Fixes
+
+* Make table roller markdown rendering synchronous so images render. ([59e5968](https://github.com/javalent/dice-roller/commit/59e5968b3cf6e5e578764788776f3a345bc3558f))
+
 ## [11.0.4](https://github.com/javalent/dice-roller/compare/11.0.3...11.0.4) (2024-05-22)
 
 
