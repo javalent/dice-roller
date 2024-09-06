@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.4](https://github.com/javalent/dice-roller/compare/11.0.3...11.0.4) (2024-05-22)
+
+
+### Bug Fixes
+
+* Fixes issue where dice rolls from the dice tray wouldn't be logged if the global setting wasn't turned on (close [#317](https://github.com/javalent/dice-roller/issues/317)) ([582c202](https://github.com/javalent/dice-roller/commit/582c20252f3be4c7c9a794d191ac27e67dc7e29b))
+
 ## [11.0.3](https://github.com/javalent/dice-roller/compare/11.0.2...11.0.3) (2024-05-01)
 
 
