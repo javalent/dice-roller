@@ -3,6 +3,7 @@ import {
     ExtraButtonComponent,
     ItemView,
     Notice,
+    Platform,
     TextAreaComponent,
     WorkspaceLeaf
 } from "obsidian";
@@ -341,13 +342,18 @@ export default class DiceView extends ItemView {
                 await navigator.clipboard.writeText(`${result.result}`);
             });
         copy.extraSettingsEl.addClass("dice-content-copy");
+        if (Platform.isMobile) {
+            resultEl.createSpan({
+                cls: "dice-content-result",
+                text: `${result.resultText}`
+            });
+        }
         resultEl.createEl("strong", {
             attr: {
                 "aria-label": result.resultText
             },
             text: `${result.result}`
         });
-        /* .appendChild(roller.containerEl.cloneNode(true)) */
 
         const context = resultEl.createDiv("result-context");
 
