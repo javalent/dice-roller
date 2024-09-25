@@ -107,8 +107,15 @@ function inlineRender(
                     );
 
                     const currentFile = plugin.app.workspace.getActiveFile();
-                    const roller = API.getRollerSync(content, currentFile.path);
+                    const maybeRoller = API.getRoller(
+                        content,
+                        currentFile.path
+                    );
 
+                    if (maybeRoller.isNone()) {
+                        return;
+                    }
+                    const roller = maybeRoller.unwrap();
                     roller.roll().then(async () => {
                         const replacer = await roller.getReplacer();
                         const insert = `${replacer}`;
@@ -133,7 +140,11 @@ function inlineRender(
                 let [, content] = original.match(
                     /^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/
                 );
-                const roller = API.getRollerSync(content, currentFile.path);
+                const maybeRoller = API.getRoller(content, currentFile.path);
+                if (maybeRoller.isNone()) {
+                    return;
+                }
+                const roller = maybeRoller.unwrap();
                 roller.addContexts(component, plugin);
                 const widget = new InlineWidget(
                     original,

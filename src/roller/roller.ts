@@ -87,7 +87,6 @@ abstract class BareRoller<T> extends Roller<T> {
         });
         setIcon(this.iconEl, Icons.DICE);
         this.iconEl.onclick = this.onClick.bind(this);
-        console.log("🚀 ~ file: roller.ts:91 ~ position:", position);
         switch (position) {
             case "LEFT": {
                 this.containerEl.prepend(this.iconEl);
@@ -277,7 +276,8 @@ export abstract class GenericEmbeddedRoller<T> extends GenericFileRoller<T> {
         public lexeme: LexicalToken,
         source: string,
         public app: App,
-        position = data.position
+        position = data.position,
+        public inline: boolean = true,
     ) {
         super(data, original, lexeme, source, app, position);
         if (this.data.displayAsEmbed) {

@@ -1,6 +1,7 @@
 /* import lexer from "lex"; */
 
 import * as moo from "moo";
+import { Err, Ok, type Result } from "@sniptt/monads";
 import { DataviewManager } from "src/api/api.dataview";
 import type { Conditional } from "src/roller";
 
@@ -218,10 +219,15 @@ class LexerClass {
     public setDefaultFace(face: number) {
         this.defaultFace = face;
     }
-    parse(input: string): LexicalToken[] {
-        const tokens = Array.from(this.lexer.reset(input));
-        this.lexer.reset();
-        return this.parser.parse(this.transform(tokens));
+    parse(input: string): Result<LexicalToken[], string> {
+        try {
+            const tokens = Array.from(this.lexer.reset(input));
+            this.lexer.reset();
+            return Ok(this.parser.parse(this.transform(tokens)));
+        } catch (e: any) {
+            console.error(e);
+            return Err("Could not parse");
+        }
     }
     transform(tokens: moo.Token[]): LexicalToken[] {
         tokens = tokens.filter((token) => {
@@ -267,12 +273,14 @@ class LexerClass {
                         /(?<operator>=|=!|<|>|<=|>=|=<|=>|-=|=-)(?<comparer>\d+(?:[Dd](?:%|F|-?\d+|\[\d+(?:[ \t]*[,-][ \t]*\d+)+\]|\b))?)/
                     ) ?? [];
                 const lexemes = this.parse(comparer);
-                previous.conditions.push({
-                    operator,
-                    comparer: comparer,
-                    lexemes,
-                    value: token.value
-                });
+                if (lexemes.isOk()) {
+                    previous.conditions.push({
+                        operator,
+                        comparer: comparer,
+                        lexemes: lexemes.unwrap(),
+                        value: token.value
+                    });
+                }
             } else {
                 clone.push(token as LexicalToken);
             }

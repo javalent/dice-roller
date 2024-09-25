@@ -138,7 +138,11 @@ export class TableRoller extends GenericFileRoller<string> {
                 const formula = foundRoller[1].trim();
 
                 // Create sub roller with formula
-                const subRoller = await API.getRoller(formula, this.source);
+                const maybeRoller = await API.getRoller(formula, this.source);
+                if (maybeRoller.isNone()) {
+                    continue;
+                }
+                const subRoller = maybeRoller.unwrap();
                 // Roll it
                 await subRoller.roll();
                 // Get sub result

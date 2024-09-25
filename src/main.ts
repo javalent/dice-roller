@@ -60,8 +60,11 @@ export default class DiceRollerPlugin extends Plugin {
 
         this.registerEvent(
             this.app.workspace.on("dice-roller:render-dice", async (roll) => {
-                const roller = await API.getRoller(roll, "external");
-
+                const maybeRoller = await API.getRoller(roll, "external");
+                if (maybeRoller.isNone()) {
+                    return;
+                }
+                const roller = maybeRoller.unwrap();
                 if (!(roller instanceof StackRoller)) {
                     new Notice("The Dice View only supports dice rolls.");
                     return;
@@ -172,34 +175,6 @@ export default class DiceRollerPlugin extends Plugin {
             "Using the Dice Roller plugin directly will be deprecated in a future version. Please use `window.DiceRoller` instead."
         );
         return this.api.getArrayRoller(options, rolls);
-    }
-
-    /**
-     * @deprecated
-     */
-    async getRoller(
-        raw: string,
-        source: string = "",
-        options?: RollerOptions
-    ): Promise<BasicRoller> {
-        new Notice(
-            "Using the Dice Roller plugin directly will be deprecated in a future version. Please use `window.DiceRoller` instead."
-        );
-        return this.api.getRoller(raw, source, options);
-    }
-
-    /**
-     * @deprecated
-     */
-    getRollerSync(
-        raw: string,
-        source: string,
-        options?: RollerOptions
-    ): BasicRoller {
-        new Notice(
-            "Using the Dice Roller plugin directly will be deprecated in a future version. Please use `window.DiceRoller` instead."
-        );
-        return this.api.getRollerSync(raw, source, options);
     }
 
     onunload() {

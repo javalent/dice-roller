@@ -18,6 +18,7 @@ import {
     LineRoller
 } from "../roller";
 import { DataviewManager } from "./api.dataview";
+import { None, Some, type Option } from "@sniptt/monads";
 
 export * from "../types/api";
 
@@ -204,118 +205,11 @@ class APIInstance {
         this.sources.set(source, options);
     }
 
-    getRollerSync(
-        raw: string,
-        source: string,
-        options: RollerOptions = this.getRollerOptions(this.data)
-    ): BasicRoller {
-        const {
-            content,
-            position,
-            showParens,
-            showFormula,
-            expectedValue,
-            shouldRender,
-            text,
-            round,
-            signed
-        } = this.getParametersForRoller(raw, options);
-
-        const lexemes = Lexer.parse(content);
-
-        const type = this.#getTypeFromLexemes(lexemes);
-
-        switch (type) {
-            case "dice": {
-                const roller = new StackRoller(
-                    this.data,
-                    content,
-                    lexemes,
-                    this.renderer,
-                    this.app,
-                    position,
-                    text,
-                    expectedValue,
-                    showParens,
-                    round,
-                    signed
-                );
-                roller.shouldRender = shouldRender;
-                roller.showFormula = showFormula;
-                roller.showRenderNotice = this.data.showRenderNotice;
-
-                roller.setSource(source);
-                return roller;
-            }
-            case "table": {
-                const roller = new TableRoller(
-                    this.data,
-                    content,
-                    lexemes[0],
-                    source,
-                    this.app,
-                    position
-                );
-                return roller;
-            }
-            case "section": {
-                return new SectionRoller(
-                    this.data,
-                    content,
-                    lexemes[0],
-                    source,
-                    this.app,
-                    position
-                );
-            }
-            case "dataview": {
-                if (!DataviewManager.canUseDataview) {
-                    throw new Error(
-                        "Tags are only supported with the Dataview plugin installed."
-                    );
-                }
-                return new DataViewRoller(
-                    this.data,
-                    content,
-                    lexemes[0],
-                    source,
-                    this.app,
-                    position
-                );
-            }
-            case "tag": {
-                if (!DataviewManager.canUseDataview) {
-                    throw new Error(
-                        "Tags are only supported with the Dataview plugin installed."
-                    );
-                }
-                return new TagRoller(
-                    this.data,
-                    content,
-                    lexemes[0],
-                    source,
-                    this.app,
-                    position
-                );
-            }
-            case "line": {
-                return new LineRoller(
-                    this.data,
-                    content,
-                    lexemes[0],
-                    source,
-                    this.app,
-                    position
-                );
-            }
-        }
-    }
-
-    async getRoller(
+    getRoller(
         raw: string,
         source: string = "",
         options: RollerOptions = this.getRollerOptions(this.data)
-    ): Promise<BasicRoller> {
+    ): Option<BasicRoller> {
         const {
             content,
             position,
@@ -328,7 +222,13 @@ class APIInstance {
             signed
         } = this.getParametersForRoller(raw, options);
 
-        const lexemes = Lexer.parse(content);
+        const lexemeResult = Lexer.parse(content);
+
+        if (lexemeResult.isErr()) {
+            console.error(lexemeResult.unwrapErr());
+            return None;
+        }
+        const lexemes = lexemeResult.unwrap();
 
         const type = this.#getTypeFromLexemes(lexemes);
         switch (type) {
@@ -351,7 +251,7 @@ class APIInstance {
                 roller.showRenderNotice = this.data.showRenderNotice;
 
                 roller.setSource(source);
-                return roller;
+                return Some(roller);
             }
             case "table": {
                 const roller = new TableRoller(
@@ -362,16 +262,18 @@ class APIInstance {
                     this.app,
                     position
                 );
-                return roller;
+                return Some(roller);
             }
             case "section": {
-                return new SectionRoller(
-                    this.data,
-                    content,
-                    lexemes[0],
-                    source,
-                    this.app,
-                    position
+                return Some(
+                    new SectionRoller(
+                        this.data,
+                        content,
+                        lexemes[0],
+                        source,
+                        this.app,
+                        position
+                    )
                 );
             }
             case "dataview": {
@@ -380,13 +282,15 @@ class APIInstance {
                         "Tags are only supported with the Dataview plugin installed."
                     );
                 }
-                return new DataViewRoller(
-                    this.data,
-                    content,
-                    lexemes[0],
-                    source,
-                    this.app,
-                    position
+                return Some(
+                    new DataViewRoller(
+                        this.data,
+                        content,
+                        lexemes[0],
+                        source,
+                        this.app,
+                        position
+                    )
                 );
             }
             case "tag": {
@@ -395,23 +299,27 @@ class APIInstance {
                         "Tags are only supported with the Dataview plugin installed."
                     );
                 }
-                return new TagRoller(
-                    this.data,
-                    content,
-                    lexemes[0],
-                    source,
-                    this.app,
-                    position
+                return Some(
+                    new TagRoller(
+                        this.data,
+                        content,
+                        lexemes[0],
+                        source,
+                        this.app,
+                        position
+                    )
                 );
             }
             case "line": {
-                return new LineRoller(
-                    this.data,
-                    content,
-                    lexemes[0],
-                    source,
-                    this.app,
-                    position
+                return Some(
+                    new LineRoller(
+                        this.data,
+                        content,
+                        lexemes[0],
+                        source,
+                        this.app,
+                        position
+                    )
                 );
             }
         }
@@ -476,7 +384,7 @@ class APIInstance {
     }
     public async parseDice(content: string, source: string = "") {
         const roller = await this.getRoller(content, source);
-        return { result: await roller.roll(), roller };
+        return { result: await roller.unwrap()?.roll(), roller };
     }
     getRollerOptions(data: DiceRollerSettings): RollerOptions {
         return {

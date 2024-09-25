@@ -87,7 +87,14 @@ export default class DiceProcessor extends Component {
                     continue;
 
                 //build result map;
-                const roller = await API.getRoller(content, ctx.sourcePath);
+                const maybeRoller = await API.getRoller(
+                    content,
+                    ctx.sourcePath
+                );
+                if (maybeRoller.isNone()) {
+                    return;
+                }
+                const roller = maybeRoller.unwrap();
                 if (roller instanceof StackRoller && roller.shouldRender) {
                     roller.hasRunOnce = true;
                 }
@@ -140,8 +147,14 @@ export default class DiceProcessor extends Component {
             }
             try {
                 //build result map;
-                const roller = await API.getRoller(content, ctx.sourcePath);
-
+                const maybeRoller = await API.getRoller(
+                    content,
+                    ctx.sourcePath
+                );
+                if (maybeRoller.isNone()) {
+                    return;
+                }
+                const roller = maybeRoller.unwrap();
                 /** Add the roller to the child context, so it can be unloaded with the context. */
                 roller.addContexts(ctx, this.plugin);
 

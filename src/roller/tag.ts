@@ -134,6 +134,7 @@ abstract class DataViewEnabledRoller extends BasicRoller<SectionRoller> {
                         },
                         this.source,
                         this.app,
+                        this.position,
                         false
                     );
                     /* await roller.roll(); */

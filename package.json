@@ -17,6 +17,7 @@
         "@codemirror/language": "https://github.com/lishid/cm-language",
         "@javalent/components": "^1.0.1",
         "@javalent/utilities": "^1.1.5",
+        "@sniptt/monads": "^0.5.10",
         "@tsconfig/svelte": "^5.0.4",
         "@types/he": "^1.1.2",
         "@types/moo": "^0.5.5",
