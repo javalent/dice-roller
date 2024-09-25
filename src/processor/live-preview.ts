@@ -41,7 +41,8 @@ import {
     TFile,
     editorEditorField,
     editorLivePreviewField,
-    editorInfoField
+    editorInfoField,
+    Component
 } from "obsidian";
 import DiceRollerPlugin from "../main";
 import { BasicRoller } from "../roller/roller";
@@ -62,7 +63,11 @@ function selectionAndRangeOverlap(
     return false;
 }
 
-function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
+function inlineRender(
+    view: EditorView,
+    plugin: DiceRollerPlugin,
+    component: Component
+) {
     const currentFile = plugin.app.workspace.getActiveFile();
     if (!currentFile) return;
 
@@ -129,7 +134,8 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                     /^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/
                 );
                 const roller = API.getRollerSync(content, currentFile.path);
-
+                component.addChild(roller);
+                plugin.addChild(roller);
                 const widget = new InlineWidget(
                     original,
                     roller,
@@ -210,10 +216,14 @@ export function inlinePlugin(plugin: DiceRollerPlugin) {
     return ViewPlugin.fromClass(
         class {
             decorations: DecorationSet;
+            component: Component = new Component();
             constructor(view: EditorView) {
+                this.component.load();
                 this.decorations = Decoration.none;
             }
-
+            destroy() {
+                this.component.unload();
+            }
             update(update: ViewUpdate) {
                 // only activate in LP and not source mode
                 if (!update.state.field(editorLivePreviewField)) {
@@ -226,7 +236,8 @@ export function inlinePlugin(plugin: DiceRollerPlugin) {
                     update.selectionSet
                 ) {
                     this.decorations =
-                        inlineRender(update.view, plugin) ?? Decoration.none;
+                        inlineRender(update.view, plugin, this.component) ??
+                        Decoration.none;
                 }
             }
         },

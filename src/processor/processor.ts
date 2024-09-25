@@ -18,9 +18,11 @@ import { API } from "src/api/api";
 export default class DiceProcessor extends Component {
     app: App;
     data: DiceRollerSettings;
+    plugin: DiceRollerPlugin;
     initialize(plugin: DiceRollerPlugin) {
         this.app = plugin.app;
         this.data = plugin.data;
+        this.plugin = plugin;
 
         plugin.addCommand({
             id: "reroll",
@@ -62,12 +64,9 @@ export default class DiceProcessor extends Component {
         const path = ctx.sourcePath;
         const file = this.app.vault.getAbstractFileByPath(ctx.sourcePath);
         const info = ctx.getSectionInfo(el);
-        const lineStart = ctx.getSectionInfo(el)?.lineStart;
 
         if ((!file || !(file instanceof TFile)) && path != "STATBLOCK_RENDERER")
             return;
-
-        const toPersist: Record<number, BasicRoller> = {};
 
         for (let index = 0; index < nodeList.length; index++) {
             const node = nodeList.item(index);
@@ -142,6 +141,10 @@ export default class DiceProcessor extends Component {
             try {
                 //build result map;
                 const roller = await API.getRoller(content, ctx.sourcePath);
+
+                /** Add the roller to the child context, so it can be unloaded with the context. */
+                ctx.addChild(roller);
+                this.plugin.addChild(roller);
 
                 roller.onLoad(async () => {
                     await roller.roll();

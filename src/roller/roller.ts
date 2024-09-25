@@ -6,16 +6,33 @@ import {
     TFile,
     MetadataCache,
     App,
-    type EventRef
+    type EventRef,
+    Component
 } from "obsidian";
 
 import type { LexicalToken } from "src/lexer/lexer";
 import type { DiceRollerSettings } from "src/settings/settings.types";
 import { Icons } from "src/utils/icons";
 
-export abstract class Roller<T> extends Events {
+export abstract class Roller<T> extends Component implements Events {
+    on(name: string, callback: (...data: any) => any, ctx?: any): EventRef {
+        return this.#events.on(name, callback);
+    }
+    off(name: string, callback: (...data: any) => any): void {
+        return this.#events.off(name, callback);
+    }
+    offref(ref: EventRef): void {
+        return this.#events.offref(ref);
+    }
+    trigger(name: string, ...data: any[]): void {
+        return this.#events.trigger(name, ...data);
+    }
+    tryTrigger(evt: EventRef, args: any[]): void {
+        return this.#events.tryTrigger(evt, args);
+    }
     abstract roll(): Promise<T> | T;
     result: T;
+    #events = new Events();
     getRandomBetween(min: number, max: number): number {
         const randomBuffer = new Uint32Array(1);
         crypto.getRandomValues(randomBuffer);
@@ -156,7 +173,6 @@ export abstract class GenericFileRoller<T> extends BasicRoller<T> {
         await this.load();
     }
     abstract load(): Promise<void>;
-    abstract getOptions(): Promise<void>;
     watch: boolean = true;
 }
 

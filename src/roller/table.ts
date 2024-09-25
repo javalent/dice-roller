@@ -1,4 +1,11 @@
-import { Component, MarkdownRenderer, Notice, TFile } from "obsidian";
+import {
+    Component,
+    MarkdownRenderer,
+    Notice,
+    setIcon,
+    TFile,
+    type CachedMetadata
+} from "obsidian";
 
 import { TABLE_REGEX } from "src/utils/constants";
 import { StackRoller } from ".";
@@ -20,6 +27,21 @@ export class TableRoller extends GenericFileRoller<string> {
     lookupRanges: [range: [min: number, max: number], option: string][];
     combinedTooltip: string = "";
     prettyTooltip: string = "";
+    #hashedContent: string;
+    dirty: boolean = true;
+
+    async #hash(content: string): Promise<string> {
+        return Array.from(
+            new Uint8Array(
+                await crypto.subtle.digest(
+                    "SHA-256",
+                    new TextEncoder().encode(content)
+                )
+            ),
+            (b) => b.toString(16).padStart(2, "0")
+        ).join("");
+    }
+
     getPath() {
         const { groups } = this.lexeme.value.match(TABLE_REGEX) ?? {};
 
@@ -72,6 +94,17 @@ export class TableRoller extends GenericFileRoller<string> {
             resultEl.append(...Array.from(div.firstElementChild.childNodes));
         } else {
             resultEl.append(...Array.from(div.childNodes));
+        }
+        if (this.dirty) {
+            const div = createDiv({
+                attr: {
+                    style: "display: flex; align-items: center;",
+                    "aria-label":
+                        "The underlying table for this roller has been modified."
+                }
+            });
+            setIcon(div, "alert-triangle");
+            this.resultEl.append(div);
         }
     }
 
@@ -252,7 +285,7 @@ export class TableRoller extends GenericFileRoller<string> {
         }
 
         this.prettyTooltip = this.prettify(this.combinedTooltip);
-
+        this.dirty = false;
         return res.join("||");
     }
     async roll(): Promise<string> {
@@ -277,11 +310,20 @@ export class TableRoller extends GenericFileRoller<string> {
         });
     }
     async load() {
-        await this.getOptions();
+        const cache = this.app.metadataCache.getFileCache(this.file);
+        const data = await this.app.vault.cachedRead(this.file);
+        await this.getOptions(cache, data);
+        this.registerEvent(
+            this.app.metadataCache.on("changed", async (file, data, cache) => {
+                if (file === this.file) {
+                    await this.getOptions(cache, data);
+                }
+            })
+        );
     }
 
-    async getOptions() {
-        this.cache = this.app.metadataCache.getFileCache(this.file);
+    async getOptions(cache: CachedMetadata, data: string) {
+        this.cache = cache;
 
         if (
             !this.cache ||
@@ -298,8 +340,16 @@ export class TableRoller extends GenericFileRoller<string> {
             (s) => s.position == this.cache.blocks[this.block].position
         );
         const position = this.cache.blocks[this.block].position;
-        const text = await this.app.vault.cachedRead(this.file);
-        this.content = text.slice(position.start.offset, position.end.offset);
+        const content = data.slice(position.start.offset, position.end.offset);
+        const hash = await this.#hash(content);
+        if (hash === this.#hashedContent) {
+            return;
+        } else if (this.#hashedContent) {
+            this.dirty = true;
+            this.build();
+        }
+        this.#hashedContent = hash;
+        this.content = content;
 
         if (section && section.type === "list") {
             this.options = this.content.split("\n");
