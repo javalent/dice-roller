@@ -180,14 +180,16 @@ export class DiceRoller {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
-        /* if (this.conditions?.length) {
-            new Notice("Modifiers are not permitted on conditioned dice.");
-            return;
-        } */
+
+        if (this.results.size === 1) return;
 
         [...this.results]
             .sort((a, b) => a[1].value - b[1].value)
-            .slice(drop - this.results.size)
+            .slice(
+                drop > this.results.size
+                    ? this.results.size
+                    : drop - this.results.size
+            )
             .forEach(([index]) => {
                 const previous = this.results.get(index);
                 previous.usable = false;
@@ -201,10 +203,9 @@ export class DiceRoller {
             new Notice("Modifiers are only allowed on dice rolls.");
             return;
         }
-        /* if (this.conditions?.length) {
-            new Notice("Modifiers are not permitted on conditioned dice.");
-            return;
-        } */
+
+        if (this.results.size === 1) return;
+        
         [...this.results]
             .sort((a, b) => b[1].value - a[1].value)
             .slice(drop)
