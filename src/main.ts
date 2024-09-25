@@ -129,7 +129,7 @@ export default class DiceRollerPlugin extends Plugin {
     async loadSettings() {
         const data = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
         let dirty = false;
-        console.log(compare("11.0.0", null ?? "0.0.0", ">"));
+        
         if (typeof data.version !== "string") {
             delete data.version;
         }
