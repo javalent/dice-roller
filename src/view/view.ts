@@ -60,11 +60,6 @@ export default class DiceView extends ItemView {
             this.plugin.app.workspace.on(
                 "dice-roller:new-result",
                 async (roller: StackRoller) => {
-                    console.log(
-                        "🚀 ~ file: view.ts:63 ~ roller:",
-                        roller.getSource()
-                    );
-
                     if (
                         this.plugin.data.addToView ||
                         roller.getSource() == VIEW_TYPE
@@ -379,8 +374,6 @@ export default class DiceView extends ItemView {
 
         this.resultEl.prepend(resultEl);
         if (save) {
-            console.log("🚀 ~ file: view.ts:372 ~ save:", save);
-
             this.plugin.data.viewResults.push(result);
             this.plugin.data.viewResults = this.plugin.data.viewResults.slice(
                 0,
