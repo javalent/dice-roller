@@ -1,5 +1,6 @@
 import {
     type BlockCache,
+    type CachedMetadata,
     type ListItemCache,
     type Pos,
     type SectionCache,
@@ -94,7 +95,7 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
                 continue;
             }
             MarkdownRenderer.render(
-                app,
+                this.app,
                 this.displayFromCache(result),
                 ret.createDiv(),
                 this.source,
@@ -116,10 +117,6 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
                 setIcon(copy, Icons.COPY);
             }
         }
-    }
-
-    async load() {
-        await this.getOptions();
     }
     displayFromCache(...caches: RollerCache[]) {
         let res: string[] = [];
@@ -155,7 +152,6 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
             )}^${blockID}${this.content.slice(
                 this.result.position.end.offset
             )}`;
-            this.watch = false;
             this.app.vault.modify(this.file, content);
             return blockID;
         }
@@ -182,12 +178,17 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
                 /heading\-\d+/.test(type) ? type.split("-").shift() : type
             );
     }
-    async getOptions() {
-        this.cache = this.app.metadataCache.getFileCache(this.file);
+    async getOptions(cache: CachedMetadata, data: string) {
+        this.cache = cache;
         if (!this.cache || !this.cache.sections) {
             throw new Error("Could not read file cache.");
         }
-        this.content = await this.app.vault.cachedRead(this.file);
+        const content = data;
+
+        if (!(await this.checkForDirtiness(content))) return;
+
+        this.content = content;
+        this.content = data;
 
         this.options = this.cache.sections.filter(({ type, position }) => {
             if (!this.types) return !["yaml", "thematicBreak"].includes(type);
@@ -210,13 +211,11 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
         if (this.types && this.types.includes("listItem")) {
             this.options.push(...this.cache.listItems);
         }
-        this.loaded = true;
-        this.trigger("loaded");
     }
     async roll(): Promise<RollerCache> {
         return new Promise((resolve, reject) => {
             if (!this.loaded) {
-                this.on("loaded", () => {
+                this.once("loaded", () => {
                     const options = [...this.options];
 
                     this.results = [...Array(this.rolls)]

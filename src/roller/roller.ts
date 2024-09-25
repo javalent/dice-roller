@@ -14,9 +14,19 @@ import type { LexicalToken } from "src/lexer/lexer";
 import type { DiceRollerSettings } from "src/settings/settings.types";
 import { Icons } from "src/utils/icons";
 
+export interface ComponentLike {
+    addChild(child: Component): void;
+}
+
 export abstract class Roller<T> extends Component implements Events {
     on(name: string, callback: (...data: any) => any, ctx?: any): EventRef {
         return this.#events.on(name, callback);
+    }
+    once(name: string, callback: (...data: any) => any) {
+        const ref = this.on(name, (...args: any) => {
+            callback(...args);
+            this.offref(ref);
+        });
     }
     off(name: string, callback: (...data: any) => any): void {
         return this.#events.off(name, callback);
@@ -31,6 +41,13 @@ export abstract class Roller<T> extends Component implements Events {
         return this.#events.tryTrigger(evt, args);
     }
     abstract roll(): Promise<T> | T;
+
+    addContexts(...components: ComponentLike[]) {
+        for (const component of components) {
+            component.addChild(this);
+        }
+    }
+
     result: T;
     #events = new Events();
     getRandomBetween(min: number, max: number): number {
@@ -82,6 +99,12 @@ abstract class BareRoller<T> extends Roller<T> {
         } else {
             this.on("loaded", () => callback());
         }
+    }
+    onunload(): void {
+        this.containerEl.empty();
+        const pre = createEl("pre");
+        pre.createEl("code", { text: this.original });
+        this.containerEl.append(pre);
     }
     abstract build(): Promise<void>;
     abstract get tooltip(): string;
@@ -147,7 +170,13 @@ export abstract class GenericFileRoller<T> extends BasicRoller<T> {
     cache: CachedMetadata;
     options: T[];
     results: T[];
-    init: Promise<void>;
+    dirtyEl = this.containerEl.createDiv({
+        cls: "dice-roller-dirty dice-roller-button",
+        attr: {
+            "aria-label":
+                "The underlying data source for this roller was modified"
+        }
+    });
     constructor(
         public data: DiceRollerSettings,
         public original: string,
@@ -157,9 +186,7 @@ export abstract class GenericFileRoller<T> extends BasicRoller<T> {
         showDice = data.showDice
     ) {
         super(data, original, [lexeme], showDice);
-
         this.getPath();
-        this.init = this.getFile();
     }
     abstract getPath(): void;
     async getFile() {
@@ -169,11 +196,59 @@ export abstract class GenericFileRoller<T> extends BasicRoller<T> {
         );
         if (!this.file || !(this.file instanceof TFile))
             throw new Error("Could not load file.");
-
-        await this.load();
     }
-    abstract load(): Promise<void>;
-    watch: boolean = true;
+    #hashedContent: string;
+
+    override async render() {
+        super.render();
+        this.dirtyEl.empty();
+    }
+
+    async checkForDirtiness(content: string): Promise<boolean> {
+        const hash = await this.hash(content);
+        if (hash === this.#hashedContent) {
+            this.dirtyEl.empty();
+            return false; //not dirty
+        } else if (this.#hashedContent) {
+            setIcon(this.dirtyEl, Icons.WARNING);
+        }
+        this.#hashedContent = hash;
+        return true;
+    }
+
+    async hash(content: string): Promise<string> {
+        return Array.from(
+            new Uint8Array(
+                await crypto.subtle.digest(
+                    "SHA-256",
+                    new TextEncoder().encode(content)
+                )
+            ),
+            (b) => b.toString(16).padStart(2, "0")
+        ).join("");
+    }
+    #initialized = false;
+    async onload() {
+        if (this.#initialized) return;
+        this.#initialized = true;
+        await this.getFile();
+        const cache = this.app.metadataCache.getFileCache(this.file);
+        const data = await this.app.vault.cachedRead(this.file);
+        await this.getOptions(cache, data);
+
+        this.loaded = true;
+        this.trigger("loaded");
+
+        this.registerEvent(
+            this.app.metadataCache.on("changed", async (file, data, cache) => {
+                if (file === this.file) {
+                    await this.getOptions(cache, data);
+                }
+            })
+        );
+    }
+
+    abstract getOptions(cache: CachedMetadata, data: string): Promise<void>;
 }
 
 export abstract class GenericEmbeddedRoller<T> extends GenericFileRoller<T> {

@@ -58,7 +58,7 @@ const parameters = {
     target: "es2022",
     logLevel: "info",
     sourcemap: prod ? false : "inline",
-    minify: true,
+    minify: prod ? true : false,
     treeShaking: true,
     outdir: dir,
     conditions: ["svelte"],

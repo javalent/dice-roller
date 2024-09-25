@@ -253,7 +253,6 @@ class APIInstance {
                     this.app,
                     showDice
                 );
-                roller.init;
                 return roller;
             }
             case "section": {
@@ -360,7 +359,6 @@ class APIInstance {
                     this.app,
                     showDice
                 );
-                await roller.init;
                 return roller;
             }
             case "section": {

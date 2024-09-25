@@ -143,8 +143,7 @@ export default class DiceProcessor extends Component {
                 const roller = await API.getRoller(content, ctx.sourcePath);
 
                 /** Add the roller to the child context, so it can be unloaded with the context. */
-                ctx.addChild(roller);
-                this.plugin.addChild(roller);
+                roller.addContexts(ctx, this.plugin);
 
                 roller.onLoad(async () => {
                     await roller.roll();

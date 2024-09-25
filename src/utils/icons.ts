@@ -18,5 +18,7 @@ export enum Icons {
 
     COLLAPSE = "chevron-right",
 
-    LOADING = "loader-2"
+    LOADING = "loader-2",
+
+    WARNING = "alert-triangle"
 }

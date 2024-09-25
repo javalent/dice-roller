@@ -134,8 +134,7 @@ function inlineRender(
                     /^dice(?:\+|\-|\-mod)?:\s*([\s\S]+)\s*?/
                 );
                 const roller = API.getRollerSync(content, currentFile.path);
-                component.addChild(roller);
-                plugin.addChild(roller);
+                roller.addContexts(component, plugin);
                 const widget = new InlineWidget(
                     original,
                     roller,

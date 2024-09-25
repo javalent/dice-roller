@@ -27,20 +27,6 @@ export class TableRoller extends GenericFileRoller<string> {
     lookupRanges: [range: [min: number, max: number], option: string][];
     combinedTooltip: string = "";
     prettyTooltip: string = "";
-    #hashedContent: string;
-    dirty: boolean = true;
-
-    async #hash(content: string): Promise<string> {
-        return Array.from(
-            new Uint8Array(
-                await crypto.subtle.digest(
-                    "SHA-256",
-                    new TextEncoder().encode(content)
-                )
-            ),
-            (b) => b.toString(16).padStart(2, "0")
-        ).join("");
-    }
 
     getPath() {
         const { groups } = this.lexeme.value.match(TABLE_REGEX) ?? {};
@@ -94,17 +80,6 @@ export class TableRoller extends GenericFileRoller<string> {
             resultEl.append(...Array.from(div.firstElementChild.childNodes));
         } else {
             resultEl.append(...Array.from(div.childNodes));
-        }
-        if (this.dirty) {
-            const div = createDiv({
-                attr: {
-                    style: "display: flex; align-items: center;",
-                    "aria-label":
-                        "The underlying table for this roller has been modified."
-                }
-            });
-            setIcon(div, "alert-triangle");
-            this.resultEl.append(div);
         }
     }
 
@@ -285,7 +260,6 @@ export class TableRoller extends GenericFileRoller<string> {
         }
 
         this.prettyTooltip = this.prettify(this.combinedTooltip);
-        this.dirty = false;
         return res.join("||");
     }
     async roll(): Promise<string> {
@@ -298,7 +272,7 @@ export class TableRoller extends GenericFileRoller<string> {
                 this.trigger("new-result");
                 resolve(this.result);
             } else {
-                this.on("loaded", async () => {
+                this.once("loaded", async () => {
                     this.result = await this.getResult();
 
                     this.render();
@@ -308,18 +282,6 @@ export class TableRoller extends GenericFileRoller<string> {
                 });
             }
         });
-    }
-    async load() {
-        const cache = this.app.metadataCache.getFileCache(this.file);
-        const data = await this.app.vault.cachedRead(this.file);
-        await this.getOptions(cache, data);
-        this.registerEvent(
-            this.app.metadataCache.on("changed", async (file, data, cache) => {
-                if (file === this.file) {
-                    await this.getOptions(cache, data);
-                }
-            })
-        );
     }
 
     async getOptions(cache: CachedMetadata, data: string) {
@@ -341,14 +303,9 @@ export class TableRoller extends GenericFileRoller<string> {
         );
         const position = this.cache.blocks[this.block].position;
         const content = data.slice(position.start.offset, position.end.offset);
-        const hash = await this.#hash(content);
-        if (hash === this.#hashedContent) {
-            return;
-        } else if (this.#hashedContent) {
-            this.dirty = true;
-            this.build();
-        }
-        this.#hashedContent = hash;
+
+        if (!(await this.checkForDirtiness(content))) return;
+
         this.content = content;
 
         if (section && section.type === "list") {
@@ -413,9 +370,6 @@ export class TableRoller extends GenericFileRoller<string> {
                 this.options = table.rows;
             }
         }
-
-        this.loaded = true;
-        this.trigger("loaded");
     }
 }
 const MATCH = /^\|?([\s\S]+?)\|?$/;
