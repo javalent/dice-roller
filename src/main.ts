@@ -139,7 +139,7 @@ export default class DiceRollerPlugin extends Plugin {
         if (typeof data.version !== "string") {
             delete data.version;
         }
-        if (compare("11.2.0", data.version ?? "0.0.0", ">")) {
+        if (compare("11.2.0", data.version ?? "0.0.0", ">") && !("position" in data)) {
             data.position = data.showDice
                 ? ButtonPosition.RIGHT
                 : ButtonPosition.NONE;
