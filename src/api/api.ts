@@ -42,6 +42,7 @@ export interface RollerOptions {
     showParens?: boolean;
     formulaAfter?: boolean;
     signed?: boolean;
+    lookup?: string;
 }
 
 declare global {
@@ -120,6 +121,7 @@ class APIInstance {
         let text: string = options?.text ?? "";
         let round = options?.round ?? this.data.round;
         let signed = options?.signed ?? this.data.signed;
+        let lookup = options?.lookup;
 
         const regextext = /\|text\((.*)\)/;
 
@@ -171,6 +173,10 @@ class APIInstance {
         if (content.includes("|signed")) {
             signed = true;
         }
+        if (content.includes("|lookup=")) {
+            [, lookup] = content.match(/\|lookup=(.+?)(?:\||$)/) ?? [];
+            console.log("🚀 ~ file: api.ts:178 ~ lookup:", lookup);
+        }
 
         content = decode(
             //remove flags...
@@ -179,6 +185,7 @@ class APIInstance {
                     /\|(no)?(dice|render|form|paren|avg|none|round|floor|ceil|signed)/g,
                     ""
                 )
+                .replace(/\|lookup=.+?(\||$)/, "")
                 .replace(regextext, "")
         );
 
@@ -195,7 +202,8 @@ class APIInstance {
             shouldRender,
             text,
             round,
-            signed
+            signed,
+            lookup
         };
     }
 
@@ -219,7 +227,8 @@ class APIInstance {
             round,
             shouldRender,
             text,
-            signed
+            signed,
+            lookup
         } = this.getParametersForRoller(raw, options);
 
         const lexemeResult = Lexer.parse(content);
@@ -260,7 +269,8 @@ class APIInstance {
                     lexemes[0],
                     source,
                     this.app,
-                    position
+                    position,
+                    lookup
                 );
                 return Some(roller);
             }

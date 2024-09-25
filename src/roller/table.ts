@@ -1,4 +1,5 @@
 import {
+    App,
     Component,
     MarkdownRenderer,
     Notice,
@@ -11,6 +12,8 @@ import { TABLE_REGEX } from "src/utils/constants";
 import { StackRoller } from ".";
 import { GenericFileRoller } from "./roller";
 import { API } from "src/api/api";
+import type { DiceRollerSettings } from "src/settings/settings.types";
+import type { LexicalToken } from "src/lexer/lexer";
 
 class SubRollerResult {
     result: string = "";
@@ -22,12 +25,25 @@ export class TableRoller extends GenericFileRoller<string> {
     block: string;
     header: string;
     rollsFormula: string;
-    isLookup: any;
+    isLookup: boolean = false;
     lookupRoller: StackRoller;
     lookupRanges: [range: [min: number, max: number], option: string][];
     combinedTooltip: string = "";
     prettyTooltip: string = "";
-
+    constructor(
+        data: DiceRollerSettings,
+        original: string,
+        lexeme: LexicalToken,
+        source: string,
+        app: App,
+        position = data.position,
+        public lookup?: string
+    ) {
+        super(data, original, lexeme, source, app, position);
+        if (lookup) {
+        }
+        this.getPath();
+    }
     getPath() {
         const { groups } = this.lexeme.value.match(TABLE_REGEX) ?? {};
 
@@ -180,26 +196,29 @@ export class TableRoller extends GenericFileRoller<string> {
 
         if (this.rollsFormula) {
             try {
-                const roller = await API.getRoller(
+                const maybeRoller = await API.getRoller(
                     this.rollsFormula,
                     this.source
                 );
-                if (!(roller instanceof StackRoller)) {
-                    this.prettyTooltip =
-                        "TableRoller only supports dice rolls to select multiple elements.";
-                    new Notice(this.prettyTooltip);
-                    return "ERROR";
-                }
-                const rollsRoller = roller as StackRoller;
-                await rollsRoller.roll();
-                this.rolls = rollsRoller.result;
-                if (!rollsRoller.isStatic) {
-                    formula = formula.replace(
-                        this.rollsFormula,
-                        `${this.rollsFormula.trim()} --> ${
-                            rollsRoller.resultText
-                        } > `
-                    );
+                if (maybeRoller.isSome()) {
+                    const roller = maybeRoller.unwrap();
+                    if (!(roller instanceof StackRoller)) {
+                        this.prettyTooltip =
+                            "TableRoller only supports dice rolls to select multiple elements.";
+                        new Notice(this.prettyTooltip);
+                        return "ERROR";
+                    }
+                    const rollsRoller = roller as StackRoller;
+                    await rollsRoller.roll();
+                    this.rolls = rollsRoller.result;
+                    if (!rollsRoller.isStatic) {
+                        formula = formula.replace(
+                            this.rollsFormula,
+                            `${this.rollsFormula.trim()} --> ${
+                                rollsRoller.resultText
+                            } > `
+                        );
+                    }
                 }
             } catch (error) {
                 this.prettyTooltip = `TableRoller: '${this.rollsFormula}' is not a valid dice roll.`;
@@ -319,40 +338,46 @@ export class TableRoller extends GenericFileRoller<string> {
 
             /** Check for Lookup Table */
             if (
-                table.columns.size === 2 &&
                 /dice:\s*([\s\S]+)\s*?/.test(
                     Array.from(table.columns.keys())[0]
-                )
+                ) ||
+                this.lookup
             ) {
-                const roller = await API.getRoller(
-                    Array.from(table.columns.keys())[0]
-                        .split(":")
-                        .pop()
-                        .replace(/\`/g, ""),
+                const maybeRoller = await API.getRoller(
+                    this.lookup ??
+                        Array.from(table.columns.keys())[0]
+                            .split(":")
+                            .pop()
+                            .replace(/\`/g, ""),
                     this.source
                 );
-                if (roller instanceof StackRoller) {
-                    this.lookupRoller = roller;
-                    // TODO: useless roll I think
-                    // let result = await this.lookupRoller.roll();
+                if (maybeRoller.isSome()) {
+                    const roller = maybeRoller.unwrap();
+                    if (roller instanceof StackRoller) {
+                        this.lookupRoller = roller;
+                        // TODO: useless roll I think
+                        // let result = await this.lookupRoller.roll();
 
-                    this.lookupRanges = table.rows.map((row) => {
-                        const [range, option] = row
-                            .replace(/\\\|/g, "{ESCAPED_PIPE}")
-                            .split("|")
-                            .map((str) => str.replace(/{ESCAPED_PIPE}/g, "\\|"))
-                            .map((s) => s.trim());
+                        this.lookupRanges = table.rows.map((row) => {
+                            const [range, option] = row
+                                .replace(/\\\|/g, "{ESCAPED_PIPE}")
+                                .split("|")
+                                .map((str) =>
+                                    str.replace(/{ESCAPED_PIPE}/g, "\\|")
+                                )
+                                .map((s) => s.trim());
 
-                        let [, min, max] =
-                            range.match(/(\d+)(?:[^\d]+?(\d+))?/) ?? [];
+                            let [, min, max] =
+                                range.match(/(\d+)(?:[^\d]+?(\d+))?/) ?? [];
 
-                        if (!min && !max) return;
-                        return [
-                            [Number(min), max ? Number(max) : undefined],
-                            option
-                        ];
-                    });
-                    this.isLookup = true;
+                            if (!min && !max) return;
+                            return [
+                                [Number(min), max ? Number(max) : undefined],
+                                option
+                            ];
+                        });
+                        this.isLookup = true;
+                    }
                 }
             }
             /** Check for 2d Rolling */
