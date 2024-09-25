@@ -1,7 +1,7 @@
 import { App, Component, MarkdownRenderer, Notice } from "obsidian";
 import type { LexicalToken } from "src/lexer/lexer";
 import { TAG_REGEX, DATAVIEW_REGEX } from "src/utils/constants";
-import { BasicRoller } from "./roller";
+import { BasicRoller, type ComponentLike } from "./roller";
 import { SectionRoller } from "./section";
 import type { DiceRollerSettings } from "src/settings/settings.types";
 import { DataviewManager } from "src/api/api.dataview";
@@ -14,6 +14,15 @@ abstract class DataViewEnabledRoller extends BasicRoller<SectionRoller> {
 
     types: string;
     results: SectionRoller[];
+
+    #components: ComponentLike[] = [];
+    override addContexts(...components: ComponentLike[]): void {
+        this.#components = components;
+        super.addContexts(...components);
+    }
+    onunload(): void {
+        this.#components = [];
+    }
 
     async getReplacer() {
         if (this.isLink) {
@@ -129,6 +138,7 @@ abstract class DataViewEnabledRoller extends BasicRoller<SectionRoller> {
                     );
                     /* await roller.roll(); */
                     this.results.push(roller);
+                    roller.addContexts(...this.#components);
                     resolve();
                 })
             );
@@ -149,7 +159,7 @@ abstract class DataViewEnabledRoller extends BasicRoller<SectionRoller> {
         const clone = new Map(this.results.map((r, i) => [i, r]));
         for (let i = 0; i < this.rolls; i++) {
             if (!clone.size) continue;
-            const result = this.getRandomBetween(0, clone.size);
+            const result = this.getRandomBetween(0, clone.size - 1);
             const cloned = clone.get(result);
             await cloned.roll();
             results.push(cloned);
@@ -172,32 +182,6 @@ abstract class DataViewEnabledRoller extends BasicRoller<SectionRoller> {
             );
         } else {
             for (const result of results) {
-                /* const link = this.resultEl.createEl("a", {
-                        cls: "internal-link",
-                        text: result.file.basename
-                    });
-                    link.onclick = async (evt) => {
-                        evt.stopPropagation();
-                        this.app.workspace.openLinkText(
-                            result.path,
-                            this.app.workspace.getActiveFile()?.path,
-                            evt.getModifierState("Control")
-                        );
-                    };
-    
-                    link.onmouseenter = async (evt) => {
-                        this.app.workspace.trigger(
-                            "link-hover",
-                            this, //not sure
-                            link, //targetEl
-                            result.path, //linkText
-                            this.app.workspace.getActiveFile()?.path //source
-                        );
-                    };
-                    if (results.length > 1 && r != results.length - 1) {
-                        this.resultEl.createSpan({ text: ", " });
-                    } */
-
                 const container = this.resultEl.createDiv();
                 container.createEl("h5", {
                     cls: "dice-file-name",
