@@ -1,4 +1,10 @@
-import { MarkdownRenderer, Component, Notice, setIcon } from "obsidian";
+import {
+    MarkdownRenderer,
+    Component,
+    Notice,
+    setIcon,
+    type CachedMetadata
+} from "obsidian";
 import { SECTION_REGEX } from "src/utils/constants";
 import { GenericEmbeddedRoller } from "./roller";
 import { Icons } from "src/utils/icons";
@@ -56,7 +62,8 @@ export class LineRoller extends GenericEmbeddedRoller<string> {
 
                 continue;
             }
-            MarkdownRenderer.renderMarkdown(
+            MarkdownRenderer.render(
+                this.app,
                 result,
                 ret.createDiv(),
                 this.source,
@@ -80,9 +87,6 @@ export class LineRoller extends GenericEmbeddedRoller<string> {
     transformResultsToString(): string {
         return this.results.join("\n\n");
     }
-    async load() {
-        await this.getOptions();
-    }
     getPath() {
         const { groups } = this.lexeme.value.match(SECTION_REGEX) ?? {};
 
@@ -93,8 +97,9 @@ export class LineRoller extends GenericEmbeddedRoller<string> {
         this.path = link.replace(/(\[|\])/g, "");
         this.types = types?.split(",");
     }
-    async getOptions() {
-        this.content = await this.app.vault.cachedRead(this.file);
+    async getOptions(cache: CachedMetadata, data: string) {
+        if (!(await this.checkForDirtiness(data))) return;
+        this.content = data;
         if (!this.content) {
             throw new Error("Could not read file cache.");
         }
@@ -103,14 +108,11 @@ export class LineRoller extends GenericEmbeddedRoller<string> {
             .split("\n")
             .map((c) => c.trim())
             .filter((c) => c && c.length);
-
-        this.loaded = true;
-        this.trigger("loaded");
     }
     async roll(): Promise<string> {
         return new Promise((resolve, reject) => {
             if (!this.loaded) {
-                this.on("loaded", () => {
+                this.once("loaded", () => {
                     const options = [...this.options];
 
                     this.results = [...Array(this.rolls)]
