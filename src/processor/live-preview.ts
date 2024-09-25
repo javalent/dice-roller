@@ -63,7 +63,7 @@ function selectionAndRangeOverlap(
 }
 
 function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
-    const currentFile = this.app.workspace.getActiveFile();
+    const currentFile = plugin.app.workspace.getActiveFile();
     if (!currentFile) return;
 
     const widgets: Range<Decoration>[] = [];
@@ -101,7 +101,7 @@ function inlineRender(view: EditorView, plugin: DiceRollerPlugin) {
                         /dice\-mod:\s*([\s\S]+)\s*?/
                     );
 
-                    const currentFile = app.workspace.getActiveFile();
+                    const currentFile = plugin.app.workspace.getActiveFile();
                     const roller = API.getRollerSync(content, currentFile.path);
 
                     roller.roll().then(async () => {
