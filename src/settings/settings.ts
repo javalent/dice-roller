@@ -181,16 +181,6 @@ export default class SettingTab extends PluginSettingTab {
                 });
             });
         new Setting(containerEl)
-            .setName("Display Dice Button With Results")
-            .setDesc("A dice button will appear next to results.")
-            .addToggle((t) => {
-                t.setValue(this.plugin.data.showDice);
-                t.onChange(async (v) => {
-                    this.plugin.data.showDice = v;
-                    await this.plugin.saveSettings();
-                });
-            });
-        new Setting(containerEl)
             .setName("Display Formula in Parentheses After")
             .setDesc(
                 createFragment((e) => {
