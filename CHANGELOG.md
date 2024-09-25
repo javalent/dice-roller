@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0](https://github.com/javalent/dice-roller/compare/11.0.5...11.1.0) (2024-09-25)
+
+
+### Features
+
+* Line rollers now watch underlying note content ([08a1c08](https://github.com/javalent/dice-roller/commit/08a1c0808ea95eb1319e87f00c30608051f389cc))
+* Section rollers generated inside a tag roller are now contextualized properly ([f3d7ef2](https://github.com/javalent/dice-roller/commit/f3d7ef2c19dc1bcf8465d7b1240d9afcecd57352))
+* Section rollers now watch underlying note content ([d948da6](https://github.com/javalent/dice-roller/commit/d948da6e2a61f41c0f4bfa7c882b3599bdfcb8d0))
+* Table rollers now watch underlying tables ([a054124](https://github.com/javalent/dice-roller/commit/a0541242517996489483038fc2221b1cab16d22c))
+
+
+### Bug Fixes
+
+* Remove console log ([cf13b1e](https://github.com/javalent/dice-roller/commit/cf13b1e5d9ab01998354105159e51d3edcf914b3))
+* Remove console logs ([a9508e0](https://github.com/javalent/dice-roller/commit/a9508e0a3f73537dd98ae97eea9d5db92aeea7bc))
+* Remove deprecated global app reference ([857c8df](https://github.com/javalent/dice-roller/commit/857c8df615e26dd5c3cad36b7cd3f1ce99fbfdee))
+
 ## [11.0.5](https://github.com/javalent/dice-roller/compare/11.0.4...11.0.5) (2024-09-06)
 
 
