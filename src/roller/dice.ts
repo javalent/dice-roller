@@ -6,7 +6,10 @@ import { BasicRoller, Roller } from "./roller";
 import DiceRenderer from "src/renderer/renderer";
 import { DiceShape } from "src/renderer/shapes";
 import { Icons } from "src/utils/icons";
-import { ButtonPosition, type DiceRollerSettings } from "src/settings/settings.types";
+import {
+    ButtonPosition,
+    type DiceRollerSettings
+} from "src/settings/settings.types";
 import { Round, ExpectedValue } from "src/types/api";
 
 export interface Conditional {
@@ -382,21 +385,34 @@ export class DiceRoller {
     }
     getMaxPossible(): number {
         if (this.static) return Number(this.dice);
-        if (this.multiplier === -1) {
-            return (
-                this.multiplier * Math.min(...this.possibilities) * this.rolls
-            );
+        let rolls = this.rolls;
+        if (this.modifiers.has("kl")) {
+            rolls = rolls - this.modifiers.get("kl")!.data;
         }
-        return Math.max(...this.possibilities) * this.rolls;
+        if (this.modifiers.has("kh")) {
+            rolls = rolls - this.modifiers.get("kh")!.data;
+        }
+        if (rolls < 1) rolls = 0;
+        if (this.multiplier === -1) {
+            return this.multiplier * Math.min(...this.possibilities) * rolls;
+        }
+        return Math.max(...this.possibilities) * rolls;
     }
     getMinPossible(): number {
         if (this.static) return Number(this.dice);
-        if (this.multiplier === -1) {
-            return (
-                this.multiplier * Math.max(...this.possibilities) * this.rolls
-            );
+        let rolls = this.rolls;
+        if (this.modifiers.has("kl")) {
+            rolls = rolls - this.modifiers.get("kl")!.data;
         }
-        return Math.min(...this.possibilities) * this.rolls;
+        if (this.modifiers.has("kh")) {
+            rolls = rolls - this.modifiers.get("kh")!.data;
+        }
+        if (rolls < 1) rolls = 0;
+
+        if (this.multiplier === -1) {
+            return this.multiplier * Math.max(...this.possibilities) * rolls;
+        }
+        return Math.min(...this.possibilities) * rolls;
     }
     #resolveShapeValue(shapes: DiceShape[] = []) {
         if (!shapes.length) return this.getValueSync();
