@@ -11,7 +11,10 @@ import { Lexer } from "./lexer/lexer";
 import { type RollerOptions } from "./api/api";
 import { inlinePlugin } from "./processor/live-preview";
 import { API } from "./api/api";
-import type { DiceRollerSettings } from "./settings/settings.types";
+import {
+    ButtonPosition,
+    type DiceRollerSettings
+} from "./settings/settings.types";
 import { DEFAULT_SETTINGS } from "./settings/settings.const";
 import { DataviewManager } from "./api/api.dataview";
 import DiceProcessor from "./processor/processor";
@@ -129,9 +132,17 @@ export default class DiceRollerPlugin extends Plugin {
     async loadSettings() {
         const data = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
         let dirty = false;
-        
+
         if (typeof data.version !== "string") {
             delete data.version;
+        }
+        if (compare("11.2.0", data.version ?? "0.0.0", ">")) {
+            data.position = data.showDice
+                ? ButtonPosition.RIGHT
+                : ButtonPosition.NONE;
+            delete data["showDice"];
+
+            dirty = true;
         }
         if (compare("11.0.0", data.version ?? "0.0.0", ">")) {
             delete data["persistResults"];

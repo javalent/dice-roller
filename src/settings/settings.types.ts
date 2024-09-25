@@ -2,7 +2,15 @@ import type { ViewResult } from "src/view/view";
 import { Round, ExpectedValue } from "../types/api";
 import type { DiceIcon } from "../view/view.icons";
 
+export const ButtonPosition = {
+    LEFT: "LEFT",
+    RIGHT: "RIGHT",
+    NONE: "NONE"
+} as const;
+export type ButtonPosition =
+    (typeof ButtonPosition)[keyof typeof ButtonPosition];
 export interface DiceRollerSettings {
+    position: ButtonPosition;
     showFudgeIcon: boolean;
     rollLinksForTags: boolean;
     copyContentButton: boolean;
@@ -13,7 +21,6 @@ export interface DiceRollerSettings {
     escapeDiceMod: boolean;
     signed: boolean;
     formulas: Record<string, string>;
-    showDice: boolean;
     defaultRoll: number;
     defaultFace: number;
     renderer: boolean;

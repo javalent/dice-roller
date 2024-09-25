@@ -21,6 +21,7 @@ import { FontSuggestionModal } from "src/suggester/fonts";
 import { FolderInputSuggest } from "@javalent/utilities";
 import { Icons } from "src/utils/icons";
 import { Lexer } from "src/lexer/lexer";
+import { ButtonPosition } from "./settings.types";
 
 declare var require: (id: "get-fonts") => { getFonts: () => Promise<string[]> };
 
@@ -162,6 +163,20 @@ export default class SettingTab extends PluginSettingTab {
                 t.setValue(this.plugin.data.displayResultsInline);
                 t.onChange(async (v) => {
                     this.plugin.data.displayResultsInline = v;
+                    await this.plugin.saveSettings();
+                });
+            });
+
+        new Setting(containerEl)
+            .setName("Re-roll button position")
+            .setDesc("Controls position of the re-roll button")
+            .addDropdown((d) => {
+                d.addOption(ButtonPosition.LEFT, "Left");
+                d.addOption(ButtonPosition.RIGHT, "Right");
+                d.addOption(ButtonPosition.NONE, "None");
+                d.setValue(this.plugin.data.position);
+                d.onChange(async (v) => {
+                    this.plugin.data.position = v as ButtonPosition;
                     await this.plugin.saveSettings();
                 });
             });

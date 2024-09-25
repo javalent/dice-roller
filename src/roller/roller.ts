@@ -11,7 +11,10 @@ import {
 } from "obsidian";
 
 import type { LexicalToken } from "src/lexer/lexer";
-import type { DiceRollerSettings } from "src/settings/settings.types";
+import type {
+    ButtonPosition,
+    DiceRollerSettings
+} from "src/settings/settings.types";
 import { Icons } from "src/utils/icons";
 
 export interface ComponentLike {
@@ -67,7 +70,7 @@ abstract class BareRoller<T> extends Roller<T> {
     constructor(
         public data: DiceRollerSettings,
         public original = "",
-        showDice = data.showDice
+        position: ButtonPosition = data.position
     ) {
         super();
         if (!this.original) this.original = "";
@@ -79,14 +82,25 @@ abstract class BareRoller<T> extends Roller<T> {
             }
         });
         this.resultEl = this.containerEl.createSpan("dice-roller-result");
-        if (showDice) {
-            this.iconEl = this.containerEl.createSpan({
-                cls: "dice-roller-button"
-            });
-            setIcon(this.iconEl, Icons.DICE);
-            this.iconEl.onclick = this.onClick.bind(this);
-        } else {
-            this.containerEl.addClass("no-icon");
+        this.iconEl = createSpan({
+            cls: "dice-roller-button"
+        });
+        setIcon(this.iconEl, Icons.DICE);
+        this.iconEl.onclick = this.onClick.bind(this);
+        console.log("🚀 ~ file: roller.ts:91 ~ position:", position);
+        switch (position) {
+            case "LEFT": {
+                this.containerEl.prepend(this.iconEl);
+                break;
+            }
+            case "RIGHT": {
+                this.containerEl.append(this.iconEl);
+                break;
+            }
+            case "NONE": {
+                this.containerEl.addClass("no-icon");
+                break;
+            }
         }
 
         this.containerEl.onclick = this.onClick.bind(this);
@@ -158,9 +172,9 @@ export abstract class BasicRoller<T = any> extends BareRoller<T> {
         public data: DiceRollerSettings,
         public original: string,
         public lexemes: LexicalToken[],
-        public showDice = data.showDice
+        public position = data.position
     ) {
-        super(data, original, showDice);
+        super(data, original, position);
     }
 }
 
@@ -183,9 +197,9 @@ export abstract class GenericFileRoller<T> extends BasicRoller<T> {
         public lexeme: LexicalToken,
         public source: string,
         public app: App,
-        showDice = data.showDice
+        position = data.position
     ) {
-        super(data, original, [lexeme], showDice);
+        super(data, original, [lexeme], position);
         this.getPath();
     }
     abstract getPath(): void;
@@ -263,10 +277,9 @@ export abstract class GenericEmbeddedRoller<T> extends GenericFileRoller<T> {
         public lexeme: LexicalToken,
         source: string,
         public app: App,
-        public inline: boolean = true,
-        showDice = data.showDice
+        position = data.position
     ) {
-        super(data, original, lexeme, source, app, showDice);
+        super(data, original, lexeme, source, app, position);
         if (this.data.displayAsEmbed) {
             this.containerEl.addClasses(["has-embed", "markdown-embed"]);
             this.resultEl.addClass("internal-embed");

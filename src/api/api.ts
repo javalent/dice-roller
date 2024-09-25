@@ -1,5 +1,8 @@
 import { ArrayRoller, type BasicRoller } from "../roller/roller";
-import type { DiceRollerSettings } from "../settings/settings.types";
+import {
+    ButtonPosition,
+    type DiceRollerSettings
+} from "../settings/settings.types";
 import { ExpectedValue, Round } from "../types/api";
 
 import { decode } from "he";
@@ -29,7 +32,7 @@ export {
 };
 
 export interface RollerOptions {
-    showDice?: boolean;
+    position?: ButtonPosition;
     shouldRender?: boolean;
     showFormula?: boolean;
     expectedValue?: ExpectedValue;
@@ -106,7 +109,7 @@ class APIInstance {
     ): { content: string } & RollerOptions {
         content = content.replace(/\\\|/g, "|");
 
-        let showDice = options?.showDice ?? true;
+        let position = options?.position ?? ButtonPosition.LEFT;
         let shouldRender = options?.shouldRender ?? this.data.renderAllDice;
         let showFormula =
             options?.showFormula ?? this.data.displayResultsInline;
@@ -121,7 +124,7 @@ class APIInstance {
 
         //Flags always take precedence.
         if (content.includes("|nodice")) {
-            showDice = false;
+            position = ButtonPosition.NONE;
         }
         if (content.includes("|render")) {
             shouldRender = true;
@@ -184,7 +187,7 @@ class APIInstance {
 
         return {
             content,
-            showDice,
+            position,
             showParens,
             showFormula,
             expectedValue,
@@ -208,7 +211,7 @@ class APIInstance {
     ): BasicRoller {
         const {
             content,
-            showDice,
+            position,
             showParens,
             showFormula,
             expectedValue,
@@ -230,7 +233,7 @@ class APIInstance {
                     lexemes,
                     this.renderer,
                     this.app,
-                    showDice,
+                    position,
                     text,
                     expectedValue,
                     showParens,
@@ -251,7 +254,7 @@ class APIInstance {
                     lexemes[0],
                     source,
                     this.app,
-                    showDice
+                    position
                 );
                 return roller;
             }
@@ -262,7 +265,7 @@ class APIInstance {
                     lexemes[0],
                     source,
                     this.app,
-                    showDice
+                    position
                 );
             }
             case "dataview": {
@@ -277,7 +280,7 @@ class APIInstance {
                     lexemes[0],
                     source,
                     this.app,
-                    showDice
+                    position
                 );
             }
             case "tag": {
@@ -292,7 +295,7 @@ class APIInstance {
                     lexemes[0],
                     source,
                     this.app,
-                    showDice
+                    position
                 );
             }
             case "line": {
@@ -302,7 +305,7 @@ class APIInstance {
                     lexemes[0],
                     source,
                     this.app,
-                    showDice
+                    position
                 );
             }
         }
@@ -315,7 +318,7 @@ class APIInstance {
     ): Promise<BasicRoller> {
         const {
             content,
-            showDice,
+            position,
             showParens,
             showFormula,
             expectedValue,
@@ -336,7 +339,7 @@ class APIInstance {
                     lexemes,
                     this.renderer,
                     this.app,
-                    showDice,
+                    position,
                     text,
                     expectedValue,
                     showParens,
@@ -357,7 +360,7 @@ class APIInstance {
                     lexemes[0],
                     source,
                     this.app,
-                    showDice
+                    position
                 );
                 return roller;
             }
@@ -368,7 +371,7 @@ class APIInstance {
                     lexemes[0],
                     source,
                     this.app,
-                    showDice
+                    position
                 );
             }
             case "dataview": {
@@ -383,7 +386,7 @@ class APIInstance {
                     lexemes[0],
                     source,
                     this.app,
-                    showDice
+                    position
                 );
             }
             case "tag": {
@@ -398,7 +401,7 @@ class APIInstance {
                     lexemes[0],
                     source,
                     this.app,
-                    showDice
+                    position
                 );
             }
             case "line": {
@@ -408,7 +411,7 @@ class APIInstance {
                     lexemes[0],
                     source,
                     this.app,
-                    showDice
+                    position
                 );
             }
         }
@@ -418,8 +421,8 @@ class APIInstance {
         if (!source) return roll;
         const options =
             this.sources.get(source) ?? this.getRollerOptions(this.data);
-        if ("showDice" in options) {
-            roll += options.showDice ? "" : "|nodice";
+        if ("position" in options) {
+            roll += options.position !== ButtonPosition.NONE ? "" : "|nodice";
         }
         if ("shouldRender" in options) {
             roll += options.shouldRender ? "|render" : "|norender";
@@ -477,7 +480,7 @@ class APIInstance {
     }
     getRollerOptions(data: DiceRollerSettings): RollerOptions {
         return {
-            showDice: data.showDice,
+            position: data.position,
             shouldRender: data.renderAllDice,
             showFormula: data.displayResultsInline,
             showParens: data.displayFormulaAfter,

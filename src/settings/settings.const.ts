@@ -1,9 +1,10 @@
 import { Round, ExpectedValue } from "../types/api";
 import { DEFAULT_ICONS } from "../view/view.icons";
 import copy from "fast-copy";
-import type { DiceRollerSettings } from "./settings.types";
+import { ButtonPosition, type DiceRollerSettings } from "./settings.types";
 
 export const DEFAULT_SETTINGS: DiceRollerSettings = {
+    position: ButtonPosition.RIGHT,
     showFudgeIcon: false,
     rollLinksForTags: false,
     copyContentButton: true,
@@ -27,7 +28,7 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     textColor: "#ffffff",
     textFont: "Arial",
     showLeafOnStartup: true,
-    showDice: true,
+    
     displayAsEmbed: true,
     round: Round.None,
     initialDisplay: ExpectedValue.Roll,

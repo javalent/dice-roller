@@ -6,7 +6,7 @@ import { BasicRoller, Roller } from "./roller";
 import DiceRenderer from "src/renderer/renderer";
 import { DiceShape } from "src/renderer/shapes";
 import { Icons } from "src/utils/icons";
-import type { DiceRollerSettings } from "src/settings/settings.types";
+import { ButtonPosition, type DiceRollerSettings } from "src/settings/settings.types";
 import { Round, ExpectedValue } from "src/types/api";
 
 export interface Conditional {
@@ -205,7 +205,7 @@ export class DiceRoller {
         }
 
         if (this.results.size === 1) return;
-        
+
         [...this.results]
             .sort((a, b) => b[1].value - a[1].value)
             .slice(drop)
@@ -1101,7 +1101,7 @@ export class StackRoller extends BasicRoller<number> {
         let sign = this.signed && rounded > 0 ? "+" : "";
         let result;
         if (this.expectedValue === ExpectedValue.None && !this.shouldRender) {
-            if (this.showDice) {
+            if (this.position != ButtonPosition.NONE) {
                 result = [""];
             } else {
                 result = ["\xa0"];
@@ -1167,14 +1167,14 @@ export class StackRoller extends BasicRoller<number> {
         public lexemes: LexicalToken[],
         public renderer: DiceRenderer,
         public app: App,
-        showDice = data.showDice,
+        position = data.position,
         fixedText: string,
         expectedValue = data.initialDisplay,
         displayFormulaAfter = data.displayFormulaAfter,
         round = data.round,
         signed = data.signed
     ) {
-        super(data, original, lexemes, showDice);
+        super(data, original, lexemes, position);
 
         if (displayFormulaAfter) {
             this.containerEl.createSpan({
