@@ -14,7 +14,7 @@
 .dice-roller > div {
     display: inline-block;
 }
-.dice-roller span {
+.dice-roller:not(.has-embed) span {
     font-weight: 700;
 }
 .dice-roller > .dice-roller-button {
