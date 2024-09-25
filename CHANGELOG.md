@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.2.0](https://github.com/javalent/dice-roller/compare/11.1.0...11.2.0) (2024-09-25)
+
+
+### Features
+
+* Adds `lookup` parameter to table rolls. You can now specify the lookup roll directly in the table roller: `dice: [[Note^table]]|lookup=2d20` (close [#299](https://github.com/javalent/dice-roller/issues/299)) ([86599ec](https://github.com/javalent/dice-roller/commit/86599ec0a0c40d0595bf430e17f6cb98b16b8251))
+* Adds new "Re-roll button position" setting to control position of re-roll button. If button was previously turned off, this will be set to "None" (close [#324](https://github.com/javalent/dice-roller/issues/324)) ([69a2540](https://github.com/javalent/dice-roller/commit/69a2540244821340518c46fabbe1b7a6787fd37e))
+
+
+### Bug Fixes
+
+* Dice rollers now take `kl` and `kh` modifiers into account when calculating possible min and max (close [#320](https://github.com/javalent/dice-roller/issues/320)) ([2daa614](https://github.com/javalent/dice-roller/commit/2daa614f62c89eea306f347df4c33318039e218c))
+* Display dice results in dice view on mobile (close [#322](https://github.com/javalent/dice-roller/issues/322)) ([95b648d](https://github.com/javalent/dice-roller/commit/95b648ddc73505ded0d2bb4586a0e52ad2ce1505))
+* Embedded content is no longer bolded by default (close [#302](https://github.com/javalent/dice-roller/issues/302)) ([3fbcbd7](https://github.com/javalent/dice-roller/commit/3fbcbd7833e881af4730d733cd09215fc35b41de))
+* Fixes issue where a syntax error in live preview could crash the plugin (close [#300](https://github.com/javalent/dice-roller/issues/300)) ([a1e356e](https://github.com/javalent/dice-roller/commit/a1e356e72ae6bf50f855fc3a4862903de988ec36))
+* Fixes minor issue in data file update from &lt; v11.2 ([e33ebe0](https://github.com/javalent/dice-roller/commit/e33ebe0b4ee09e4e48f256ca69a8e6d20d2050b4))
+* kl / kh (and corresponding drop modifiers) now only work if applied to more than 1 die (close [#311](https://github.com/javalent/dice-roller/issues/311)) ([1501454](https://github.com/javalent/dice-roller/commit/1501454204f706baacb657d4b38f7fb002f93796))
+* Removes legacy "Show Dice Button With Results" setting ([9ff8414](https://github.com/javalent/dice-roller/commit/9ff8414c1befa1c15a8371fcf6b20c9bac85e44d))
+
 ## [11.1.0](https://github.com/javalent/dice-roller/compare/11.0.5...11.1.0) (2024-09-25)
 
 
