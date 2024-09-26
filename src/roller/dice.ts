@@ -3,7 +3,7 @@ import type { LexicalToken } from "src/lexer/lexer";
 
 import { _insertIntoMap } from "src/utils/util";
 import { BasicRoller, Roller } from "./roller";
-import DiceRenderer from "src/renderer/renderer";
+import { DiceRenderer } from "src/renderer/renderer";
 import { DiceShape } from "src/renderer/shapes";
 import { Icons } from "src/utils/icons";
 import {
@@ -38,7 +38,6 @@ type ModifierType = "sort" | "kh" | "kl" | "!" | "!!" | "r" | "u";
 export class DiceRoller {
     constructor(
         dice: string | number,
-        public renderer: DiceRenderer | null,
         public lexeme: Partial<LexicalToken> = {
             value: `${dice}`,
             conditions: [],
@@ -119,7 +118,7 @@ export class DiceRoller {
         if (this.shapes.has(index)) {
             return this.shapes.get(index);
         }
-        const shapes = this.renderer.getDiceForRoller(this);
+        const shapes = DiceRenderer.getDiceForRoller(this);
         if (index != undefined) {
             this.shapes.set(index, shapes);
         }
@@ -372,8 +371,8 @@ export class DiceRoller {
     async getValue(shapes?: DiceShape[]) {
         let value: number;
         if (this.shouldRender && this.canRender()) {
-            const temp = shapes ?? this.renderer.getDiceForRoller(this) ?? [];
-            await this.renderer.addDice(temp);
+            const temp = shapes ?? DiceRenderer.getDiceForRoller(this) ?? [];
+            await DiceRenderer.addDice(temp);
             value = this.#resolveShapeValue(temp);
         } else {
             value = this.getValueSync();
@@ -678,12 +677,8 @@ export class DiceRoller {
 }
 
 class StuntRoller extends DiceRoller {
-    constructor(
-        public dice: string,
-        renderer?: DiceRenderer,
-        lexeme?: LexicalToken
-    ) {
-        super(`3d6`, renderer, lexeme);
+    constructor(public dice: string, lexeme?: LexicalToken) {
+        super(`3d6`, lexeme);
     }
     get doubles() {
         return (
@@ -721,17 +716,13 @@ class StuntRoller extends DiceRoller {
 
 export class PercentRoller extends DiceRoller {
     stack: DiceRoller[][] = [];
-    constructor(
-        public dice: string,
-        renderer?: DiceRenderer,
-        lexeme?: LexicalToken
-    ) {
-        super(dice, renderer, lexeme);
+    constructor(public dice: string, lexeme?: LexicalToken) {
+        super(dice, lexeme);
         const faces = `${this.faces.max}`.split("");
         for (let i = 0; i < this.rolls; i++) {
             const stack = [];
             for (const face of faces) {
-                const roller = new DiceRoller(`1d${face}`, renderer);
+                const roller = new DiceRoller(`1d${face}`);
                 stack.push(roller);
                 roller.roll();
             }
@@ -843,7 +834,7 @@ class BasicStackRoller extends Roller<number> {
                     );
 
                     this.stackCopy.push(dice.value);
-                    this.stack.push(new DiceRoller(`${result}`, null, dice));
+                    this.stack.push(new DiceRoller(`${result}`, dice));
                     break;
                 case "u": {
                     let diceInstance = this.dice[index - 1];
@@ -958,18 +949,10 @@ class BasicStackRoller extends Roller<number> {
                     ) {
                         const previous = this.stack.pop();
                         dice.value = `${previous.result}${dice.value}`;
-                        this.dice[index] = new DiceRoller(
-                            dice.value,
-                            null,
-                            dice
-                        );
+                        this.dice[index] = new DiceRoller(dice.value, dice);
                     }
                     if (!this.dice[index]) {
-                        this.dice[index] = new DiceRoller(
-                            dice.value,
-                            null,
-                            dice
-                        );
+                        this.dice[index] = new DiceRoller(dice.value, dice);
                     }
 
                     this.stack.push(this.dice[index]);
@@ -979,11 +962,7 @@ class BasicStackRoller extends Roller<number> {
                 }
                 case "stunt": {
                     if (!this.dice[index]) {
-                        this.dice[index] = new StuntRoller(
-                            dice.value,
-                            null,
-                            dice
-                        );
+                        this.dice[index] = new StuntRoller(dice.value, dice);
                     }
 
                     this.stack.push(this.dice[index]);
@@ -994,11 +973,7 @@ class BasicStackRoller extends Roller<number> {
 
                 case "%": {
                     if (!this.dice[index]) {
-                        this.dice[index] = new PercentRoller(
-                            dice.value,
-                            null,
-                            dice
-                        );
+                        this.dice[index] = new PercentRoller(dice.value, dice);
                     }
 
                     this.stack.push(this.dice[index]);
@@ -1181,7 +1156,6 @@ export class StackRoller extends BasicRoller<number> {
         public data: DiceRollerSettings,
         public original: string,
         public lexemes: LexicalToken[],
-        public renderer: DiceRenderer,
         public app: App,
         position = data.position,
         fixedText: string,
@@ -1383,18 +1357,10 @@ export class StackRoller extends BasicRoller<number> {
                     ) {
                         const previous = this.stack.pop();
                         dice.value = `${previous.result}${dice.value}`;
-                        this.dice[index] = new DiceRoller(
-                            dice.value,
-                            this.renderer,
-                            dice
-                        );
+                        this.dice[index] = new DiceRoller(dice.value, dice);
                     }
                     if (!this.dice[index]) {
-                        this.dice[index] = new DiceRoller(
-                            dice.value,
-                            this.renderer,
-                            dice
-                        );
+                        this.dice[index] = new DiceRoller(dice.value, dice);
                     }
 
                     index++;
@@ -1402,11 +1368,7 @@ export class StackRoller extends BasicRoller<number> {
                 }
                 case "stunt": {
                     if (!this.dice[index]) {
-                        this.dice[index] = new StuntRoller(
-                            dice.value,
-                            this.renderer,
-                            dice
-                        );
+                        this.dice[index] = new StuntRoller(dice.value, dice);
                     }
                     index++;
                     break;
@@ -1414,11 +1376,7 @@ export class StackRoller extends BasicRoller<number> {
 
                 case "%": {
                     if (!this.dice[index]) {
-                        this.dice[index] = new PercentRoller(
-                            dice.value,
-                            this.renderer,
-                            dice
-                        );
+                        this.dice[index] = new PercentRoller(dice.value, dice);
                     }
                     index++;
                     break;
@@ -1432,7 +1390,7 @@ export class StackRoller extends BasicRoller<number> {
         if (!this.dice.length) {
             this.buildDiceTree();
         }
-        this.renderer.stop();
+        DiceRenderer.stop();
         this.dice.forEach((dice) => (dice.shouldRender = false));
         if (render || (this.shouldRender && this.hasRunOnce)) {
             await this.renderDice();
@@ -1500,9 +1458,7 @@ export class StackRoller extends BasicRoller<number> {
                     );
 
                     this.stackCopy.push(dice.value);
-                    this.stack.push(
-                        new DiceRoller(`${result}`, this.renderer, dice)
-                    );
+                    this.stack.push(new DiceRoller(`${result}`, dice));
                     this.minStack.push(min);
                     this.maxStack.push(max);
                     break;

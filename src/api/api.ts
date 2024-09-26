@@ -8,7 +8,7 @@ import { ExpectedValue, Round } from "../types/api";
 import { decode } from "he";
 import { Lexer, type LexicalToken } from "../lexer/lexer";
 import type { App } from "obsidian";
-import type DiceRenderer from "../renderer/renderer";
+
 import {
     StackRoller,
     TableRoller,
@@ -76,12 +76,10 @@ declare module "obsidian" {
 class APIInstance {
     app: App;
     data: DiceRollerSettings;
-    renderer: DiceRenderer;
 
-    initialize(data: DiceRollerSettings, app: App, renderer: DiceRenderer) {
+    initialize(data: DiceRollerSettings, app: App) {
         this.data = data;
         this.app = app;
-        this.renderer = renderer;
     }
 
     #getTypeFromLexemes(lexemes: LexicalToken[]) {
@@ -245,7 +243,6 @@ class APIInstance {
                     this.data,
                     content,
                     lexemes,
-                    this.renderer,
                     this.app,
                     position,
                     text,

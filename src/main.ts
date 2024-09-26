@@ -6,7 +6,7 @@ import SettingTab from "./settings/settings";
 
 import { BasicRoller } from "./roller/roller";
 import DiceView, { VIEW_TYPE } from "./view/view";
-import DiceRenderer, { type RendererData } from "./renderer/renderer";
+import { DiceRenderer, type RendererData } from "./renderer/renderer";
 import { Lexer } from "./lexer/lexer";
 import { type RollerOptions } from "./api/api";
 import { inlinePlugin } from "./processor/live-preview";
@@ -25,7 +25,6 @@ export default class DiceRollerPlugin extends Plugin {
     api = API;
 
     data: DiceRollerSettings;
-    renderer: DiceRenderer;
     processor: DiceProcessor;
 
     getRendererData(): RendererData {
@@ -42,8 +41,9 @@ export default class DiceRollerPlugin extends Plugin {
         console.log("DiceRoller plugin loaded");
         await this.loadSettings();
 
-        this.renderer = new DiceRenderer(this.getRendererData());
-        this.api.initialize(this.data, this.app, this.renderer);
+        DiceRenderer.setData(this.getRendererData());
+        this.addChild(DiceRenderer);
+        this.api.initialize(this.data, this.app);
 
         window["DiceRoller"] = this.api;
         this.register(() => delete window["DiceRoller"]);
@@ -139,7 +139,10 @@ export default class DiceRollerPlugin extends Plugin {
         if (typeof data.version !== "string") {
             delete data.version;
         }
-        if (compare("11.2.0", data.version ?? "0.0.0", ">") && !("position" in data)) {
+        if (
+            compare("11.2.0", data.version ?? "0.0.0", ">") &&
+            !("position" in data)
+        ) {
             data.position = data.showDice
                 ? ButtonPosition.RIGHT
                 : ButtonPosition.NONE;
@@ -186,7 +189,6 @@ export default class DiceRollerPlugin extends Plugin {
         if ("__THREE__" in window) {
             delete window.__THREE__;
         }
-        this.renderer.unload();
         this.app.workspace.trigger("dice-roller:unloaded");
     }
 }

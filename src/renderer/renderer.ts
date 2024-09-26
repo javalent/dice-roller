@@ -64,7 +64,7 @@ export type RendererData = {
     textFont: string;
 };
 
-export default class DiceRenderer extends Component {
+class DiceRendererClass extends Component {
     event = new Events();
     tracker = new ResourceTracker();
     renderer: WebGLRenderer;
@@ -107,25 +107,29 @@ export default class DiceRenderer extends Component {
     }
 
     #animating = false;
+    data: RendererData;
+
     setData(data: RendererData) {
         this.data = data;
-        this.factory.width = this.WIDTH;
-        this.factory.height = this.HEIGHT;
-
-        this.factory.updateDice(this.data);
+        if (!this.factory) {
+            this.factory = new DiceFactory(this.WIDTH, this.HEIGHT, {
+                diceColor: this.data.diceColor,
+                textColor: this.data.textColor,
+                colorfulDice: this.data.colorfulDice,
+                scaler: this.data.scaler,
+                textFont: this.data.textFont
+            });
+        } else {
+            this.factory.width = this.WIDTH;
+            this.factory.height = this.HEIGHT;
+            this.factory.updateDice(this.data);
+        }
     }
-    constructor(public data: RendererData) {
+    constructor() {
         super();
         this.renderer = new WebGLRenderer({
             alpha: true,
             antialias: true
-        });
-        this.factory = new DiceFactory(this.WIDTH, this.HEIGHT, {
-            diceColor: this.data.diceColor,
-            textColor: this.data.textColor,
-            colorfulDice: this.data.colorfulDice,
-            scaler: this.data.scaler,
-            textFont: this.data.textFont
         });
     }
     getDiceForRoller(roller: DiceRoller): DiceShape[] {
@@ -209,7 +213,7 @@ export default class DiceRenderer extends Component {
             this.load();
         }
         this.#animating = true;
-        this.extraFrames = DiceRenderer.DEFAULT_EXTRA_FRAMES;
+        this.extraFrames = DiceRendererClass.DEFAULT_EXTRA_FRAMES;
         this.render();
     }
     static DEFAULT_EXTRA_FRAMES = 30;
@@ -374,8 +378,8 @@ export default class DiceRenderer extends Component {
                 const a = dice.body.angularVelocity;
                 const v = dice.body.velocity;
                 if (
-                    Math.abs(a.length()) < DiceRenderer.Threshold &&
-                    Math.abs(v.length()) < DiceRenderer.Threshold
+                    Math.abs(a.length()) < DiceRendererClass.Threshold &&
+                    Math.abs(v.length()) < DiceRendererClass.Threshold
                 ) {
                     if (this.iterations - dice.iterations > 5) {
                         dice.stopped = true;
@@ -397,7 +401,7 @@ export default class DiceRenderer extends Component {
         }
         return res;
     }
-    extraFrames = DiceRenderer.DEFAULT_EXTRA_FRAMES;
+    extraFrames = DiceRendererClass.DEFAULT_EXTRA_FRAMES;
     unrender() {
         this.container.style.opacity = `0`;
         cancelAnimationFrame(this.animation);
@@ -492,7 +496,7 @@ export default class DiceRenderer extends Component {
         });
     }
 }
-
+export const DiceRenderer = new DiceRendererClass();
 class LocalWorld {
     add(...dice: DiceShape[]) {
         dice.forEach((die) => {

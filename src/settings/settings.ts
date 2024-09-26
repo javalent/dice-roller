@@ -22,6 +22,7 @@ import { FolderInputSuggest } from "@javalent/utilities";
 import { Icons } from "src/utils/icons";
 import { Lexer } from "src/lexer/lexer";
 import { ButtonPosition } from "./settings.types";
+import { DiceRenderer } from "src/renderer/renderer";
 
 declare var require: (id: "get-fonts") => { getFonts: () => Promise<string[]> };
 
@@ -555,7 +556,7 @@ export default class SettingTab extends PluginSettingTab {
                 t.onChange(async (v) => {
                     if ((v && Number(v) < 0) || isNaN(Number(v))) return;
                     this.plugin.data.renderTime = Number(v);
-                    this.plugin.renderer.setData(this.plugin.getRendererData());
+                    DiceRenderer.setData(this.plugin.getRendererData());
                     await this.plugin.saveSettings();
                 });
             })
@@ -579,7 +580,7 @@ export default class SettingTab extends PluginSettingTab {
                 t.setValue(this.plugin.data.colorfulDice);
                 t.onChange(async (v) => {
                     this.plugin.data.colorfulDice = v;
-                    this.plugin.renderer.setData(this.plugin.getRendererData());
+                    DiceRenderer.setData(this.plugin.getRendererData());
                     await this.plugin.saveSettings();
                 });
             });
@@ -591,9 +592,7 @@ export default class SettingTab extends PluginSettingTab {
                     .setValue(this.plugin.data.scaler)
                     .onChange((v) => {
                         this.plugin.data.scaler = v;
-                        this.plugin.renderer.setData(
-                            this.plugin.getRendererData()
-                        );
+                        DiceRenderer.setData(this.plugin.getRendererData());
                         this.plugin.saveSettings();
                     });
             });
@@ -604,7 +603,7 @@ export default class SettingTab extends PluginSettingTab {
                 const set = async () => {
                     this.plugin.data.textFont = t.getValue();
                     await this.plugin.saveSettings();
-                    this.plugin.renderer.setData(this.plugin.getRendererData());
+                    DiceRenderer.setData(this.plugin.getRendererData());
                 };
                 const folderModal = new FontSuggestionModal(
                     this.app,
@@ -635,7 +634,7 @@ export default class SettingTab extends PluginSettingTab {
                     let color = (target as HTMLInputElement).value;
 
                     this.plugin.data.diceColor = color;
-                    this.plugin.renderer.setData(this.plugin.getRendererData());
+                    DiceRenderer.setData(this.plugin.getRendererData());
 
                     await this.plugin.saveSettings();
                 };
@@ -658,7 +657,7 @@ export default class SettingTab extends PluginSettingTab {
 
                     if (!color) return;
                     this.plugin.data.textColor = color;
-                    this.plugin.renderer.setData(this.plugin.getRendererData());
+                    DiceRenderer.setData(this.plugin.getRendererData());
                     await this.plugin.saveSettings();
                 };
             }
