@@ -3,7 +3,7 @@
 import * as moo from "moo";
 import { Err, Ok, type Result } from "@sniptt/monads";
 import { DataviewManager } from "src/api/api.dataview";
-import type { Conditional } from "src/roller";
+import type { Conditional } from "src/rollers";
 
 export const TAG_REGEX =
     /(?:\d+[Dd])?#(?:[\p{Letter}\p{Emoji_Presentation}\w/-]+)(?:\|(?:[+-]))?(?:\|(?:[^+-]+))?/u;

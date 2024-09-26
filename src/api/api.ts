@@ -1,4 +1,4 @@
-import { ArrayRoller, type BasicRoller } from "../roller/roller";
+import { ArrayRoller, type BasicRoller } from "../rollers/roller";
 import {
     ButtonPosition,
     type DiceRollerSettings
@@ -16,7 +16,7 @@ import {
     DataViewRoller,
     TagRoller,
     LineRoller
-} from "../roller";
+} from "../rollers";
 import { DataviewManager } from "./api.dataview";
 import { None, Some, type Option } from "@sniptt/monads";
 

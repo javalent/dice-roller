@@ -1,4 +1,4 @@
-import type { StackRoller } from "src/roller";
+import type { StackRoller } from "src/rollers";
 import type { DiceRollerSettings } from "src/settings/settings.types";
 
 //expose dataview plugin for tags

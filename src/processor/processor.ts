@@ -8,9 +8,9 @@ import {
     editorLivePreviewField,
     type MarkdownPostProcessorContext
 } from "obsidian";
-import type { BasicRoller } from "../roller/roller";
+import type { BasicRoller } from "../rollers/roller";
 import type DiceRollerPlugin from "src/main";
-import { StackRoller } from "src/roller";
+import { StackRoller } from "src/rollers";
 import { isTemplateFolder } from "src/utils/util";
 import type { DiceRollerSettings } from "src/settings/settings.types";
 import { API } from "src/api/api";
