@@ -16,7 +16,8 @@ import DiceGeometry, {
     GenesysChallengeDiceGeometry,
     GenesysDifficultyDiceGeometry,
     GenesysProficiencyDiceGeometry,
-    GenesysSetbackDiceGeometry
+    GenesysSetbackDiceGeometry,
+    StuntDiceGeometry
 } from "./geometries";
 
 import {
@@ -55,6 +56,7 @@ import {
     WebGLRenderer
 } from "three";
 import { ResourceTracker } from "./resource";
+import { RenderTypes, type RenderableDice } from "src/rollers/dice/renderable";
 
 export type RendererData = {
     diceColor: string;
@@ -658,10 +660,13 @@ class DiceFactory extends Component {
         for (const dice of Object.values(this.dice))
             this.disposeChildren(dice.geometry.children);
     }
-    getDiceForRoller(roller: DiceRoller, vector: { x: number; y: number }) {
+    getDiceForRoller(
+        roller: RenderableDice<any>,
+        vector: { x: number; y: number }
+    ) {
         const dice = [];
-        switch (roller.faces.max) {
-            case 4: {
+        switch (roller.getType()) {
+            case RenderTypes.D4: {
                 dice.push(
                     new D4Dice(
                         this.width,
@@ -672,158 +677,85 @@ class DiceFactory extends Component {
                 );
                 break;
             }
-            case 1:
-            case 6: {
+            case RenderTypes.FUDGE: {
                 dice.push(
-                    new D6Dice(
-                        this.width,
-                        this.height,
-                        roller.fudge ? this.clone("fudge") : this.clone("d6"),
-                        vector
-                    )
-                );
-                break;
-            }
-            case 8: {
-                dice.push(
-                    new D8Dice(
-                        this.width,
-                        this.height,
-                        this.clone("d8"),
-                        vector
-                    )
-                );
-                break;
-            }
-            case 10: {
-                dice.push(
-                    new D10Dice(
-                        this.width,
-                        this.height,
-                        this.clone("d10"),
-                        vector
-                    )
-                );
-                break;
-            }
-            case 12: {
-                dice.push(
-                    new D12Dice(
-                        this.width,
-                        this.height,
-                        this.clone("d12"),
-                        vector
-                    )
-                );
-                break;
-            }
-            case 20: {
-                dice.push(
-                    new D20Dice(
-                        this.width,
-                        this.height,
-                        this.clone("d20"),
-                        vector
-                    )
-                );
-                break;
-            }
-            case 100: {
-                dice.push(
-                    new D10Dice(
-                        this.width,
-                        this.height,
-                        this.clone("d100"),
-                        vector,
-                        true
-                    ),
-                    new D10Dice(
-                        this.width,
-                        this.height,
-                        this.clone("d10"),
-                        vector,
-                        true
-                    )
-                );
-                break;
-            }
-        }
-        return dice;
-    }
-    cloneDice(dice: DiceShape, vector: { x: number; y: number }): DiceShape[] {
-        switch (dice.sides) {
-            case 4: {
-                return [
-                    new D4Dice(
-                        this.width,
-                        this.height,
-                        this.clone("d4"),
-                        vector
-                    )
-                ];
-            }
-            case 1: {
-                return [
                     new D6Dice(
                         this.width,
                         this.height,
                         this.clone("fudge"),
                         vector
                     )
-                ];
+                );
+                break;
             }
-            case 6: {
-                return [
+            case RenderTypes.STUNT: {
+                dice.push(
+                    new D6Dice(
+                        this.width,
+                        this.height,
+                        this.clone("stunt"),
+                        vector
+                    )
+                );
+                break;
+            }
+            case RenderTypes.D6: {
+                dice.push(
                     new D6Dice(
                         this.width,
                         this.height,
                         this.clone("d6"),
                         vector
                     )
-                ];
+                );
+                break;
             }
-            case 8: {
-                return [
+            case RenderTypes.D8: {
+                dice.push(
                     new D8Dice(
                         this.width,
                         this.height,
                         this.clone("d8"),
                         vector
                     )
-                ];
+                );
+                break;
             }
-            case 10: {
-                return [
+            case RenderTypes.D10: {
+                dice.push(
                     new D10Dice(
                         this.width,
                         this.height,
                         this.clone("d10"),
                         vector
                     )
-                ];
+                );
+                break;
             }
-            case 12: {
-                return [
+            case RenderTypes.D12: {
+                dice.push(
                     new D12Dice(
                         this.width,
                         this.height,
                         this.clone("d12"),
                         vector
                     )
-                ];
+                );
+                break;
             }
-            case 20: {
-                return [
+            case RenderTypes.D20: {
+                dice.push(
                     new D20Dice(
                         this.width,
                         this.height,
                         this.clone("d20"),
                         vector
                     )
-                ];
+                );
+                break;
             }
-            case 100: {
-                return [
+            case RenderTypes.D100: {
+                dice.push(
                     new D10Dice(
                         this.width,
                         this.height,
@@ -838,10 +770,16 @@ class DiceFactory extends Component {
                         vector,
                         true
                     )
-                ];
+                );
+                break;
+            }
+            case RenderTypes.NONE: {
+                break;
             }
         }
+        return dice;
     }
+
     getDice(stack: StackRoller, vector: { x: number; y: number }) {
         const map: Map<DiceRoller, DiceShape[]> = new Map();
 
@@ -901,6 +839,12 @@ class DiceFactory extends Component {
             this.options.scaler
         ).create();
         this.dice.fudge = new FudgeDiceGeometry(
+            this.width,
+            this.height,
+            this.colors,
+            this.options.scaler
+        ).create();
+        this.dice.stunt = new StuntDiceGeometry(
             this.width,
             this.height,
             this.colors,

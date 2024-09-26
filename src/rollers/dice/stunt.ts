@@ -1,40 +1,55 @@
 import type { LexicalToken } from "src/lexer/lexer";
 import { DiceRoller } from "./dice";
+import { RenderTypes } from "./renderable";
 
-export class StuntRoller extends DiceRoller {
-    constructor(public dice: string, lexeme?: LexicalToken) {
-        super(`3d6`, lexeme);
+class StuntDice extends DiceRoller {
+    override getType() {
+        return RenderTypes.STUNT;
     }
-    get doubles() {
-        return (
-            new Set(
-                [...this.results].map(([, { usable, value }]) =>
-                    usable ? value : 0
-                )
-            ).size < 3
-        );
+    override canRender() {
+        return true;
     }
-    get result() {
-        if (this.static) {
-            return Number(this.dice);
-        }
-        const results = [...this.results].map(([, { usable, value }]) =>
-            usable ? value : 0
-        );
-        return results.reduce((a, b) => a + b, 0);
-    }
-    get display() {
-        let str: string[] = [];
-        for (let result of this.results) {
-            if (result[0] == 0 && this.doubles) {
-                str.push(`${result[1].value}S`);
-                continue;
-            }
-            str.push(`${result[1].value}`);
-        }
-        return `[${str.join(", ")}]`;
+    constructor() {
+        super(`1d6`);
     }
     allowAverage(): boolean {
         return false;
+    }
+}
+
+export class StuntRoller extends DiceRoller {
+    pair = new DiceRoller(`2d6`);
+    stunt = new StuntDice();
+    constructor(public dice: string, lexeme?: LexicalToken) {
+        super(dice, lexeme);
+    }
+    async roll() {
+        await Promise.all([
+            new Promise<void>(async (resolve) => {
+                this.pair.shouldRender = this.shouldRender;
+                await this.pair.roll();
+                resolve();
+            }),
+            new Promise<void>(async (resolve) => {
+                this.stunt.shouldRender = this.shouldRender;
+                await this.stunt.roll();
+                resolve();
+            })
+        ]);
+    }
+
+    get doubles() {
+        return new Set([...this.pair.resultArray, this.stunt.result]).size < 3;
+    }
+    get result() {
+        return this.pair.result + this.stunt.result;
+    }
+    get display() {
+        let str: string[] = [
+            this.pair.display,
+            `${this.stunt.display}${this.doubles ? "S" : ""}`
+        ];
+
+        return `${str.join(", ")}`;
     }
 }

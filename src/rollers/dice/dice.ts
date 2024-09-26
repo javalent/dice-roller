@@ -5,6 +5,7 @@ import { _insertIntoMap } from "src/utils/util";
 import { DiceRenderer } from "src/renderer/renderer";
 import { DiceShape } from "src/renderer/shapes";
 import { BasicStackRoller } from "./stack";
+import type { RenderableDice, RenderTypes } from "./renderable";
 
 export interface Conditional {
     operator: string;
@@ -29,7 +30,11 @@ interface Modifier {
 
 type ModifierType = "sort" | "kh" | "kl" | "!" | "!!" | "r" | "u";
 
-export class DiceRoller {
+export class DiceRoller implements RenderableDice<number> {
+    getType() {
+        return `${this.faces.max}` as RenderTypes;
+    }
+
     constructor(
         dice: string | number,
         public lexeme: Partial<LexicalToken> = {
@@ -74,9 +79,6 @@ export class DiceRoller {
                 { length: max - min },
                 (_, i) => i + min
             );
-        } else if (maxStr === "F") {
-            this.possibilities = [-1, 0, 1];
-            this.fudge = true;
         } else {
             if (maxStr === "%") {
                 max = 100;
@@ -89,8 +91,11 @@ export class DiceRoller {
             if (Number(max) < Number(min)) {
                 [max, min] = [min, max];
             }
+            if (isNaN(max)) {
+                max = 1;
+            }
 
-            this.possibilities = [...Array(Number(max)).keys()].map(
+            this.possibilities = [...Array(Number(max ?? 1)).keys()].map(
                 (k) => k + min
             );
         }
@@ -118,6 +123,7 @@ export class DiceRoller {
         }
         return shapes;
     }
+
     resultArray: number[];
     modifiersAllowed: boolean = true;
     static: boolean = false;
@@ -366,6 +372,7 @@ export class DiceRoller {
         let value: number;
         if (this.shouldRender && this.canRender()) {
             const temp = shapes ?? DiceRenderer.getDiceForRoller(this) ?? [];
+
             await DiceRenderer.addDice(temp);
             value = this.#resolveShapeValue(temp);
         } else {
@@ -460,14 +467,14 @@ export class DiceRoller {
         if (this.conditions?.length) this.applyConditions();
         return [...results.values()];
     }
-    async roll(): Promise<number[]> {
+    async roll(): Promise<void> {
         this.results = new Map();
         this.shapes = new Map();
         const results = await this.#roll();
+
         this.setResults(results);
         await this.applyModifiers();
         if (this.conditions?.length) this.applyConditions();
-        return [...results.values()];
     }
     async #roll() {
         const results = new Map();

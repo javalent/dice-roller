@@ -1,7 +1,14 @@
 import type { LexicalToken } from "src/lexer/lexer";
 import { DiceRoller } from "./dice";
+import { RenderTypes } from "./renderable";
 
 export class PercentRoller extends DiceRoller {
+    override getType() {
+        return RenderTypes.NONE;
+    }
+    override canRender() {
+        return false;
+    }
     stack: DiceRoller[][] = [];
     constructor(public dice: string, lexeme?: LexicalToken) {
         super(dice, lexeme);
@@ -36,12 +43,6 @@ export class PercentRoller extends DiceRoller {
     async roll() {
         if (!this.stack || !this.stack.length) return super.roll();
         this.stack.forEach((stack) => stack.map((dice) => dice.roll()));
-
-        return [
-            ...this.stack
-                .map((stack) => stack.map((dice) => dice.result))
-                .flat()
-        ];
     }
     allowAverage(): boolean {
         return false;

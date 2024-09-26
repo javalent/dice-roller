@@ -741,34 +741,14 @@ class D6DiceGeometry extends DiceGeometry {
         super(w, h, options, scaler);
     }
 }
-class FudgeDiceGeometry extends DiceGeometry {
-    mass = 300;
-    tab = 0.1;
-    af = Math.PI / 4;
-    chamfer = 0.96;
-    vertices = [
-        [-1, -1, -1],
-        [1, -1, -1],
-        [1, 1, -1],
-        [-1, 1, -1],
-        [-1, -1, 1],
-        [1, -1, 1],
-        [1, 1, 1],
-        [-1, 1, 1]
-    ];
-    faces = [
-        [0, 3, 2, 1, 1],
-        [1, 2, 6, 5, 2],
-        [0, 1, 5, 4, 3],
-        [3, 7, 6, 2, 4],
-        [0, 4, 7, 3, 5],
-        [4, 5, 6, 7, 6]
-    ];
-    scaleFactor = 0.9;
-    sides = 6;
-    margin = 1.0;
+class FudgeDiceGeometry extends D6DiceGeometry {
     labels = ["", "", "+", "-", " ", "+", "-", " "];
     values = [null, 1, -1, 0, 1, -1, 0];
+}
+class StuntDiceGeometry extends D6DiceGeometry {
+    get diceColor() {
+        return "red";
+    }
 }
 class D4DiceGeometry extends DiceGeometry {
     mass = 300;
@@ -1106,7 +1086,7 @@ export {
     D8DiceGeometry,
     D6DiceGeometry,
     D4DiceGeometry,
-    //FudgeFate
-    FudgeDiceGeometry
+    FudgeDiceGeometry,
+    StuntDiceGeometry
     //Genesys
 };

@@ -11,6 +11,7 @@ import { Roller, BasicRoller } from "../roller";
 import { DiceRoller } from "./dice";
 import { PercentRoller } from "./percentage";
 import { StuntRoller } from "./stunt";
+import { FudgeRoller } from "./fudge";
 
 export class BasicStackRoller extends Roller<number> {
     constructor(
@@ -204,6 +205,16 @@ export class BasicStackRoller extends Roller<number> {
                     }
                     if (!this.dice[index]) {
                         this.dice[index] = new DiceRoller(dice.value, dice);
+                    }
+
+                    this.stack.push(this.dice[index]);
+                    this.stackCopy.push(this.dice[index]);
+                    index++;
+                    break;
+                }
+                case "fudge": {
+                    if (!this.dice[index]) {
+                        this.dice[index] = new FudgeRoller(dice.value, dice);
                     }
 
                     this.stack.push(this.dice[index]);
@@ -617,6 +628,14 @@ export class StackRoller extends BasicRoller<number> {
                     index++;
                     break;
                 }
+
+                case "fudge": {
+                    if (!this.dice[index]) {
+                        this.dice[index] = new FudgeRoller(dice.value, dice);
+                    }
+                    index++;
+                    break;
+                }
                 case "stunt": {
                     if (!this.dice[index]) {
                         this.dice[index] = new StuntRoller(dice.value, dice);
@@ -715,6 +734,7 @@ export class StackRoller extends BasicRoller<number> {
                     break;
                 }
                 case "stunt":
+                case "fudge":
                 case "%":
                 case "dice": {
                     this.stack.push(this.dice[index]);
@@ -733,7 +753,7 @@ export class StackRoller extends BasicRoller<number> {
         this.max = this.maxStack.pop();
         if (final instanceof StuntRoller) {
             if (final.doubles) {
-                this.stunted = ` - ${final.results.get(0).value} Stunt Points`;
+                this.stunted = ` - ${final.stunt.result} Stunt Points`;
             }
         }
         this.result = final.result;
