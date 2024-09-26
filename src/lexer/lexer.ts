@@ -166,6 +166,15 @@ class LexerClass {
         u: /u/u,
         stunt: /1[Dd]S/u,
         "%": /\d+[Dd]\d+%/u,
+        fudge: {
+            match: /(?:\d*[Dd])?[Dd]?F/u,
+            value: (match) => {
+                const { roll = this.defaultRoll } = match.match(
+                    /(?:(?<roll>\d*)[Dd])?F/
+                ).groups;
+                return `${roll}dF`;
+            }
+        },
         dice: [
             {
                 match: OMITTED_REGEX,
@@ -174,7 +183,7 @@ class LexerClass {
                         roll = this.defaultRoll,
                         faces = this.defaultFace
                     } = match.match(
-                        /(?<roll>\d+)?[Dd](?<faces>%|F|-?\d+|\[\d+(?:[ \t]*[,-][ \t]*\d+)+\])?/
+                        /(?<roll>\d+)?[Dd](?<faces>%|-?\d+|\[\d+(?:[ \t]*[,-][ \t]*\d+)+\])?/
                     ).groups;
                     return `${roll}d${faces}`;
                 }
