@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.2.1](https://github.com/javalent/dice-roller/compare/11.2.0...11.2.1) (2024-09-26)
+
+
+### Bug Fixes
+
+* Fixes issue where sometimes table lookup rollers wouldn't resolve ([d8df63d](https://github.com/javalent/dice-roller/commit/d8df63d27df6a6489436a40b6170e7c0f76569a6))
+
 ## [11.2.0](https://github.com/javalent/dice-roller/compare/11.1.0...11.2.0) (2024-09-25)
 
 
