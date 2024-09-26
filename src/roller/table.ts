@@ -10,7 +10,7 @@ import {
 
 import { TABLE_REGEX } from "src/utils/constants";
 import { StackRoller } from ".";
-import { GenericFileRoller } from "./roller";
+import { GenericFileRoller, type ComponentLike } from "./roller";
 import { API } from "src/api/api";
 import type { DiceRollerSettings } from "src/settings/settings.types";
 import type { LexicalToken } from "src/lexer/lexer";
@@ -30,6 +30,11 @@ export class TableRoller extends GenericFileRoller<string> {
     lookupRanges: [range: [min: number, max: number], option: string][];
     combinedTooltip: string = "";
     prettyTooltip: string = "";
+    #components: ComponentLike[] = [];
+    override addContexts(...components: ComponentLike[]): void {
+        this.#components = components;
+        super.addContexts(...components);
+    }
     constructor(
         data: DiceRollerSettings,
         original: string,
@@ -159,6 +164,7 @@ export class TableRoller extends GenericFileRoller<string> {
                     continue;
                 }
                 const subRoller = maybeRoller.unwrap();
+                subRoller.addContexts(...this.#components);
                 // Roll it
                 await subRoller.roll();
                 // Get sub result
@@ -209,6 +215,7 @@ export class TableRoller extends GenericFileRoller<string> {
                         return "ERROR";
                     }
                     const rollsRoller = roller as StackRoller;
+                    rollsRoller.addContexts(...this.#components);
                     await rollsRoller.roll();
                     this.rolls = rollsRoller.result;
                     if (!rollsRoller.isStatic) {
@@ -353,10 +360,9 @@ export class TableRoller extends GenericFileRoller<string> {
                 );
                 if (maybeRoller.isSome()) {
                     const roller = maybeRoller.unwrap();
+                    roller.addContexts(...this.#components);
                     if (roller instanceof StackRoller) {
                         this.lookupRoller = roller;
-                        // TODO: useless roll I think
-                        // let result = await this.lookupRoller.roll();
 
                         this.lookupRanges = table.rows.map((row) => {
                             const [range, option] = row

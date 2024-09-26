@@ -175,7 +175,6 @@ class APIInstance {
         }
         if (content.includes("|lookup=")) {
             [, lookup] = content.match(/\|lookup=(.+?)(?:\||$)/) ?? [];
-            console.log("🚀 ~ file: api.ts:178 ~ lookup:", lookup);
         }
 
         content = decode(

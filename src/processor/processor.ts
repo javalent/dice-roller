@@ -87,10 +87,7 @@ export default class DiceProcessor extends Component {
                     continue;
 
                 //build result map;
-                const maybeRoller = await API.getRoller(
-                    content,
-                    ctx.sourcePath
-                );
+                const maybeRoller = API.getRoller(content, ctx.sourcePath);
                 if (maybeRoller.isNone()) {
                     return;
                 }
@@ -147,22 +144,19 @@ export default class DiceProcessor extends Component {
             }
             try {
                 //build result map;
-                const maybeRoller = await API.getRoller(
-                    content,
-                    ctx.sourcePath
-                );
+                const maybeRoller = API.getRoller(content, ctx.sourcePath);
                 if (maybeRoller.isNone()) {
                     return;
                 }
-                const roller = maybeRoller.unwrap();
                 /** Add the roller to the child context, so it can be unloaded with the context. */
-                roller.addContexts(ctx, this.plugin);
+                const roller = maybeRoller.unwrap();
 
                 roller.onLoad(async () => {
                     await roller.roll();
 
                     node.replaceWith(roller.containerEl);
                 });
+                roller.addContexts(ctx, this.plugin);
 
                 if (!file || !(file instanceof TFile)) continue;
 
