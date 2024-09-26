@@ -1,10 +1,9 @@
 import { Plugin, Notice, WorkspaceLeaf } from "obsidian";
 
-import { StackRoller } from "./rollers";
+import { StackRoller } from "./rollers/dice/stack";
 
 import SettingTab from "./settings/settings";
 
-import { BasicRoller } from "./rollers/roller";
 import DiceView, { VIEW_TYPE } from "./view/view";
 import { DiceRenderer, type RendererData } from "./renderer/renderer";
 import { Lexer } from "./lexer/lexer";

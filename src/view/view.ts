@@ -8,7 +8,7 @@ import {
     WorkspaceLeaf
 } from "obsidian";
 import type DiceRollerPlugin from "src/main";
-import { StackRoller } from "src/rollers";
+import { StackRoller } from "src/rollers/dice/stack";
 import { ExpectedValue } from "../types/api";
 import { API } from "../api/api";
 import { type DiceIcon, IconManager } from "./view.icons";

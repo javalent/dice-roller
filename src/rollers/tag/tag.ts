@@ -1,8 +1,8 @@
 import { App, Component, MarkdownRenderer, Notice } from "obsidian";
 import type { LexicalToken } from "src/lexer/lexer";
 import { TAG_REGEX, DATAVIEW_REGEX } from "src/utils/constants";
-import { BasicRoller, type ComponentLike } from "./roller";
-import { SectionRoller } from "./section";
+import { BasicRoller, type ComponentLike } from "../roller";
+import { SectionRoller } from "../section/section";
 import type { DiceRollerSettings } from "src/settings/settings.types";
 import { DataviewManager } from "src/api/api.dataview";
 
@@ -14,15 +14,6 @@ abstract class DataViewEnabledRoller extends BasicRoller<SectionRoller> {
 
     types: string;
     results: SectionRoller[];
-
-    #components: ComponentLike[] = [];
-    override addContexts(...components: ComponentLike[]): void {
-        this.#components = components;
-        super.addContexts(...components);
-    }
-    onunload(): void {
-        this.#components = [];
-    }
 
     async getReplacer() {
         if (this.isLink) {
@@ -139,7 +130,7 @@ abstract class DataViewEnabledRoller extends BasicRoller<SectionRoller> {
                     );
                     /* await roller.roll(); */
                     this.results.push(roller);
-                    roller.addContexts(...this.#components);
+                    roller.addContexts(...this.components);
                     resolve();
                 })
             );

@@ -9,16 +9,13 @@ import { decode } from "he";
 import { Lexer, type LexicalToken } from "../lexer/lexer";
 import type { App } from "obsidian";
 
-import {
-    StackRoller,
-    TableRoller,
-    SectionRoller,
-    DataViewRoller,
-    TagRoller,
-    LineRoller
-} from "../rollers";
 import { DataviewManager } from "./api.dataview";
 import { None, Some, type Option } from "@sniptt/monads";
+import { StackRoller } from "src/rollers/dice/stack";
+import { TableRoller } from "src/rollers/table/table";
+import { SectionRoller } from "src/rollers/section/section";
+import { DataViewRoller, TagRoller } from "src/rollers/tag/tag";
+import { LineRoller } from "src/rollers/line/line";
 
 export * from "../types/api";
 

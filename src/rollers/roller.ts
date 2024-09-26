@@ -45,7 +45,13 @@ export abstract class Roller<T> extends Component implements Events {
     }
     abstract roll(): Promise<T> | T;
 
+    components: ComponentLike[] = [];
+
+    onunload(): void {
+        this.components = [];
+    }
     addContexts(...components: ComponentLike[]) {
+        this.components = components;
         for (const component of components) {
             component.addChild(this);
         }
@@ -65,8 +71,7 @@ interface BareRoller<T> {
     trigger(name: "loaded"): void;
     on(name: "new-result", callback: () => void): EventRef;
     trigger(name: "new-result"): void;
-}
-abstract class BareRoller<T> extends Roller<T> {
+}abstract class BareRoller<T> extends Roller<T> {
     constructor(
         public data: DiceRollerSettings,
         public original = "",
@@ -277,7 +282,7 @@ export abstract class GenericEmbeddedRoller<T> extends GenericFileRoller<T> {
         source: string,
         public app: App,
         position = data.position,
-        public inline: boolean = true,
+        public inline: boolean = true
     ) {
         super(data, original, lexeme, source, app, position);
         if (this.data.displayAsEmbed) {

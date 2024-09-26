@@ -1,6 +1,7 @@
 import { Component, Events, debounce } from "obsidian";
 
-import { DiceRoller, StackRoller } from "src/rollers";
+import { StackRoller } from "src/rollers/dice/stack";
+import { DiceRoller } from "src/rollers/dice/dice";
 import DiceGeometry, {
     D100DiceGeometry,
     D10DiceGeometry,

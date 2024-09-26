@@ -10,7 +10,7 @@ import {
     setIcon
 } from "obsidian";
 import { SECTION_REGEX } from "src/utils/constants";
-import { GenericEmbeddedRoller } from "./roller";
+import { GenericEmbeddedRoller } from "../roller";
 import { Icons } from "src/utils/icons";
 
 type RollerCache = SectionCache | ListItemCache;

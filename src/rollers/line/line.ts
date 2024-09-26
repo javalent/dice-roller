@@ -6,7 +6,7 @@ import {
     type CachedMetadata
 } from "obsidian";
 import { SECTION_REGEX } from "src/utils/constants";
-import { GenericEmbeddedRoller } from "./roller";
+import { GenericEmbeddedRoller } from "../roller";
 import { Icons } from "src/utils/icons";
 
 export class LineRoller extends GenericEmbeddedRoller<string> {
