@@ -249,6 +249,12 @@ export class BasicStackRoller extends Roller<number> {
 }
 
 export class StackRoller extends BasicRoller<number> {
+    onunload(): void {
+        if (this.isRendering) {
+            DiceRenderer.unrender();
+        }
+        super.onunload();
+    }
     result: number;
     fixedText: string;
     displayFixedText: boolean = false;
