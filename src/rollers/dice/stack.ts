@@ -446,8 +446,6 @@ export class StackRoller extends BasicRoller<number> {
         this.displayFixedText = this.fixedText !== "";
         this.round = round;
         this.signed = signed;
-        this.loaded = true;
-        this.trigger("loaded");
     }
     operators: Record<string, (...args: number[]) => number> = {
         "+": (a: number, b: number): number => a + b,
@@ -477,10 +475,6 @@ export class StackRoller extends BasicRoller<number> {
         this.trigger("new-result");
         this.hasRunOnce = true;
         return this.result;
-    }
-    setSpinner() {
-        this.resultEl.empty();
-        setIcon(this.resultEl.createDiv("should-spin"), Icons.LOADING);
     }
     async renderDice() {
         this.isRendering = true;

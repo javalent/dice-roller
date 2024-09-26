@@ -32,7 +32,7 @@ type ModifierType = "sort" | "kh" | "kl" | "!" | "!!" | "r" | "u";
 
 export class DiceRoller implements RenderableDice<number> {
     getType() {
-        return `${this.faces.max}` as RenderTypes;
+        return `D${this.faces.max}` as RenderTypes;
     }
 
     constructor(
@@ -498,6 +498,7 @@ export class DiceRoller implements RenderableDice<number> {
 
         return results;
     }
+
     applyConditions() {
         for (const result of this.results.values()) {
             const negate = this.conditions.find(

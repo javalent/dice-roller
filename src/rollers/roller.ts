@@ -46,7 +46,11 @@ export abstract class Roller<T> extends Component implements Events {
     abstract roll(): Promise<T> | T;
 
     components: ComponentLike[] = [];
-
+    loaded: boolean = false;
+    onload(): void {
+        this.loaded = true;
+        this.trigger("loaded");
+    }
     onunload(): void {
         this.components = [];
     }
@@ -71,7 +75,8 @@ interface BareRoller<T> {
     trigger(name: "loaded"): void;
     on(name: "new-result", callback: () => void): EventRef;
     trigger(name: "new-result"): void;
-}abstract class BareRoller<T> extends Roller<T> {
+}
+abstract class BareRoller<T> extends Roller<T> {
     constructor(
         public data: DiceRollerSettings,
         public original = "",
@@ -159,6 +164,12 @@ export abstract class BasicRoller<T = any> extends BareRoller<T> {
     source: string;
     abstract getReplacer(): Promise<string>;
     save: boolean = false;
+
+    setSpinner() {
+        this.resultEl.empty();
+        setIcon(this.resultEl.createDiv("should-spin"), Icons.LOADING);
+    }
+
     abstract result: T;
     abstract roll(): Promise<T>;
 

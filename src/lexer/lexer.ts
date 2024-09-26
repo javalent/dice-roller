@@ -164,6 +164,10 @@ class LexerClass {
             value: this.clampInfinite
         },
         u: /u/u,
+        narrative: {
+            match: /^[GgYyBbRrPpSs]+$/u,
+            value: (match) => match.toLowerCase()
+        },
         stunt: /1[Dd]S/u,
         "%": /\d+[Dd]\d+%/u,
         fudge: {

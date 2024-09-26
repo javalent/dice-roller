@@ -27,7 +27,14 @@ import {
     D6Dice,
     D8Dice,
     D12Dice,
-    D20Dice
+    D20Dice,
+    D100Dice,
+    BoostDice,
+    ChallengeDice,
+    ProficiencyDice,
+    DifficultyDice,
+    AbilityDice,
+    SetbackDice
 } from "./shapes";
 
 import {
@@ -756,19 +763,83 @@ class DiceFactory extends Component {
             }
             case RenderTypes.D100: {
                 dice.push(
-                    new D10Dice(
+                    new D100Dice(
                         this.width,
                         this.height,
                         this.clone("d100"),
-                        vector,
-                        true
+                        vector
                     ),
                     new D10Dice(
                         this.width,
                         this.height,
                         this.clone("d10"),
-                        vector,
-                        true
+                        vector
+                    )
+                );
+                break;
+            }
+            case RenderTypes.BOOST: {
+                dice.push(
+                    new BoostDice(
+                        this.width,
+                        this.height,
+                        this.clone("boost"),
+                        vector
+                    )
+                );
+                break;
+            }
+            case RenderTypes.SETBACK:{
+                dice.push(
+                    new SetbackDice(
+                        this.width,
+                        this.height,
+                        this.clone("setback"),
+                        vector
+                    )
+                );
+                break;
+            }
+            case RenderTypes.ABILITY:{
+                dice.push(
+                    new AbilityDice(
+                        this.width,
+                        this.height,
+                        this.clone("ability"),
+                        vector
+                    )
+                );
+                break;
+            }
+            case RenderTypes.DIFFICULTY:{
+                dice.push(
+                    new DifficultyDice(
+                        this.width,
+                        this.height,
+                        this.clone("difficulty"),
+                        vector
+                    )
+                );
+                break;
+            }
+            case RenderTypes.PROFICIENCY:{
+                dice.push(
+                    new ProficiencyDice(
+                        this.width,
+                        this.height,
+                        this.clone("proficiency"),
+                        vector
+                    )
+                );
+                break;
+            }
+            case RenderTypes.CHALLENGE:{
+                dice.push(
+                    new ChallengeDice(
+                        this.width,
+                        this.height,
+                        this.clone("challenge"),
+                        vector
                     )
                 );
                 break;

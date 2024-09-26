@@ -16,17 +16,25 @@ export interface RenderableDice<T> {
 }
 
 export const RenderTypes = {
+    NONE: "none",
     /** Polyhedral */
-    D4: "4",
-    D6: "6",
-    D8: "8",
-    D10: "10",
-    D12: "12",
-    D20: "20",
-    D100: "100",
+    D4: "D4",
+    D6: "D6",
+    D8: "D8",
+    D10: "D10",
+    D12: "D12",
+    D20: "D20",
+    D100: "D100",
     /** Special */
     FUDGE: "fudge",
     STUNT: "stunt",
-    NONE: "none"
+
+    /** Genesys */
+    BOOST: "boost",
+    SETBACK: "setback",
+    ABILITY: "ability",
+    DIFFICULTY: "difficulty",
+    PROFICIENCY: "proficiency",
+    CHALLENGE: "challenge"
 } as const;
 export type RenderTypes = (typeof RenderTypes)[keyof typeof RenderTypes];
