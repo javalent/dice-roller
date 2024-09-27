@@ -69,7 +69,7 @@ export default class DiceRollerPlugin extends Plugin {
                     return;
                 }
                 await roller.roll();
-                if (!roller.dice.length) {
+                if (!roller.children.length) {
                     new Notice("Invalid formula.");
                     return;
                 }

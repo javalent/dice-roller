@@ -68,13 +68,20 @@ export class TableRoller extends GenericFileRoller<string> {
             .toLowerCase();
         this.header = header;
     }
-    get tooltip() {
+    getTooltip() {
         return this.prettyTooltip;
     }
     async getReplacer() {
         return this.result;
     }
     result: string;
+    getResultText(): string {
+        const result = [this.result];
+        if (this.data.displayResultsInline) {
+            result.unshift(this.inlineText);
+        }
+        return result.join("");
+    }
     async build() {
         this.resultEl.empty();
         const result = [this.result];
@@ -84,7 +91,7 @@ export class TableRoller extends GenericFileRoller<string> {
         const div = createSpan();
         MarkdownRenderer.render(
             this.app,
-            result.join(""),
+            this.getResultText(),
             div,
             this.source,
             new Component()
@@ -180,7 +187,7 @@ export class TableRoller extends GenericFileRoller<string> {
                 if (subRoller instanceof TableRoller) {
                     subTooltips.push(subRoller.combinedTooltip);
                 } else {
-                    const [top, bottom] = subRoller.tooltip.split("\n");
+                    const [top, bottom] = subRoller.getTooltip().split("\n");
                     subTooltips.push(top + " --> " + bottom);
                 }
             }
@@ -217,9 +224,7 @@ export class TableRoller extends GenericFileRoller<string> {
                     if (!rollsRoller.isStatic) {
                         formula = formula.replace(
                             this.rollsFormula,
-                            `${this.rollsFormula.trim()} --> ${
-                                rollsRoller.resultText
-                            } > `
+                            `${this.rollsFormula.trim()} --> ${rollsRoller.getDisplayText()} > `
                         );
                     }
                 }
@@ -246,7 +251,7 @@ export class TableRoller extends GenericFileRoller<string> {
                     subTooltip =
                         this.lookupRoller.original.trim() +
                         " --> " +
-                        `${this.lookupRoller.resultText}${
+                        `${this.lookupRoller.getDisplayText()}${
                             this.header ? " | " + this.header : ""
                         }`.trim();
                     selectedOption = option[1];

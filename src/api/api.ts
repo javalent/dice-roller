@@ -246,6 +246,7 @@ class APIInstance {
                         this.data,
                         content,
                         lexemes,
+                        this.app,
                         position
                     )
                 );

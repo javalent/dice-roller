@@ -15,6 +15,7 @@ import { type DiceIcon, IconManager } from "./view.icons";
 import { Icons } from "src/utils/icons";
 import { nanoid } from "nanoid";
 import DiceTray from "./ui/DiceTray.svelte";
+import type { RenderableRoller } from "src/rollers/roller";
 
 /* import { Details } from "@javalent/utilities"; */
 
@@ -60,15 +61,15 @@ export default class DiceView extends ItemView {
         this.registerEvent(
             this.plugin.app.workspace.on(
                 "dice-roller:new-result",
-                async (roller: StackRoller) => {
+                async (roller: RenderableRoller) => {
                     if (
                         this.plugin.data.addToView ||
                         roller.getSource() == VIEW_TYPE
                     ) {
                         await this.addResult({
-                            result: roller.result,
+                            result: roller.getResultText(),
                             original: roller.original,
-                            resultText: roller.resultText,
+                            resultText: roller.getTooltip(),
                             timestamp: new Date().valueOf(),
                             id: nanoid(12)
                         });
@@ -267,7 +268,7 @@ export default class DiceView extends ItemView {
             roller.iconEl.detach();
             roller.containerEl.onclick = null;
             roller.buildDiceTree();
-            if (!roller.dice.length) {
+            if (!roller.children.length) {
                 throw new Error("No dice.");
             }
             await roller.roll(this.plugin.data.renderer).catch((e) => {
@@ -339,7 +340,7 @@ export default class DiceView extends ItemView {
             .setIcon(Icons.COPY)
             .setTooltip("Copy Result")
             .onClick(async () => {
-                await navigator.clipboard.writeText(`${result.result}`);
+                await navigator.clipboard.writeText(`${result.resultText}`);
             });
         copy.extraSettingsEl.addClass("dice-content-copy");
         if (Platform.isMobile) {

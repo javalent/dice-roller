@@ -1,7 +1,10 @@
 import type { DiceShape } from "src/renderer/shapes";
-import { BasicRoller } from "../roller";
+import { BasicRoller, RenderableRoller } from "../roller";
 import { DiceRoller } from "./dice";
 import { RenderTypes, type RenderableDice } from "./renderable";
+import type { App } from "obsidian";
+import type { LexicalToken } from "src/lexer/lexer";
+import type { DiceRollerSettings } from "src/settings/settings.types";
 
 interface NarrativeResult {
     success: number; //negative => failure
@@ -334,14 +337,74 @@ class ForceRoller extends NarrativeRoller {
 }
 const NARRATIVE_FACES = ["g", "y", "b", "r", "p", "s", "w"] as const;
 type NarrativeFace = (typeof NARRATIVE_FACES)[number];
-export class NarrativeStackRoller extends BasicRoller<NarrativeResult> {
-    stack: NarrativeRoller[] = [];
-    hasRunOnce: boolean = false;
-    shouldRender: boolean = false;
-    isRendering: boolean = false;
+export class NarrativeStackRoller extends RenderableRoller<NarrativeResult> {
+    constructor(
+        public data: DiceRollerSettings,
+        public original: string,
+        public lexemes: LexicalToken[],
+        public app: App,
+        position = data.position
+    ) {
+        super(data, original, lexemes, position);
+    }
+    children: NarrativeRoller[] = [];
+    getTooltip() {
+        let map = {
+            success: 0,
+            failure: 0,
+            advantage: 0,
+            threat: 0,
+            triumph: 0,
+            despair: 0
+        };
+
+        for (const child of this.children) {
+            const die = child.toNarrativeResult();
+
+            if (die.success > 0) {
+                map.success += die.success;
+            } else {
+                map.failure += die.success;
+            }
+            if (die.advantage > 0) {
+                map.advantage += die.advantage;
+            } else {
+                map.threat += die.advantage;
+            }
+            map.triumph += die.triumph;
+            map.despair += die.despair;
+        }
+        return `**Totals**
+
+Successes: ${map.success}
+Failures: ${map.failure}
+Advantages: ${map.advantage}
+Threats: ${map.threat}
+Triumphs: ${map.triumph}
+Despairs: ${map.despair}`;
+    }
+    getResultText(): string {
+        const display = [];
+        if (this.result.success === 0) {
+            display.push(`Wash`);
+        } else if (this.result.success > 0) {
+            display.push(`${this.result.success} success`);
+        } else if (this.result.success < 0) {
+            display.push(`${Math.abs(this.result.success)} failure`);
+        }
+        if (this.result.advantage > 0) {
+            display.push(`${this.result.advantage} adv`);
+        } else if (this.result.advantage < 0) {
+            display.push(`${Math.abs(this.result.advantage)} threat`);
+        }
+        if (this.result.triumph > 0) {
+            display.push(`${this.result.triumph} triumph`);
+        } else if (this.result.despair > 0) {
+            display.push(`${Math.abs(this.result.despair)} despair`);
+        }
+        return display.join(", ");
+    }
     onload(): void {
-        super.onload();
-        console.log(this.lexemes);
         const map: Map<NarrativeFace, number> = new Map();
 
         for (const lexeme of this.lexemes) {
@@ -384,10 +447,9 @@ export class NarrativeStackRoller extends BasicRoller<NarrativeResult> {
                     break;
                 }
             }
-            this.stack.push(roller);
+            this.children.push(roller);
         }
-
-        console.log("🚀 ~ file: narrative.ts:72 ~ map:", this.stack);
+        super.onload();
     }
     getReplacer(): Promise<string> {
         throw new Error("Method not implemented.");
@@ -398,7 +460,7 @@ export class NarrativeStackRoller extends BasicRoller<NarrativeResult> {
         this.setTooltip();
         this.setSpinner();
         const promises = [];
-        for (const die of this.stack) {
+        for (const die of this.children) {
             promises.push(
                 new Promise<void>(async (resolve) => {
                     await die.render();
@@ -412,17 +474,35 @@ export class NarrativeStackRoller extends BasicRoller<NarrativeResult> {
         this.setTooltip();
     }
     async roll(render?: boolean): Promise<NarrativeResult> {
-        this.stack.forEach((dice) => (dice.shouldRender = false));
         if (render || (this.shouldRender && this.hasRunOnce)) {
             await this.renderDice();
         } else {
-            for (const dice of this.stack) {
-                await dice.roll();
-            }
+            return this.rollSync();
         }
         this.hasRunOnce = true;
+        this.calculate();
 
-        this.result = this.stack.reduce(
+        this.trigger("new-result");
+        this.app.workspace.trigger("dice-roller:new-result", this);
+
+        this.render();
+        return this.result;
+    }
+    rollSync() {
+        for (const dice of this.children) {
+            dice.rollSync();
+        }
+        this.hasRunOnce = true;
+        this.calculate();
+        this.trigger("new-result");
+        this.app.workspace.trigger("dice-roller:new-result", this);
+
+        this.render();
+        return this.result;
+    }
+
+    calculate() {
+        this.result = this.children.reduce(
             (a, b) => {
                 a.success += b.toNarrativeResult().success;
                 a.advantage += b.toNarrativeResult().advantage;
@@ -437,54 +517,13 @@ export class NarrativeStackRoller extends BasicRoller<NarrativeResult> {
                 despair: 0
             }
         );
-        console.log("🚀 ~ file: narrative.ts:259 ~ this.result:", this.result);
-
-        this.trigger("new-result");
-
-        this.render();
-        return this.result;
     }
 
     async build(): Promise<void> {
         this.resultEl.empty();
 
         this.resultEl.addClass("dice-roller-genesys");
-        if (this.result.success === 0) {
-            this.resultEl.createSpan({
-                text: `Wash`
-            });
-        } else if (this.result.success > 0) {
-            this.resultEl.createSpan({
-                text: `${this.result.success} success`
-            });
-        } else if (this.result.success < 0) {
-            this.resultEl.createSpan({
-                text: `${Math.abs(this.result.success)} failure`
-            });
-        }
-        if (this.result.advantage > 0) {
-            this.resultEl.createSpan({
-                text: `, ${this.result.advantage} adv`
-            });
-        } else if (this.result.advantage < 0) {
-            this.resultEl.createSpan({
-                text: `, ${Math.abs(this.result.advantage)} threat`
-            });
-        }
-        if (this.result.triumph > 0) {
-            this.resultEl.createSpan({
-                text: `, ${this.result.triumph} triumph`
-            });
-        } else if (this.result.despair > 0) {
-            this.resultEl.createSpan({
-                text: `, ${Math.abs(this.result.despair)} despair`
-            });
-        }
-        /* throw new Error("Method not implemented."); */
-    }
-    get tooltip(): string {
-        return `${Math.abs(this.result.despair)}`;
-        /* throw new Error("Method not implemented."); */
+        this.resultEl.setText(this.getResultText());
     }
     override async onClick(evt: MouseEvent) {
         evt.stopPropagation();

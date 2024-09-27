@@ -200,7 +200,7 @@ abstract class DataViewEnabledRoller extends BasicRoller<SectionRoller> {
             }
         });
     }
-    get tooltip() {
+    getTooltip() {
         return this.original;
     }
 }

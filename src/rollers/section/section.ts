@@ -44,7 +44,7 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
     content: string;
     levels: string[];
 
-    get tooltip() {
+    getTooltip() {
         return `${this.original}\n${this.path}`;
     }
     async build() {
