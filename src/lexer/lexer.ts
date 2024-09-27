@@ -165,8 +165,24 @@ class LexerClass {
         },
         u: /u/u,
         narrative: {
-            match: /^[GgYyBbRrPpSs]+$/u,
-            value: (match) => match.toLowerCase()
+            match: /^(?:\d*(?:[GgYyBbRrPpSsWw]|pro|a|boo|blk|k|sb|c|diff|f))(?: ?\d*(?:[GgYyBbRrPpSsWw]|pro|a|boo|blk|k|sb|c|diff|f))+$/u,
+            value: (match) => {
+                match = match
+                    .toLowerCase()
+                    .replace(/pro/g, "y")
+                    .replace(/a/g, "g")
+                    .replace(/boo/g, "b")
+                    .replace(/(blk|k|sb)/g, "s")
+                    .replace(/c/g, "r")
+                    .replace(/diff/g, "p")
+                    .replace(/f/g, "w")
+                    .replace(/ /g, "")
+                    .replace(/(\d+)(\w)/g, (_, num: string, char: string) =>
+                        char.repeat(Number(num))
+                    );
+
+                return match;
+            }
         },
         stunt: /1[Dd]S/u,
         "%": /\d+[Dd]\d+%/u,
