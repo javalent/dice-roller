@@ -905,6 +905,7 @@ export class GenesysProficiencyDiceGeometry extends GenesysD12DiceGeometry {
     labels = [
         "",
         "",
+        "", //Moved Blank to top as a 1 roll.
         "s", //Success
         "s", //Success
         "s\ns", //Success Success
@@ -916,7 +917,6 @@ export class GenesysProficiencyDiceGeometry extends GenesysD12DiceGeometry {
         "a\na", //Advantage Advantage
         "a\na", //Advantage Advantage
         "x", //Triumph
-        ""
     ];
     constructor(
         w: number,
@@ -933,18 +933,18 @@ export class GenesysChallengeDiceGeometry extends GenesysD12DiceGeometry {
     labels = [
         "",
         "",
-        "t\nt",
-        "t",
-        "t\nt",
-        "t",
-        "t\nf",
-        "f",
-        "t\nf",
-        "f",
-        "f\nf",
-        "y",
-        "f\nf",
-        ""
+        "", //Moved blank to roll of 1.
+        "f", //Fail
+        "f", //Fail
+        "f\nf", //Fail Fail
+        "f\nf", //Fail Fail
+        "t", //Threat
+        "t", //Threat
+        "t\nf", //Threat Fail
+        "t\nf", //Threat Fail
+        "t\nt", //Threat Threat
+        "t\nt", //Threat Threat
+        "y", //Despair
     ];
     constructor(
         w: number,
@@ -987,7 +987,18 @@ abstract class GenesysD8DiceGeometry extends GenesysDice {
 }
 
 export class GenesysAbilityDiceGeometry extends GenesysD8DiceGeometry {
-    labels = ["", "", "s", "a", "s\na", "s\ns", "a", "s", "a\na", ""];
+    labels = [
+        "", 
+        "", 
+        "", //Blank on 1
+        "s", //Success
+        "s", //Success
+        "s\ns", //Success Success 
+        "a", //Adv
+        "a", //Adv
+        "s\na", //Success Advantage
+        "a\na", //Adv Adv
+    ];
     constructor(
         w: number,
         h: number,
@@ -999,7 +1010,18 @@ export class GenesysAbilityDiceGeometry extends GenesysD8DiceGeometry {
     }
 }
 export class GenesysDifficultyDiceGeometry extends GenesysD8DiceGeometry {
-    labels = ["", "", "t", "f", "f\nt", "t", "", "t\nt", "f\nf", "t", ""];
+    labels = [
+        "", 
+        "", 
+        "", //Blank on 1
+        "f", //Fail
+        "f\nf", //Fail Fail
+        "t", //Threat
+        "t", //Threat
+        "t", //Threat
+        "t\nt", //Threat Threat
+        "f\nt", //Fail Threat
+    ];
     constructor(
         w: number,
         h: number,
@@ -1041,7 +1063,16 @@ class GenesysD6DiceGeometry extends GenesysDice {
 }
 
 export class GenesysBoostDiceGeometry extends GenesysD6DiceGeometry {
-    labels = ["", "", "", "", "s", "s  \n  a", "a  \n  a", "a", "", ""];
+    labels = [
+        "",
+        "",
+        "", //Blank on 1 
+        "", //Blank on 2 
+        "a\na", //Adv Adv
+        "a", //Adv
+        "s\na", //Success Adv
+        "s", //Success
+        ];
     constructor(
         w: number,
         h: number,
@@ -1053,7 +1084,16 @@ export class GenesysBoostDiceGeometry extends GenesysD6DiceGeometry {
     }
 }
 export class GenesysSetbackDiceGeometry extends GenesysD6DiceGeometry {
-    labels = ["", "", "", "t", "f", "", ""];
+    labels = [
+        "",
+        "",
+        "", //Blank on 1 
+        "", //Blank on 2 
+        "f", //Fail
+        "f", //Fail
+        "t", //Threat
+        "t", //Threat
+        ];
     constructor(
         w: number,
         h: number,
