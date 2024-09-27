@@ -309,6 +309,22 @@ export class ProficiencyDice extends DiceShape {
         this.create();
     }
 }
+export class ForceDice extends DiceShape {
+    sides = 12;
+    inertia = 8;
+    constructor(
+        public w: number,
+        public h: number,
+        public data: { geometry: Mesh; body: Body },
+        vector?: { x: number; y: number }
+    ) {
+        super(w, h, data);
+        if (vector) {
+            this.vector = this.generateVector(vector);
+        }
+        this.create();
+    }
+}
 export class ChallengeDice extends DiceShape {
     sides = 12;
     inertia = 8;

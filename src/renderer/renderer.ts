@@ -15,6 +15,7 @@ import DiceGeometry, {
     GenesysBoostDiceGeometry,
     GenesysChallengeDiceGeometry,
     GenesysDifficultyDiceGeometry,
+    GenesysForceDiceGeometry,
     GenesysProficiencyDiceGeometry,
     GenesysSetbackDiceGeometry,
     StuntDiceGeometry
@@ -34,7 +35,8 @@ import {
     ProficiencyDice,
     DifficultyDice,
     AbilityDice,
-    SetbackDice
+    SetbackDice,
+    ForceDice
 } from "./shapes";
 
 import {
@@ -822,6 +824,17 @@ class DiceFactory extends Component {
                 );
                 break;
             }
+            case RenderTypes.FORCE:{
+                dice.push(
+                    new ForceDice(
+                        this.width,
+                        this.height,
+                        this.clone("force"),
+                        vector
+                    )
+                );
+                break;
+            }
             case RenderTypes.PROFICIENCY:{
                 dice.push(
                     new ProficiencyDice(
@@ -946,6 +959,12 @@ class DiceFactory extends Component {
             this.options.scaler
         ).create();
         this.dice.proficiency = new GenesysProficiencyDiceGeometry(
+            this.width,
+            this.height,
+            this.colors,
+            this.options.scaler
+        ).create();
+        this.dice.force = new GenesysForceDiceGeometry(
             this.width,
             this.height,
             this.colors,

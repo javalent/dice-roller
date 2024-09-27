@@ -901,6 +901,33 @@ abstract class GenesysD12DiceGeometry extends GenesysDice {
     }
 }
 
+export class GenesysForceDiceGeometry extends GenesysD12DiceGeometry {
+    labels = [
+        "",
+        "",
+        "z", //Moved Blank to top as a 1 roll.
+        "z", //Success
+        "z", //Success
+        "z", //Success Success
+        "z", //Success Success
+        "z", //Advantage
+        "z\nz", //Success Advantage
+        "Z", //Success Advantage
+        "Z", //Success Advantage
+        "Z\nZ", //Advantage Advantage
+        "Z\nZ", //Advantage Advantage
+        "Z\nZ", //Advantage Advantage
+   ];
+    constructor(
+        w: number,
+        h: number,
+        options: Partial<DiceOptions> = DEFAULT_DICE_OPTIONS,
+        scaler: number
+    ) {
+        super(w, h, options, scaler);
+        this.setColor({ diceColor: "white", textColor: "#000000" });
+    }
+}
 export class GenesysProficiencyDiceGeometry extends GenesysD12DiceGeometry {
     labels = [
         "",

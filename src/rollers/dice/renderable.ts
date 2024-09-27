@@ -35,6 +35,7 @@ export const RenderTypes = {
     ABILITY: "ability",
     DIFFICULTY: "difficulty",
     PROFICIENCY: "proficiency",
-    CHALLENGE: "challenge"
+    CHALLENGE: "challenge",
+    FORCE: "force"
 } as const;
 export type RenderTypes = (typeof RenderTypes)[keyof typeof RenderTypes];
