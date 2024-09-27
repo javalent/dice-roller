@@ -6,7 +6,8 @@ import { RenderTypes, type RenderableDice } from "./renderable";
 interface NarrativeResult {
     success: number; //negative => failure
     advantage: number; //negative => threat
-    triumph: number; //negative => despair
+    triumph: number; //triumphs & despairs do not cancel, but count additonally for success/failure for the purpose of overall success.
+    despair: number; 
 }
 
 abstract class NarrativeRoller extends DiceRoller {
@@ -18,6 +19,28 @@ abstract class NarrativeRoller extends DiceRoller {
 }
 
 class BoostRoller extends NarrativeRoller {
+    toNarrativeResult(): NarrativeResult {
+        const narrativeResult: NarrativeResult = {
+            success: 0,
+            advantage: 0,
+            triumph: 0,
+            despair: 0
+        };
+        for (const result of this.resultArray) {
+            if (result === 6) narrativeResult.success += 1; //Success
+            if (result === 5) { //1 success 1 adv
+                narrativeResult.advantage += 1;
+                narrativeResult.success += 1;
+            }
+            if (result === 4) narrativeResult.advantage += 1; //1 Adv
+            if (result === 3) narrativeResult.advantage += 2; //2 Adv
+            if (result === 2) continue; //Blank
+            if (result === 1) continue; //Blank
+            if (result === 0) continue;
+        }
+
+        return narrativeResult;
+    }
     override getType(): RenderTypes {
         return RenderTypes.BOOST;
     }
@@ -29,6 +52,25 @@ class BoostRoller extends NarrativeRoller {
     }
 }
 class SetbackRoller extends NarrativeRoller {
+    toNarrativeResult(): NarrativeResult {
+        const narrativeResult: NarrativeResult = {
+            success: 0,
+            advantage: 0,
+            triumph: 0,
+            despair: 0
+        };
+        for (const result of this.resultArray) {
+            if (result === 6) narrativeResult.advantage -= 1; //1 Threat
+            if (result === 5) narrativeResult.advantage -= 1; //1 Threat
+            if (result === 4) narrativeResult.success -= 1; //1 Fail
+            if (result === 3) narrativeResult.success -= 1; //1 Fail
+            if (result === 2) continue; //Blank
+            if (result === 1) continue; //Blank
+            if (result === 0) continue;
+        }
+
+        return narrativeResult;
+    }
     override getType(): RenderTypes {
         return RenderTypes.SETBACK;
     }
@@ -40,6 +82,32 @@ class SetbackRoller extends NarrativeRoller {
     }
 }
 class AbilityRoller extends NarrativeRoller {
+    toNarrativeResult(): NarrativeResult {
+        const narrativeResult: NarrativeResult = {
+            success: 0,
+            advantage: 0,
+            triumph: 0,
+            despair: 0
+        };
+        for (const result of this.resultArray) {
+            if (result === 8) { //2 Adv
+                narrativeResult.advantage += 2;
+            }
+            if (result === 7) { //1 success 1 adv
+                narrativeResult.advantage += 1;
+                narrativeResult.success += 1;
+            }
+            if (result === 6) narrativeResult.advantage += 1; //1 Adv
+            if (result === 5) narrativeResult.advantage += 1; //1 Adv
+            if (result === 4) narrativeResult.success += 2; //2 Success
+            if (result === 3) narrativeResult.success += 1; //1 Success
+            if (result === 2) narrativeResult.success += 1; //1 Success
+            if (result === 1) continue; //Blank
+            if (result === 0) continue;
+        }
+
+        return narrativeResult;
+    }
     override getType(): RenderTypes {
         return RenderTypes.ABILITY;
     }
@@ -51,6 +119,30 @@ class AbilityRoller extends NarrativeRoller {
     }
 }
 class DifficultyRoller extends NarrativeRoller {
+    toNarrativeResult(): NarrativeResult {
+        const narrativeResult: NarrativeResult = {
+            success: 0,
+            advantage: 0,
+            triumph: 0,
+            despair: 0
+        };
+        for (const result of this.resultArray) {
+            if (result === 8) { //1 Threat 1 Fail
+                narrativeResult.advantage -= 1;
+                narrativeResult.success -= 1;
+            }
+            if (result === 7) narrativeResult.advantage -= 2; //2 Threat
+            if (result === 6) narrativeResult.advantage -= 1; //1 Threat
+            if (result === 5) narrativeResult.advantage -= 1; //1 Threat
+            if (result === 4) narrativeResult.advantage -= 1; //1 Threat
+            if (result === 3) narrativeResult.success -= 2; //2 Fail
+            if (result === 2) narrativeResult.success -= 1; //1 Fail
+            if (result === 1) continue; //Blank
+            if (result === 0) continue;
+        }
+
+        return narrativeResult;
+    }
     override getType(): RenderTypes {
         return RenderTypes.DIFFICULTY;
     }
@@ -66,34 +158,39 @@ class ProficiencyRoller extends NarrativeRoller {
         const narrativeResult: NarrativeResult = {
             success: 0,
             advantage: 0,
-            triumph: 0
+            triumph: 0,
+            despair: 0
         };
-        for (const result of this.resultArray) {
-            if (result === 12) continue;
-            if (result === 11) narrativeResult.triumph += 1;
-            if (result === 10) narrativeResult.advantage += 2;
-            if (result === 9) narrativeResult.advantage += 2;
-            if (result === 8) {
+        for (const result of this.resultArray) { //@Javalent are 0 results possible?
+            if (result === 12) { //1 Triumph
+                narrativeResult.triumph += 1;
+                narrativeResult.success += 1; //Triumph counts as success, but Triumph cannot be cancelled.
+            }
+            if (result === 11) narrativeResult.advantage += 2; //2 Adv
+            if (result === 10) narrativeResult.advantage += 2; //2 Adv
+            if (result === 9) { //1 Adv 1 Success
                 narrativeResult.advantage += 1;
                 narrativeResult.success += 1;
             }
-            if (result === 7) {
+            if (result === 8) { //1 Adv 1 Suc
                 narrativeResult.advantage += 1;
                 narrativeResult.success += 1;
             }
-            if (result === 6) {
+            if (result === 7) { //1 Adv 1 Suc
                 narrativeResult.advantage += 1;
                 narrativeResult.success += 1;
             }
-            if (result === 5) {
+            if (result === 6) { //1 Adv
                 narrativeResult.advantage += 1;
-                narrativeResult.success += 1;
             }
-            if (result === 4) narrativeResult.advantage += 1;
-            if (result === 3) narrativeResult.success += 2;
-            if (result === 2) narrativeResult.success += 2;
-            if (result === 1) narrativeResult.success += 1;
-            if (result === 0) narrativeResult.success += 1;
+            if (result === 5) { //2 Success
+                narrativeResult.success += 2;
+            }
+            if (result === 4) narrativeResult.success += 2; //2 Success
+            if (result === 3) narrativeResult.success += 1; //1 Success
+            if (result === 2) narrativeResult.success += 1; //1 Success
+            if (result === 1) continue; //Blank
+            if (result === 0) continue;
         }
 
         return narrativeResult;
@@ -113,34 +210,38 @@ class ChallengeRoller extends NarrativeRoller {
         const narrativeResult: NarrativeResult = {
             success: 0,
             advantage: 0,
-            triumph: 0
+            triumph: 0,
+            despair: 0
         };
-        for (const result of this.resultArray) {
-            if (result === 12) continue;
-            if (result === 11) narrativeResult.triumph -= 1;
-            if (result === 10) narrativeResult.advantage -= 2;
-            if (result === 9) narrativeResult.advantage -= 2;
-            if (result === 8) {
+        for (const result of this.resultArray) { //@Javalent are 0 results possible?
+            if (result === 12) { //1 Despair
+                narrativeResult.despair += 1;
+                narrativeResult.success -= 1; //Despair counts as fail, but does not cancel Despair.
+            }
+            if (result === 11) narrativeResult.advantage -= 2; //2 Threat
+            if (result === 10) narrativeResult.advantage -= 2; //2 Threat
+            if (result === 9) { //1 Threat 1 Fail
                 narrativeResult.advantage -= 1;
                 narrativeResult.success -= 1;
             }
-            if (result === 7) {
+            if (result === 8) { //1 Threat 1 Fail
                 narrativeResult.advantage -= 1;
                 narrativeResult.success -= 1;
             }
-            if (result === 6) {
+            if (result === 7) { //1 Threat
                 narrativeResult.advantage -= 1;
-                narrativeResult.success -= 1;
             }
-            if (result === 5) {
+            if (result === 6) { //1 Threat
                 narrativeResult.advantage -= 1;
-                narrativeResult.success -= 1;
             }
-            if (result === 4) narrativeResult.advantage -= 1;
-            if (result === 3) narrativeResult.success -= 2;
-            if (result === 2) narrativeResult.success -= 2;
-            if (result === 1) narrativeResult.success -= 1;
-            if (result === 0) narrativeResult.success -= 1;
+            if (result === 5) { //2 Fail
+                narrativeResult.success -= 2;
+            }
+            if (result === 4) narrativeResult.success -= 2; //2 Fail
+            if (result === 3) narrativeResult.success -= 1; //1 Fail
+            if (result === 2) narrativeResult.success -= 1; //1 Fail
+            if (result === 1) continue; //Blank
+            if (result === 0) continue;
         }
 
         return narrativeResult;
@@ -246,12 +347,14 @@ export class NarrativeStackRoller extends BasicRoller<NarrativeResult> {
                 a.success += b.toNarrativeResult().success;
                 a.advantage += b.toNarrativeResult().advantage;
                 a.triumph += b.toNarrativeResult().triumph;
+                a.despair += b.toNarrativeResult().despair;
                 return a;
             },
             {
                 success: 0,
                 advantage: 0,
-                triumph: 0
+                triumph: 0,
+                despair: 0
             }
         );
         console.log("🚀 ~ file: narrative.ts:259 ~ this.result:", this.result);
@@ -266,7 +369,11 @@ export class NarrativeStackRoller extends BasicRoller<NarrativeResult> {
         this.resultEl.empty();
 
         this.resultEl.addClass("dice-roller-genesys");
-        if (this.result.success > 0) {
+        if (this.result.success === 0) {
+            this.resultEl.createSpan({
+                text: `Wash`
+            });
+        } else if (this.result.success > 0) {
             this.resultEl.createSpan({
                 text: `${this.result.success} success`
             });
@@ -277,26 +384,26 @@ export class NarrativeStackRoller extends BasicRoller<NarrativeResult> {
         }
         if (this.result.advantage > 0) {
             this.resultEl.createSpan({
-                text: `${this.result.advantage} adv`
+                text: `, ${this.result.advantage} adv`
             });
         } else if (this.result.advantage < 0) {
             this.resultEl.createSpan({
-                text: `${Math.abs(this.result.advantage)} threat`
+                text: `, ${Math.abs(this.result.advantage)} threat`
             });
         }
         if (this.result.triumph > 0) {
             this.resultEl.createSpan({
-                text: `${this.result.triumph} triumph`
+                text: `, ${this.result.triumph} triumph`
             });
-        } else if (this.result.triumph < 0) {
+        } else if (this.result.despair > 0) {
             this.resultEl.createSpan({
-                text: `${Math.abs(this.result.triumph)} despair`
+                text: `, ${Math.abs(this.result.despair)} despair`
             });
         }
         /* throw new Error("Method not implemented."); */
     }
     get tooltip(): string {
-        return "abc";
+        return "abc" && `${Math.abs(this.result.despair)}`;
         /* throw new Error("Method not implemented."); */
     }
     override async onClick(evt: MouseEvent) {
