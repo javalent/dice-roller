@@ -1,6 +1,7 @@
 import { vi, test, expect } from "vitest";
 import { Lexer } from "../../src/lexer/lexer";
 import { toLexicalToken } from "../util";
+import { Ok } from "@sniptt/monads";
 
 /**
  * possible formats:
@@ -50,7 +51,7 @@ Lexer.setDefaultFace(100);
 Lexer.setDefaultRoll(1);
 
 test('Lexer should parse "d"', () => {
-    let actual = Lexer.parse("d").map(toLexicalToken);
+    let actual = Lexer.parse("d").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -62,7 +63,7 @@ test('Lexer should parse "d"', () => {
 });
 
 test('Lexer should parse "5d17"', () => {
-    let actual = Lexer.parse("5d17").map(toLexicalToken);
+    let actual = Lexer.parse("5d17").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -74,7 +75,7 @@ test('Lexer should parse "5d17"', () => {
 });
 
 test('Lexer should parse "5d%"', () => {
-    let actual = Lexer.parse("5d%").map(toLexicalToken);
+    let actual = Lexer.parse("5d%").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -86,7 +87,7 @@ test('Lexer should parse "5d%"', () => {
 });
 
 test('Lexer should parse "2d66%"', () => {
-    let actual = Lexer.parse("2d66%").map(toLexicalToken);
+    let actual = Lexer.parse("2d66%").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -98,7 +99,7 @@ test('Lexer should parse "2d66%"', () => {
 });
 
 test('Lexer should parse "1d6dh', () => {
-    let actual = Lexer.parse("1d6dh").map(toLexicalToken);
+    let actual = Lexer.parse("1d6dh").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -116,7 +117,7 @@ test('Lexer should parse "1d6dh', () => {
 });
 
 test('Lexer should parse "1d6dh3', () => {
-    let actual = Lexer.parse("1d6dh3").map(toLexicalToken);
+    let actual = Lexer.parse("1d6dh3").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -134,7 +135,7 @@ test('Lexer should parse "1d6dh3', () => {
 });
 
 test('Lexer should parse "1d6dl', () => {
-    let actual = Lexer.parse("1d6dl").map(toLexicalToken);
+    let actual = Lexer.parse("1d6dl").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -152,7 +153,7 @@ test('Lexer should parse "1d6dl', () => {
 });
 
 test('Lexer should parse "1d6dl3', () => {
-    let actual = Lexer.parse("1d6dl3").map(toLexicalToken);
+    let actual = Lexer.parse("1d6dl3").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -170,7 +171,7 @@ test('Lexer should parse "1d6dl3', () => {
 });
 
 test('Lexer should parse "1d6kl', () => {
-    let actual = Lexer.parse("1d6kl").map(toLexicalToken);
+    let actual = Lexer.parse("1d6kl").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -188,7 +189,7 @@ test('Lexer should parse "1d6kl', () => {
 });
 
 test('Lexer should parse "1d6kl3', () => {
-    let actual = Lexer.parse("1d6kl3").map(toLexicalToken);
+    let actual = Lexer.parse("1d6kl3").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -206,7 +207,7 @@ test('Lexer should parse "1d6kl3', () => {
 });
 
 test('Lexer should parse "1d6k', () => {
-    let actual = Lexer.parse("1d6k").map(toLexicalToken);
+    let actual = Lexer.parse("1d6k").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -224,7 +225,7 @@ test('Lexer should parse "1d6k', () => {
 });
 
 test('Lexer should parse "1d6k3', () => {
-    let actual = Lexer.parse("1d6k3").map(toLexicalToken);
+    let actual = Lexer.parse("1d6k3").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -242,7 +243,7 @@ test('Lexer should parse "1d6k3', () => {
 });
 
 test('Lexer should parse "1d6kh', () => {
-    let actual = Lexer.parse("1d6kh").map(toLexicalToken);
+    let actual = Lexer.parse("1d6kh").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -260,7 +261,7 @@ test('Lexer should parse "1d6kh', () => {
 });
 
 test('Lexer should parse "1d6kh3', () => {
-    let actual = Lexer.parse("1d6kh3").map(toLexicalToken);
+    let actual = Lexer.parse("1d6kh3").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -278,7 +279,7 @@ test('Lexer should parse "1d6kh3', () => {
 });
 
 test('Lexer should parse "5d6!!', () => {
-    let actual = Lexer.parse("5d6!!").map(toLexicalToken);
+    let actual = Lexer.parse("5d6!!").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -296,7 +297,7 @@ test('Lexer should parse "5d6!!', () => {
 });
 
 test('Lexer should parse "5d6!!3', () => {
-    let actual = Lexer.parse("5d6!!3").map(toLexicalToken);
+    let actual = Lexer.parse("5d6!!3").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -314,7 +315,7 @@ test('Lexer should parse "5d6!!3', () => {
 });
 
 test('Lexer should parse "5d6!!i', () => {
-    let actual = Lexer.parse("5d6!!i").map(toLexicalToken);
+    let actual = Lexer.parse("5d6!!i").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -332,7 +333,7 @@ test('Lexer should parse "5d6!!i', () => {
 });
 
 test('Lexer should parse "5d6!', () => {
-    let actual = Lexer.parse("5d6!").map(toLexicalToken);
+    let actual = Lexer.parse("5d6!").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -350,7 +351,7 @@ test('Lexer should parse "5d6!', () => {
 });
 
 test('Lexer should parse "5d6!3', () => {
-    let actual = Lexer.parse("5d6!3").map(toLexicalToken);
+    let actual = Lexer.parse("5d6!3").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -368,7 +369,7 @@ test('Lexer should parse "5d6!3', () => {
 });
 
 test('Lexer should parse "5d6!i', () => {
-    let actual = Lexer.parse("5d6!i").map(toLexicalToken);
+    let actual = Lexer.parse("5d6!i").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -386,7 +387,7 @@ test('Lexer should parse "5d6!i', () => {
 });
 
 test('Lexer should parse "5d6u', () => {
-    let actual = Lexer.parse("5d6u").map(toLexicalToken);
+    let actual = Lexer.parse("5d6u").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -404,7 +405,7 @@ test('Lexer should parse "5d6u', () => {
 });
 
 test('Lexer should parse "5d[3,7]', () => {
-    let actual = Lexer.parse("5d[3,7]").map(toLexicalToken);
+    let actual = Lexer.parse("5d[3,7]").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -416,7 +417,7 @@ test('Lexer should parse "5d[3,7]', () => {
 });
 
 test('Lexer should parse "5d[7,3]', () => {
-    let actual = Lexer.parse("5d[7,3]").map(toLexicalToken);
+    let actual = Lexer.parse("5d[7,3]").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -428,7 +429,7 @@ test('Lexer should parse "5d[7,3]', () => {
 });
 
 test('Lexer should parse "5d7r', () => {
-    let actual = Lexer.parse("5d7r").map(toLexicalToken);
+    let actual = Lexer.parse("5d7r").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -446,7 +447,7 @@ test('Lexer should parse "5d7r', () => {
 });
 
 test('Lexer should parse "5d7r4', () => {
-    let actual = Lexer.parse("5d7r4").map(toLexicalToken);
+    let actual = Lexer.parse("5d7r4").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -464,7 +465,7 @@ test('Lexer should parse "5d7r4', () => {
 });
 
 test('Lexer should parse "5d7ri', () => {
-    let actual = Lexer.parse("5d7ri").map(toLexicalToken);
+    let actual = Lexer.parse("5d7ri").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -482,7 +483,7 @@ test('Lexer should parse "5d7ri', () => {
 });
 
 test('Lexer should parse "5d7s', () => {
-    let actual = Lexer.parse("5d7s").map(toLexicalToken);
+    let actual = Lexer.parse("5d7s").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -500,7 +501,7 @@ test('Lexer should parse "5d7s', () => {
 });
 
 test('Lexer should parse "5d7sa', () => {
-    let actual = Lexer.parse("5d7sa").map(toLexicalToken);
+    let actual = Lexer.parse("5d7sa").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -518,7 +519,7 @@ test('Lexer should parse "5d7sa', () => {
 });
 
 test('Lexer should parse "5d7sd', () => {
-    let actual = Lexer.parse("5d7sd").map(toLexicalToken);
+    let actual = Lexer.parse("5d7sd").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -536,12 +537,12 @@ test('Lexer should parse "5d7sd', () => {
 });
 
 test('Lexer should parse "6dF', () => {
-    let actual = Lexer.parse("6dF").map(toLexicalToken);
+    let actual = Lexer.parse("6dF").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
             parenedDice: undefined,
-            type: "dice",
+            type: "fudge",
             value: "6dF"
         }
     ]);
@@ -550,7 +551,7 @@ test('Lexer should parse "6dF', () => {
 // SPECIAL DICE ===============================================================
 
 test('Lexer should parse "1dS', () => {
-    let actual = Lexer.parse("1dS").map(toLexicalToken);
+    let actual = Lexer.parse("1dS").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -562,13 +563,13 @@ test('Lexer should parse "1dS', () => {
 });
 
 test('Lexer should parse "5dS', () => {
-    expect(() => Lexer.parse("5dS")).toThrow();
+    expect(Lexer.parse("5dS").unwrapErr()).toBe("Could not parse");
 });
 
 // BLOCKS =====================================================================
 
 test('Lexer should parse "[[Note]]', () => {
-    let actual = Lexer.parse("[[Note]]").map(toLexicalToken);
+    let actual = Lexer.parse("[[Note]]").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -580,7 +581,7 @@ test('Lexer should parse "[[Note]]', () => {
 });
 
 test('Lexer should parse "4d[[Note]]', () => {
-    let actual = Lexer.parse("4d[[Note]]").map(toLexicalToken);
+    let actual = Lexer.parse("4d[[Note]]").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -592,7 +593,7 @@ test('Lexer should parse "4d[[Note]]', () => {
 });
 
 test('Lexer should parse "[[Note]]|line', () => {
-    let actual = Lexer.parse("[[Note]]|line").map(toLexicalToken);
+    let actual = Lexer.parse("[[Note]]|line").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -604,7 +605,7 @@ test('Lexer should parse "[[Note]]|line', () => {
 });
 
 test('Lexer should parse "[[Note]]|heading-2', () => {
-    let actual = Lexer.parse("[[Note]]|heading-2").map(toLexicalToken);
+    let actual = Lexer.parse("[[Note]]|heading-2").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -616,7 +617,7 @@ test('Lexer should parse "[[Note]]|heading-2', () => {
 });
 
 test('Lexer should parse "[[Note^block-id]]', () => {
-    let actual = Lexer.parse("[[Note^block-id]]").map(toLexicalToken);
+    let actual = Lexer.parse("[[Note^block-id]]").unwrap().map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -628,7 +629,9 @@ test('Lexer should parse "[[Note^block-id]]', () => {
 });
 
 test('Lexer should parse "1d4+1[[Note^block-id]]', () => {
-    let actual = Lexer.parse("1d4+1[[Note^block-id]]").map(toLexicalToken);
+    let actual = Lexer.parse("1d4+1[[Note^block-id]]")
+        .unwrap()
+        .map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -640,7 +643,9 @@ test('Lexer should parse "1d4+1[[Note^block-id]]', () => {
 });
 
 test('Lexer should parse "[[Note^block-id]]|Header 2', () => {
-    let actual = Lexer.parse("[[Note^block-id]]|Header 2").map(toLexicalToken);
+    let actual = Lexer.parse("[[Note^block-id]]|Header 2")
+        .unwrap()
+        .map(toLexicalToken);
     expect(actual).toEqual([
         {
             conditions: undefined,
@@ -654,25 +659,25 @@ test('Lexer should parse "[[Note^block-id]]|Header 2', () => {
 // FORMULAS ===================================================================
 
 test('Lexer should parse "1d20 + -2" like "1d20 - 2"', () => {
-    let a = Lexer.parse("1d20 + -2").map(toLexicalToken);
-    let b = Lexer.parse("1d20 - 2").map(toLexicalToken);
+    let a = Lexer.parse("1d20 + -2").unwrap().map(toLexicalToken);
+    let b = Lexer.parse("1d20 - 2").unwrap().map(toLexicalToken);
     expect(a).toEqual(b);
 });
 
 test('Lexer should parse "1d20 - -2" like "1d20 + 2"', () => {
-    let a = Lexer.parse("1d20 - -2").map(toLexicalToken);
-    let b = Lexer.parse("1d20 + 2").map(toLexicalToken);
+    let a = Lexer.parse("1d20 - -2").unwrap().map(toLexicalToken);
+    let b = Lexer.parse("1d20 + 2").unwrap().map(toLexicalToken);
     expect(a).toEqual(b);
 });
 
 test('Lexer should parse "1d20 ----2" like "1d20 + 2"', () => {
-    let a = Lexer.parse("1d20 ----2").map(toLexicalToken);
-    let b = Lexer.parse("1d20 + 2").map(toLexicalToken);
+    let a = Lexer.parse("1d20 ----2").unwrap().map(toLexicalToken);
+    let b = Lexer.parse("1d20 + 2").unwrap().map(toLexicalToken);
     expect(a).toEqual(b);
 });
 
 test('Lexer should parse "1d20 -++---+-+--++17" like "1d20 - 17"', () => {
-    let a = Lexer.parse("1d20 -++---+-+--++17").map(toLexicalToken);
-    let b = Lexer.parse("1d20 - 17").map(toLexicalToken);
+    let a = Lexer.parse("1d20 -++---+-+--++17").unwrap().map(toLexicalToken);
+    let b = Lexer.parse("1d20 - 17").unwrap().map(toLexicalToken);
     expect(a).toEqual(b);
 });
