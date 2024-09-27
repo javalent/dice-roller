@@ -209,9 +209,11 @@ export abstract class RenderableRoller<T = any> extends BasicRoller<T> {
     override async onClick(evt: MouseEvent) {
         evt.stopPropagation();
         evt.stopImmediatePropagation();
+
         if (this.isRendering) {
             DiceRenderer.stop();
         }
+        this.#controller?.abort();
         if (evt.getModifierState("Shift")) {
             await this.roll(true);
             this.hasRunOnce = true;
@@ -219,27 +221,38 @@ export abstract class RenderableRoller<T = any> extends BasicRoller<T> {
             await this.roll();
         }
     }
+
     abstract rollSync(): T;
     abstract roll(render?: boolean): Promise<T>;
     abstract getResultText(): string;
 
     children: RenderableDice<any>[];
+    #controller: AbortController;
     async renderChildren(): Promise<void> {
         this.isRendering = true;
         this.setTooltip();
         this.setSpinner();
         const promises = [];
+        this.#controller = new AbortController();
         for (const die of this.children) {
             promises.push(
-                new Promise<void>(async (resolve) => {
-                    await die.render();
+                new Promise<void>(async (resolve, reject) => {
+                    this.#controller.signal.addEventListener("abort", () => {
+                        reject();
+                    });
+                    await die.render(this.#controller);
                     resolve();
                 })
             );
         }
-        await Promise.all(promises);
+        try {
+            await Promise.all(promises);
+        } catch (e) {
+            return;
+        }
 
         this.isRendering = false;
+
         this.setTooltip();
     }
 }

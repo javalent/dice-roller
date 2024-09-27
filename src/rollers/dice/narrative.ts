@@ -1,7 +1,6 @@
-import type { DiceShape } from "src/renderer/shapes";
-import { BasicRoller, RenderableRoller } from "../roller";
+import { RenderableRoller } from "../roller";
 import { DiceRoller } from "./dice";
-import { RenderTypes, type RenderableDice } from "./renderable";
+import { RenderTypes } from "./renderable";
 import type { App } from "obsidian";
 import type { LexicalToken } from "src/lexer/lexer";
 import type { DiceRollerSettings } from "src/settings/settings.types";
@@ -455,27 +454,9 @@ Despairs: ${map.despair}`;
         throw new Error("Method not implemented.");
     }
     result: NarrativeResult;
-    async renderDice() {
-        this.isRendering = true;
-        this.setTooltip();
-        this.setSpinner();
-        const promises = [];
-        for (const die of this.children) {
-            promises.push(
-                new Promise<void>(async (resolve) => {
-                    await die.render();
-                    resolve();
-                })
-            );
-        }
-        await Promise.all(promises);
-
-        this.isRendering = false;
-        this.setTooltip();
-    }
     async roll(render?: boolean): Promise<NarrativeResult> {
         if (render || (this.shouldRender && this.hasRunOnce)) {
-            await this.renderDice();
+            await this.renderChildren();
         } else {
             return this.rollSync();
         }
@@ -524,16 +505,5 @@ Despairs: ${map.despair}`;
 
         this.resultEl.addClass("dice-roller-genesys");
         this.resultEl.setText(this.getResultText());
-    }
-    override async onClick(evt: MouseEvent) {
-        evt.stopPropagation();
-        evt.stopImmediatePropagation();
-
-        if (evt.getModifierState("Shift")) {
-            await this.roll(true);
-            this.hasRunOnce = true;
-        } else if (window.getSelection()?.isCollapsed) {
-            await this.roll();
-        }
     }
 }

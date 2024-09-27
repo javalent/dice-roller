@@ -195,7 +195,6 @@ class DiceRendererClass extends Component {
     }
 
     onunload() {
-        this.stop();
         this.loaded = false;
         cancelAnimationFrame(this.animation);
 
@@ -219,7 +218,7 @@ class DiceRendererClass extends Component {
 
     start() {
         if (this.#animating) {
-            this.unload();
+            this.stop();
         }
         if (!this.loaded) {
             this.load();
@@ -458,7 +457,7 @@ class DiceRendererClass extends Component {
                     if (!this.data.renderTime) {
                         const renderer = this;
                         function unrender() {
-                            renderer.unload();
+                            renderer.stop();
                             document.body.removeEventListener(
                                 "click",
                                 unrender
@@ -791,7 +790,7 @@ class DiceFactory extends Component {
                 );
                 break;
             }
-            case RenderTypes.SETBACK:{
+            case RenderTypes.SETBACK: {
                 dice.push(
                     new SetbackDice(
                         this.width,
@@ -802,7 +801,7 @@ class DiceFactory extends Component {
                 );
                 break;
             }
-            case RenderTypes.ABILITY:{
+            case RenderTypes.ABILITY: {
                 dice.push(
                     new AbilityDice(
                         this.width,
@@ -813,7 +812,7 @@ class DiceFactory extends Component {
                 );
                 break;
             }
-            case RenderTypes.DIFFICULTY:{
+            case RenderTypes.DIFFICULTY: {
                 dice.push(
                     new DifficultyDice(
                         this.width,
@@ -824,7 +823,7 @@ class DiceFactory extends Component {
                 );
                 break;
             }
-            case RenderTypes.FORCE:{
+            case RenderTypes.FORCE: {
                 dice.push(
                     new ForceDice(
                         this.width,
@@ -835,7 +834,7 @@ class DiceFactory extends Component {
                 );
                 break;
             }
-            case RenderTypes.PROFICIENCY:{
+            case RenderTypes.PROFICIENCY: {
                 dice.push(
                     new ProficiencyDice(
                         this.width,
@@ -846,7 +845,7 @@ class DiceFactory extends Component {
                 );
                 break;
             }
-            case RenderTypes.CHALLENGE:{
+            case RenderTypes.CHALLENGE: {
                 dice.push(
                     new ChallengeDice(
                         this.width,

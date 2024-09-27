@@ -8,7 +8,7 @@ export interface RenderableDice<T> {
     roll(): Promise<void>;
     rollSync(): void;
 
-    render(): Promise<void>;
+    render(abortController: AbortController): Promise<void>;
     shouldRender: boolean;
 
     getValue(shapes?: DiceShape[]): Promise<T>;

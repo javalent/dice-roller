@@ -484,7 +484,13 @@ export class DiceRoller implements RenderableDice<number> {
             const promises = [];
             for (let index = 0; index < this.rolls; index++) {
                 promises.push(
-                    new Promise<void>(async (resolve) => {
+                    new Promise<void>(async (resolve, reject) => {
+                        this.#controller.signal.addEventListener(
+                            "abort",
+                            () => {
+                                reject();
+                            }
+                        );
                         const value = await this.getValue(
                             this.getShapes(index)
                         );
@@ -493,7 +499,9 @@ export class DiceRoller implements RenderableDice<number> {
                     })
                 );
             }
-            await Promise.all(promises);
+            try {
+                await Promise.all(promises);
+            } catch (e) {}
         }
 
         return results;
@@ -671,8 +679,10 @@ export class DiceRoller implements RenderableDice<number> {
     getGeometries() {
         return [...this.shapes.values()].flat();
     }
-    async render(): Promise<void> {
+    #controller: AbortController;
+    async render(abortController: AbortController): Promise<void> {
         this.shouldRender = true;
+        this.#controller = abortController;
         await this.roll();
         this.shouldRender = false;
     }
