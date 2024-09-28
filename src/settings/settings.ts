@@ -125,6 +125,11 @@ export default class SettingTab extends PluginSettingTab {
                 cls: "dice-roller-nested-settings"
             })
         );
+        this.buildNarrative(
+            this.contentEl.createEl("details", {
+                cls: "dice-roller-nested-settings"
+            })
+        );
         this.buildDiceModTemplateFoldersSettings(
             this.contentEl.createEl("details", {
                 cls: "dice-roller-nested-settings"
@@ -359,6 +364,38 @@ export default class SettingTab extends PluginSettingTab {
                 });
             });
     }
+    buildNarrative(containerEl: HTMLDetailsElement) {
+        containerEl.empty();
+        this.#buildSummary(containerEl, "Narrative Rollers");
+    
+        // Dropdown for selecting the symbol set (Genesys or SWRPG)
+        new Setting(containerEl)
+            .setName("Symbol Set")
+            .setDesc("Select between Genesys or SWRPG symbols.")
+            .addDropdown((dropdown) => {
+                dropdown.addOption("Genesys", "Genesys");
+                dropdown.addOption("SWRPG", "SWRPG");
+                dropdown.setValue(this.plugin.data.narrativeSymbolSet);
+                dropdown.onChange(async (value) => {
+                    this.plugin.data.narrativeSymbolSet = value;
+                    DiceRenderer.setData(this.plugin.getRendererData());
+                    await this.plugin.saveSettings();
+                });
+            });
+    
+        // Toggle for displaying as text or symbols
+        new Setting(containerEl)
+            .setName("Display Results as Symbols")
+            .setDesc("Toggle between text and symbol results.")
+            .addToggle((toggle) => {
+                toggle.setValue(this.plugin.data.displayAsSymbols);
+                toggle.onChange(async (value) => {
+                    this.plugin.data.displayAsSymbols = value;
+                    await this.plugin.saveSettings();
+                });
+            });
+    }
+    
     buildView(containerEl: HTMLDetailsElement) {
         containerEl.empty();
         this.#buildSummary(containerEl, "Dice Tray");

@@ -374,7 +374,6 @@ export class NarrativeStackRoller extends RenderableRoller<NarrativeResult> {
             map.despair += die.despair;
         }
         return `**Totals**
-
 Successes: ${map.success}
 Failures: ${map.failure}
 Advantages: ${map.advantage}
@@ -382,26 +381,50 @@ Threats: ${map.threat}
 Triumphs: ${map.triumph}
 Despairs: ${map.despair}`;
     }
+    private formatSymbol(text: string, fontFamily: string): string {
+        return `<span style="font-family: ${fontFamily}; font-weight: normal;">${text}</span>`;
+    }
     getResultText(): string {
-        const display = [];
-        if (this.result.success === 0) {
-            display.push(`Wash`);
-        } else if (this.result.success > 0) {
-            display.push(`${this.result.success} success`);
-        } else if (this.result.success < 0) {
-            display.push(`${Math.abs(this.result.success)} failure`);
+        const display = []; this.data.narrativeSymbolSet
+        if (this.data.displayAsSymbols) {
+            if (this.result.success === 0) {
+                display.push(`Wash`);
+            } else if (this.result.success > 0) {
+                display.push(`${this.result.success} `+ this.formatSymbol('s', this.data.narrativeSymbolSet));
+            } else if (this.result.success < 0) {
+                display.push(`${this.result.success} ` + this.formatSymbol('f', this.data.narrativeSymbolSet));
+            }
+            if (this.result.advantage > 0) {
+                display.push(`${this.result.advantage} ` + this.formatSymbol('a', this.data.narrativeSymbolSet));
+            } else if (this.result.advantage < 0) {
+                display.push(`${Math.abs(this.result.advantage)} ` + this.formatSymbol('t', this.data.narrativeSymbolSet));
+            }
+            if (this.result.triumph > 0) {
+                display.push(`${this.result.triumph} ` + this.formatSymbol('x', this.data.narrativeSymbolSet));
+            } else if (this.result.despair > 0) {
+                display.push(`${Math.abs(this.result.despair)} ` + this.formatSymbol('y', this.data.narrativeSymbolSet));
+            }
+            return display.join(", ");
+        } else {
+            if (this.result.success === 0) {
+                display.push(`Wash`);
+            } else if (this.result.success > 0) {
+                display.push(`${this.result.success} success`);
+            } else if (this.result.success < 0) {
+                display.push(`${Math.abs(this.result.success)} failure`);
+            }
+            if (this.result.advantage > 0) {
+                display.push(`${this.result.advantage} advantage`);
+            } else if (this.result.advantage < 0) {
+                display.push(`${Math.abs(this.result.advantage)} threat`);
+            }
+            if (this.result.triumph > 0) {
+                display.push(`${this.result.triumph} triumph`);
+            } else if (this.result.despair > 0) {
+                display.push(`${Math.abs(this.result.despair)} despair`);
+            }
+            return display.join(", ");
         }
-        if (this.result.advantage > 0) {
-            display.push(`${this.result.advantage} adv`);
-        } else if (this.result.advantage < 0) {
-            display.push(`${Math.abs(this.result.advantage)} threat`);
-        }
-        if (this.result.triumph > 0) {
-            display.push(`${this.result.triumph} triumph`);
-        } else if (this.result.despair > 0) {
-            display.push(`${Math.abs(this.result.despair)} despair`);
-        }
-        return display.join(", ");
     }
     onload(): void {
         const map: Map<NarrativeFace, number> = new Map();
@@ -504,6 +527,6 @@ Despairs: ${map.despair}`;
         this.resultEl.empty();
 
         this.resultEl.addClass("dice-roller-genesys");
-        this.resultEl.setText(this.getResultText());
+        this.resultEl.innerHTML = this.getResultText();
     }
 }

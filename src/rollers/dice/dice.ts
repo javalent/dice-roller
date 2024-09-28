@@ -485,7 +485,7 @@ export class DiceRoller implements RenderableDice<number> {
             for (let index = 0; index < this.rolls; index++) {
                 promises.push(
                     new Promise<void>(async (resolve, reject) => {
-                        this.#controller.signal.addEventListener(
+                        this.#controller?.signal.addEventListener(
                             "abort",
                             () => {
                                 reject();
