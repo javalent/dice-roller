@@ -60,11 +60,10 @@ export default class DiceRollerPlugin extends Plugin {
 
         this.registerEvent(
             this.app.workspace.on("dice-roller:render-dice", async (roll) => {
-                const maybeRoller = await API.getRoller(roll, "external");
-                if (maybeRoller.isNone()) {
+                const roller = await API.getRoller(roll, "external");
+                if (roller == null) {
                     return;
                 }
-                const roller = maybeRoller.unwrap();
                 if (!(roller instanceof StackRoller)) {
                     new Notice("The Dice View only supports dice rolls.");
                     return;
