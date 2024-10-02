@@ -155,11 +155,10 @@ export class TableRoller extends GenericFileRoller<string> {
                 const formula = foundRoller[1].trim();
 
                 // Create sub roller with formula
-                const maybeRoller = await API.getRoller(formula, this.source);
-                if (maybeRoller.isNone()) {
+                const subRoller = await API.getRoller(formula, this.source);
+                if (subRoller == null) {
                     continue;
                 }
-                const subRoller = maybeRoller.unwrap();
                 subRoller.addContexts(...this.components);
                 // Roll it
                 await subRoller.roll();
@@ -198,12 +197,11 @@ export class TableRoller extends GenericFileRoller<string> {
 
         if (this.rollsFormula) {
             try {
-                const maybeRoller = await API.getRoller(
+                const roller = await API.getRoller(
                     this.rollsFormula,
                     this.source
                 );
-                if (maybeRoller.isSome()) {
-                    const roller = maybeRoller.unwrap();
+                if (roller) {
                     if (!(roller instanceof StackRoller)) {
                         this.prettyTooltip =
                             "TableRoller only supports dice rolls to select multiple elements.";
@@ -346,7 +344,7 @@ export class TableRoller extends GenericFileRoller<string> {
                 ) ||
                 this.lookup
             ) {
-                const maybeRoller = await API.getRoller(
+                const roller = await API.getRoller(
                     this.lookup ??
                         Array.from(table.columns.keys())[0]
                             .split(":")
@@ -354,8 +352,7 @@ export class TableRoller extends GenericFileRoller<string> {
                             .replace(/\`/g, ""),
                     this.source
                 );
-                if (maybeRoller.isSome()) {
-                    const roller = maybeRoller.unwrap();
+                if (roller) {
                     roller.addContexts(...this.components);
                     if (roller instanceof StackRoller) {
                         this.lookupRoller = roller;

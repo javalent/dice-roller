@@ -86,11 +86,10 @@ export default class DiceProcessor extends Component {
                     continue;
 
                 //build result map;
-                const maybeRoller = API.getRoller(content, ctx.sourcePath);
-                if (maybeRoller.isNone()) {
+                const roller = API.getRoller(content, ctx.sourcePath);
+                if (roller == null) {
                     return;
                 }
-                const roller = maybeRoller.unwrap();
                 if (roller instanceof StackRoller && roller.shouldRender) {
                     roller.hasRunOnce = true;
                 }
@@ -143,13 +142,11 @@ export default class DiceProcessor extends Component {
             }
             try {
                 //build result map;
-                const maybeRoller = API.getRoller(content, ctx.sourcePath);
-                if (maybeRoller.isNone()) {
+                const roller = API.getRoller(content, ctx.sourcePath);
+                if (roller == null) {
                     return;
                 }
                 /** Add the roller to the child context, so it can be unloaded with the context. */
-                const roller = maybeRoller.unwrap();
-
                 roller.onLoad(async () => {
                     await roller.roll();
 

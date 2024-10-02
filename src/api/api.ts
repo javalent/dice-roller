@@ -211,7 +211,7 @@ class APIInstance {
         raw: string,
         source: string = "",
         options: RollerOptions = this.getRollerOptions(this.data)
-    ): Option<BasicRoller> {
+    ): BasicRoller | null {
         const {
             content,
             position,
@@ -229,7 +229,7 @@ class APIInstance {
 
         if (lexemeResult.isErr()) {
             console.error(lexemeResult.unwrapErr());
-            return None;
+            return null;
         }
         const lexemes = lexemeResult.unwrap();
 
@@ -253,7 +253,7 @@ class APIInstance {
                 roller.showRenderNotice = this.data.showRenderNotice;
 
                 roller.setSource(source);
-                return Some(roller);
+                return roller;
             }
             case "table": {
                 const roller = new TableRoller(
@@ -265,18 +265,16 @@ class APIInstance {
                     position,
                     lookup
                 );
-                return Some(roller);
+                return roller;
             }
             case "section": {
-                return Some(
-                    new SectionRoller(
-                        this.data,
-                        content,
-                        lexemes[0],
-                        source,
-                        this.app,
-                        position
-                    )
+                return new SectionRoller(
+                    this.data,
+                    content,
+                    lexemes[0],
+                    source,
+                    this.app,
+                    position
                 );
             }
             case "dataview": {
@@ -285,15 +283,13 @@ class APIInstance {
                         "Tags are only supported with the Dataview plugin installed."
                     );
                 }
-                return Some(
-                    new DataViewRoller(
-                        this.data,
-                        content,
-                        lexemes[0],
-                        source,
-                        this.app,
-                        position
-                    )
+                return new DataViewRoller(
+                    this.data,
+                    content,
+                    lexemes[0],
+                    source,
+                    this.app,
+                    position
                 );
             }
             case "tag": {
@@ -302,27 +298,23 @@ class APIInstance {
                         "Tags are only supported with the Dataview plugin installed."
                     );
                 }
-                return Some(
-                    new TagRoller(
-                        this.data,
-                        content,
-                        lexemes[0],
-                        source,
-                        this.app,
-                        position
-                    )
+                return new TagRoller(
+                    this.data,
+                    content,
+                    lexemes[0],
+                    source,
+                    this.app,
+                    position
                 );
             }
             case "line": {
-                return Some(
-                    new LineRoller(
-                        this.data,
-                        content,
-                        lexemes[0],
-                        source,
-                        this.app,
-                        position
-                    )
+                return new LineRoller(
+                    this.data,
+                    content,
+                    lexemes[0],
+                    source,
+                    this.app,
+                    position
                 );
             }
         }
@@ -387,7 +379,7 @@ class APIInstance {
     }
     public async parseDice(content: string, source: string = "") {
         const roller = await this.getRoller(content, source);
-        return { result: await roller.unwrap()?.roll(), roller };
+        return { result: await roller?.roll(), roller };
     }
     getRollerOptions(data: DiceRollerSettings): RollerOptions {
         return {
