@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.3.0](https://github.com/javalent/dice-roller/compare/11.2.1...11.3.0) (2024-10-02)
+
+
+### Features
+
+* Stunt dice are now renderable ([e9d72b3](https://github.com/javalent/dice-roller/commit/e9d72b351e5d066610e3178c70f9a0ab2be6bd0c))
+
+
+### Bug Fixes
+
+* Dice rollers will now cancel rendering when unloaded ([a0ddb12](https://github.com/javalent/dice-roller/commit/a0ddb12b3378619320a79890c9085cd33a8198a4))
+* Reverts unintentional breaking API change to `getRoller` ([2aff04b](https://github.com/javalent/dice-roller/commit/2aff04b851f6a5608859fe63852435e6e2932d61))
+
 ## [11.2.1](https://github.com/javalent/dice-roller/compare/11.2.0...11.2.1) (2024-09-26)
 
 
