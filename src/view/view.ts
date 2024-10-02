@@ -208,9 +208,8 @@ export default class DiceView extends ItemView {
             const diceFormula = /^(?:1)?d(\d|%|F)+$/.test(icon.formula)
                 ? `${Math.abs(amount)}${icon.formula.replace(/^1/, "")}`
                 : `${Math.abs(amount)} * (${icon.formula})`;
-            const maybeRoller = API.getRoller(icon.formula, VIEW_TYPE);
-            if (maybeRoller.isNone()) continue;
-            const roller = maybeRoller.unwrap();
+            const roller = API.getRoller(icon.formula, VIEW_TYPE);
+            if (roller == null) continue;
             if (!(roller instanceof StackRoller)) continue;
             roller.buildDiceTree();
             roller.calculate();
@@ -259,9 +258,8 @@ export default class DiceView extends ItemView {
             opts.expectedValue = ExpectedValue.Roll;
         }
         try {
-            const maybeRoller = await API.getRoller(formula, VIEW_TYPE, opts);
-            if (maybeRoller.isNone()) return;
-            const roller = maybeRoller.unwrap();
+            const roller = await API.getRoller(formula, VIEW_TYPE, opts);
+            if (roller == null) return;
             if (!(roller instanceof StackRoller)) {
                 throw new Error("The Dice Tray only supports dice rolls.");
             }
