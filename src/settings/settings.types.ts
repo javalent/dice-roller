@@ -33,6 +33,8 @@ export interface DiceRollerSettings {
     textColor: string;
     textFont: string;
     showLeafOnStartup: boolean;
+    narrativeSymbolSet: string;
+    displayAsSymbols: boolean;
     customFormulas: string[];
 
     displayAsEmbed: boolean;

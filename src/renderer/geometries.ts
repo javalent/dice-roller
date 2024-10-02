@@ -27,13 +27,15 @@ const MATERIAL_OPTIONS = {
 const DEFAULT_DICE_OPTIONS: DiceOptions = {
     diceColor: "#202020",
     textColor: "#ffffff",
-    textFont: "Arial"
+    textFont: "Arial",
+    narrativeSymbolSet: "Genesys"
 };
 
 interface DiceOptions {
     diceColor: string;
     textColor: string;
     textFont: string;
+    narrativeSymbolSet: string;
 }
 
 export default abstract class DiceGeometry {
@@ -88,7 +90,8 @@ export default abstract class DiceGeometry {
         public h: number,
         public options: Partial<DiceOptions> = {
             diceColor: "#202020",
-            textColor: "#aaaaaa"
+            textColor: "#aaaaaa",
+            narrativeSymbolSet: "Genesys"
         },
         public scaler: number
     ) {
@@ -101,16 +104,21 @@ export default abstract class DiceGeometry {
     }
     setColor({
         diceColor,
-        textColor
+        textColor,
+        narrativeSymbolSet
     }: {
         diceColor?: string;
         textColor?: string;
+        narrativeSymbolSet?: string;
     }) {
         if (diceColor) {
             this.options.diceColor = diceColor;
         }
         if (textColor) {
             this.options.textColor = textColor;
+        }
+        if (narrativeSymbolSet) {
+            this.options.narrativeSymbolSet = narrativeSymbolSet;
         }
     }
     get radius() {
@@ -121,6 +129,9 @@ export default abstract class DiceGeometry {
     }
     get textColor() {
         return this.options.textColor;
+    }
+    get narrativeSymbolSet() {
+        return this.options.narrativeSymbolSet;
     }
     get buffer() {
         return this.geometry.geometry;
@@ -839,9 +850,8 @@ class D4DiceGeometry extends DiceGeometry {
 }
 
 abstract class GenesysDice extends DiceGeometry {
-    fontFace: string = "DICE_ROLLER_GENESYS_FONT";
+    fontFace = this.narrativeSymbolSet
 }
-
 abstract class GenesysD12DiceGeometry extends GenesysDice {
     mass = 350;
     sides = 12;
