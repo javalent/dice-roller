@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.3.1](https://github.com/javalent/dice-roller/compare/11.3.0...11.3.1) (2024-10-02)
+
+
+### Bug Fixes
+
+* Fixes imports for file reorg ([8245e29](https://github.com/javalent/dice-roller/commit/8245e29664084f03a82b68d632142986cf49ec21))
+
 ## [11.3.0](https://github.com/javalent/dice-roller/compare/11.2.1...11.3.0) (2024-10-02)
 
 
