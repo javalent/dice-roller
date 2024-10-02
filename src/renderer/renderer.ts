@@ -74,6 +74,7 @@ export type RendererData = {
     scaler: number;
     renderTime: number;
     textFont: string;
+    narrativeSymbolSet: string;
 };
 
 class DiceRendererClass extends Component {
@@ -129,7 +130,8 @@ class DiceRendererClass extends Component {
                 textColor: this.data.textColor,
                 colorfulDice: this.data.colorfulDice,
                 scaler: this.data.scaler,
-                textFont: this.data.textFont
+                textFont: this.data.textFont,
+                narrativeSymbolSet: this.data.narrativeSymbolSet
             });
         } else {
             this.factory.width = this.WIDTH;
@@ -631,6 +633,7 @@ class DiceFactory extends Component {
         const diceColor = this.options.diceColor;
         const textColor = this.options.textColor;
         const textFont = this.options.textFont;
+        const narrativeSymbolSet = this.options.narrativeSymbolSet;
 
         // If we want colorful dice then just use the default colors in the geometry
         if (this.options.colorfulDice) {
@@ -639,7 +642,8 @@ class DiceFactory extends Component {
 
         return {
             diceColor,
-            textFont
+            textFont,
+            narrativeSymbolSet
         };
     }
     constructor(

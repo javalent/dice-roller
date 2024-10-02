@@ -28,6 +28,8 @@ export const DEFAULT_SETTINGS: DiceRollerSettings = {
     textColor: "#ffffff",
     textFont: "Arial",
     showLeafOnStartup: true,
+    narrativeSymbolSet: "Genesys",
+    displayAsSymbols: false,
     
     displayAsEmbed: true,
     round: Round.None,
