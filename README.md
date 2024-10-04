@@ -72,6 +72,24 @@ Use `` `dice: XdF` `` to roll a fudge/fate dice. See [here](<https://en.wikipedi
 
 Use `` `dice: 1dS` `` to roll a Fantasy AGE stunt dice. The result will show the total roll and also the stunt points if successful.
 
+## Genesys/SWRPG Narrative Dice
+
+Use `` `dice: GgPpYyRrBbSsWw` `` to roll Narrative dice. The result will show the total roll in net symbols (Success, Advantage etc.). Total individual results displayed in the tooltip, and results display can be toggled between words and symbols in the settings.
+ 
+| Dice              | Syntax Options |
+| ----------------- | -------------- | 
+| Ability           | `Gg` `Aa`     | 
+| Proficiency       | `Yy` `Pp` `pro`| 
+| Difficulty        | `Pp` `Dd` `diff`        | 
+| Challenge         | `Rr` `Cc`        | 
+| Boost             | `Bb`  `boo`      | 
+| Setback           | `Ss`  `sb` `blk` | 
+| Force             | `Ww` `Ff` | 
+
+Specifying quantities of dice with a digit will also work. E.g. `` `dice: 3g4d` ``
+
+> Note: If any abbreviation exclusive letters are used (A,C,D), `P` will preference Proficiency.
+
 ## Dice Modifiers
 
 The parser supports several modifiers. If a die has been modified, it will display _how_ it has been modified in the tooltip.
