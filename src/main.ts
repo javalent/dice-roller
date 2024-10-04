@@ -41,7 +41,7 @@ export default class DiceRollerPlugin extends Plugin {
         await this.loadSettings();
 
         DiceRenderer.setData(this.getRendererData());
-        this.addChild(DiceRenderer);
+        
         this.api.initialize(this.data, this.app);
 
         window["DiceRoller"] = this.api;
