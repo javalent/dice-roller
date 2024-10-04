@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.3.2](https://github.com/javalent/dice-roller/compare/11.3.1...11.3.2) (2024-10-04)
+
+
+### Bug Fixes
+
+* Fix for bug where menu bar is not interactible if Dice Roller is enabled with no in-view dice rolls ([d91a8ab](https://github.com/javalent/dice-roller/commit/d91a8abf85e96ce8f8f0add70ade15b365a7a0a7))
+
 ## [11.3.1](https://github.com/javalent/dice-roller/compare/11.3.0...11.3.1) (2024-10-02)
 
 
