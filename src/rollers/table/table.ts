@@ -304,6 +304,8 @@ export class TableRoller extends GenericFileRoller<string> {
                     this.trigger("new-result");
                     resolve(this.result);
                 });
+
+                this.load();
             }
         });
     }

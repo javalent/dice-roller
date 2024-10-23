@@ -233,6 +233,7 @@ export class SectionRoller extends GenericEmbeddedRoller<RollerCache> {
                     this.result = this.results[0];
                     resolve(this.results[0]);
                 });
+                this.load();
             } else {
                 const options = [...this.options];
 

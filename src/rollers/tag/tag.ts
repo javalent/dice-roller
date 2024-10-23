@@ -197,6 +197,7 @@ abstract class DataViewEnabledRoller extends BasicRoller<SectionRoller> {
                     this.trigger("new-result");
                     resolve(this.result);
                 });
+                this.load();
             }
         });
     }

@@ -129,6 +129,7 @@ export class LineRoller extends GenericEmbeddedRoller<string> {
                     this.trigger("new-result");
                     resolve(this.results[0]);
                 });
+                this.load();
             } else {
                 const options = [...this.options];
 
