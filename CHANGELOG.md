@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.3.4](https://github.com/javalent/dice-roller/compare/11.3.3...11.3.4) (2024-10-23)
+
+
+### Bug Fixes
+
+* Asynchronous rollers will now load themselves if not already loaded when `roll` is called ([35102eb](https://github.com/javalent/dice-roller/commit/35102eb5e9e9516144f386d9f059cf029552cc4a))
+* Show Dice Roller version on load ([b1438ef](https://github.com/javalent/dice-roller/commit/b1438efe9b3292848e269405e3c76d41229905d3))
+
 ## [11.3.3](https://github.com/javalent/dice-roller/compare/11.3.2...11.3.3) (2024-10-23)
 
 
