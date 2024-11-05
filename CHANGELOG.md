@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.4.0](https://github.com/javalent/dice-roller/compare/11.3.4...11.4.0) (2024-11-05)
+
+
+### Features
+
+* Genesys/Star Wars narrative dice are now supported and renderable. ([#354](https://github.com/javalent/dice-roller/issues/354)) ([b0ba905](https://github.com/javalent/dice-roller/commit/b0ba90596584b12a921e21148fbc64ed22541355))
+
 ## [11.3.4](https://github.com/javalent/dice-roller/compare/11.3.3...11.3.4) (2024-10-23)
 
 
