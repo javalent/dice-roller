@@ -6,6 +6,7 @@ import {
     type Material,
     type Quaternion as ThreeQuaternion
 } from "three";
+import { RenderTypes } from "src/rollers/dice/renderable";
 
 interface DiceVector {
     pos: { x: number; y: number; z: number };
@@ -44,6 +45,7 @@ export abstract class DiceShape {
     abstract inertia: number;
     body: Body;
     geometry: Mesh<BufferGeometry, Material | Material[]>;
+    values: number[] = [];
 
     stopped: boolean | number = false;
     iterations: number = 0;
@@ -153,6 +155,7 @@ export abstract class DiceShape {
             }
         }
         let matindex = closest_face.materialIndex - 1;
+
         if (this.sides == 10 && matindex == 0) matindex = 10;
         return this.data.values?.[matindex] ?? matindex;
     }
@@ -290,6 +293,54 @@ export class D12Dice extends DiceShape {
         this.create();
     }
 }
+export class ProficiencyDice extends DiceShape {
+    sides = 12;
+    inertia = 8;
+    constructor(
+        public w: number,
+        public h: number,
+        public data: { geometry: Mesh; body: Body },
+        vector?: { x: number; y: number }
+    ) {
+        super(w, h, data);
+        if (vector) {
+            this.vector = this.generateVector(vector);
+        }
+        this.create();
+    }
+}
+export class ForceDice extends DiceShape {
+    sides = 12;
+    inertia = 8;
+    constructor(
+        public w: number,
+        public h: number,
+        public data: { geometry: Mesh; body: Body },
+        vector?: { x: number; y: number }
+    ) {
+        super(w, h, data);
+        if (vector) {
+            this.vector = this.generateVector(vector);
+        }
+        this.create();
+    }
+}
+export class ChallengeDice extends DiceShape {
+    sides = 12;
+    inertia = 8;
+    constructor(
+        public w: number,
+        public h: number,
+        public data: { geometry: Mesh; body: Body },
+        vector?: { x: number; y: number }
+    ) {
+        super(w, h, data);
+        if (vector) {
+            this.vector = this.generateVector(vector);
+        }
+        this.create();
+    }
+}
 
 export class D10Dice extends DiceShape {
     sides = 10;
@@ -298,8 +349,23 @@ export class D10Dice extends DiceShape {
         public w: number,
         public h: number,
         public data: { geometry: Mesh; body: Body },
-        vector?: { x: number; y: number },
-        public isPercentile: boolean = false
+        vector?: { x: number; y: number }
+    ) {
+        super(w, h, data);
+        if (vector) {
+            this.vector = this.generateVector(vector);
+        }
+        this.create();
+    }
+}
+export class D100Dice extends DiceShape {
+    sides = 10;
+    inertia = 9;
+    constructor(
+        public w: number,
+        public h: number,
+        public data: { geometry: Mesh; body: Body },
+        vector?: { x: number; y: number }
     ) {
         super(w, h, data);
         if (vector) {
@@ -325,6 +391,54 @@ export class D8Dice extends DiceShape {
         this.create();
     }
 }
+export class AbilityDice extends DiceShape {
+    sides = 8;
+    inertia = 10;
+    constructor(
+        public w: number,
+        public h: number,
+        public data: { geometry: Mesh; body: Body },
+        vector?: { x: number; y: number }
+    ) {
+        super(w, h, data);
+        if (vector) {
+            this.vector = this.generateVector(vector);
+        }
+        this.create();
+    }
+}
+export class DifficultyDice extends DiceShape {
+    sides = 8;
+    inertia = 10;
+    constructor(
+        public w: number,
+        public h: number,
+        public data: { geometry: Mesh; body: Body },
+        vector?: { x: number; y: number }
+    ) {
+        super(w, h, data);
+        if (vector) {
+            this.vector = this.generateVector(vector);
+        }
+        this.create();
+    }
+}
+export class Dice extends DiceShape {
+    sides = 8;
+    inertia = 10;
+    constructor(
+        public w: number,
+        public h: number,
+        public data: { geometry: Mesh; body: Body },
+        vector?: { x: number; y: number }
+    ) {
+        super(w, h, data);
+        if (vector) {
+            this.vector = this.generateVector(vector);
+        }
+        this.create();
+    }
+}
 
 export class D6Dice extends DiceShape {
     sides = 6;
@@ -332,11 +446,71 @@ export class D6Dice extends DiceShape {
     constructor(
         public w: number,
         public h: number,
-        public data: {
-            geometry: Mesh;
-            body: Body;
-            values?: number[];
-        },
+        public data: { geometry: Mesh; body: Body },
+        vector?: { x: number; y: number }
+    ) {
+        super(w, h, data);
+        if (vector) {
+            this.vector = this.generateVector(vector);
+        }
+        this.create();
+    }
+}
+export class BoostDice extends DiceShape {
+    sides = 6;
+    inertia = 13;
+    constructor(
+        public w: number,
+        public h: number,
+        public data: { geometry: Mesh; body: Body },
+        vector?: { x: number; y: number }
+    ) {
+        super(w, h, data);
+        if (vector) {
+            this.vector = this.generateVector(vector);
+        }
+        this.create();
+    }
+}
+export class SetbackDice extends DiceShape {
+    sides = 6;
+    inertia = 13;
+    constructor(
+        public w: number,
+        public h: number,
+        public data: { geometry: Mesh; body: Body },
+        vector?: { x: number; y: number }
+    ) {
+        super(w, h, data);
+        if (vector) {
+            this.vector = this.generateVector(vector);
+        }
+        this.create();
+    }
+}
+export class StuntDice extends DiceShape {
+    sides = 6;
+    inertia = 13;
+    constructor(
+        public w: number,
+        public h: number,
+        public data: { geometry: Mesh; body: Body },
+        vector?: { x: number; y: number }
+    ) {
+        super(w, h, data);
+        if (vector) {
+            this.vector = this.generateVector(vector);
+        }
+        this.create();
+    }
+}
+export class FudgeDice extends DiceShape {
+    sides = 6;
+    inertia = 13;
+    constructor(
+        public w: number,
+        public h: number,
+        public data: { geometry: Mesh; body: Body },
         vector?: { x: number; y: number }
     ) {
         super(w, h, data);

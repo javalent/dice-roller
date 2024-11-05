@@ -32,7 +32,7 @@ type ModifierType = "sort" | "kh" | "kl" | "!" | "!!" | "r" | "u";
 
 export class DiceRoller implements RenderableDice<number> {
     getType() {
-        return `${this.faces.max}` as RenderTypes;
+        return `D${this.faces.max}` as RenderTypes;
     }
 
     constructor(
@@ -484,7 +484,13 @@ export class DiceRoller implements RenderableDice<number> {
             const promises = [];
             for (let index = 0; index < this.rolls; index++) {
                 promises.push(
-                    new Promise<void>(async (resolve) => {
+                    new Promise<void>(async (resolve, reject) => {
+                        this.#controller?.signal.addEventListener(
+                            "abort",
+                            () => {
+                                reject();
+                            }
+                        );
                         const value = await this.getValue(
                             this.getShapes(index)
                         );
@@ -493,11 +499,14 @@ export class DiceRoller implements RenderableDice<number> {
                     })
                 );
             }
-            await Promise.all(promises);
+            try {
+                await Promise.all(promises);
+            } catch (e) {}
         }
 
         return results;
     }
+
     applyConditions() {
         for (const result of this.results.values()) {
             const negate = this.conditions.find(
@@ -670,8 +679,10 @@ export class DiceRoller implements RenderableDice<number> {
     getGeometries() {
         return [...this.shapes.values()].flat();
     }
-    async render(): Promise<void> {
+    #controller: AbortController;
+    async render(abortController: AbortController): Promise<void> {
         this.shouldRender = true;
+        this.#controller = abortController;
         await this.roll();
         this.shouldRender = false;
     }

@@ -30,6 +30,7 @@ export default class DiceRollerPlugin extends Plugin {
         return {
             diceColor: this.data.diceColor,
             textColor: this.data.textColor,
+            narrativeSymbolSet: this.data.narrativeSymbolSet,
             colorfulDice: this.data.colorfulDice,
             scaler: this.data.scaler,
             renderTime: this.data.renderTime,
@@ -68,7 +69,7 @@ export default class DiceRollerPlugin extends Plugin {
                     return;
                 }
                 await roller.roll();
-                if (!roller.dice.length) {
+                if (!roller.children.length) {
                     new Notice("Invalid formula.");
                     return;
                 }

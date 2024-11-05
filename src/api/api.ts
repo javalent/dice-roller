@@ -16,6 +16,7 @@ import { TableRoller } from "src/rollers/table/table";
 import { SectionRoller } from "src/rollers/section/section";
 import { DataViewRoller, TagRoller } from "src/rollers/tag/tag";
 import { LineRoller } from "src/rollers/line/line";
+import { NarrativeStackRoller } from "src/rollers/dice/narrative";
 
 export * from "../types/api";
 
@@ -26,7 +27,8 @@ export {
     type DataViewRoller,
     type TagRoller,
     type LineRoller,
-    type ArrayRoller
+    type ArrayRoller,
+    type NarrativeStackRoller
 };
 
 export interface RollerOptions {
@@ -97,6 +99,9 @@ class APIInstance {
         }
         if (lexemes.some(({ type }) => type === "line")) {
             return "line";
+        }
+        if (lexemes.some(({ type }) => type === "narrative")) {
+            return "narrative";
         }
         return "dice";
     }
@@ -235,6 +240,15 @@ class APIInstance {
 
         const type = this.#getTypeFromLexemes(lexemes);
         switch (type) {
+            case "narrative": {
+                return new NarrativeStackRoller(
+                        this.data,
+                        content,
+                        lexemes,
+                        this.app,
+                        position
+                    );
+            }
             case "dice": {
                 const roller = new StackRoller(
                     this.data,

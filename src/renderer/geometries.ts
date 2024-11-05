@@ -27,13 +27,15 @@ const MATERIAL_OPTIONS = {
 const DEFAULT_DICE_OPTIONS: DiceOptions = {
     diceColor: "#202020",
     textColor: "#ffffff",
-    textFont: "Arial"
+    textFont: "Arial",
+    narrativeSymbolSet: "Genesys"
 };
 
 interface DiceOptions {
     diceColor: string;
     textColor: string;
     textFont: string;
+    narrativeSymbolSet: string;
 }
 
 export default abstract class DiceGeometry {
@@ -88,7 +90,8 @@ export default abstract class DiceGeometry {
         public h: number,
         public options: Partial<DiceOptions> = {
             diceColor: "#202020",
-            textColor: "#aaaaaa"
+            textColor: "#aaaaaa",
+            narrativeSymbolSet: "Genesys"
         },
         public scaler: number
     ) {
@@ -101,16 +104,21 @@ export default abstract class DiceGeometry {
     }
     setColor({
         diceColor,
-        textColor
+        textColor,
+        narrativeSymbolSet
     }: {
         diceColor?: string;
         textColor?: string;
+        narrativeSymbolSet?: string;
     }) {
         if (diceColor) {
             this.options.diceColor = diceColor;
         }
         if (textColor) {
             this.options.textColor = textColor;
+        }
+        if (narrativeSymbolSet) {
+            this.options.narrativeSymbolSet = narrativeSymbolSet;
         }
     }
     get radius() {
@@ -121,6 +129,9 @@ export default abstract class DiceGeometry {
     }
     get textColor() {
         return this.options.textColor;
+    }
+    get narrativeSymbolSet() {
+        return this.options.narrativeSymbolSet;
     }
     get buffer() {
         return this.geometry.geometry;
@@ -839,22 +850,8 @@ class D4DiceGeometry extends DiceGeometry {
 }
 
 abstract class GenesysDice extends DiceGeometry {
-    fontFace: string = "DICE_ROLLER_GENESYS_FONT";
-
-    /* create() {
-        if (!document.fonts.check(`12px '${this.fontFace}'`)) {
-            const font = new FontFace(
-                this.fontFace,
-                `url(data:font/ttf;base64,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)`
-            );
-            //@ts-ignore
-            document.fonts.add(font);
-            console.log(document.fonts.check(`12px '${this.fontFace}'`));
-        }
-        return super.create();
-    } */
+    fontFace = this.narrativeSymbolSet
 }
-
 abstract class GenesysD12DiceGeometry extends GenesysDice {
     mass = 350;
     sides = 12;
@@ -914,22 +911,49 @@ abstract class GenesysD12DiceGeometry extends GenesysDice {
     }
 }
 
+export class GenesysForceDiceGeometry extends GenesysD12DiceGeometry {
+    labels = [
+        "",
+        "",
+        "z", //Moved Blank to top as a 1 roll.
+        "z", //Success
+        "z", //Success
+        "z", //Success Success
+        "z", //Success Success
+        "z", //Advantage
+        "z\nz", //Success Advantage
+        "Z", //Success Advantage
+        "Z", //Success Advantage
+        "Z\nZ", //Advantage Advantage
+        "Z\nZ", //Advantage Advantage
+        "Z\nZ", //Advantage Advantage
+   ];
+    constructor(
+        w: number,
+        h: number,
+        options: Partial<DiceOptions> = DEFAULT_DICE_OPTIONS,
+        scaler: number
+    ) {
+        super(w, h, options, scaler);
+        this.setColor({ diceColor: "white", textColor: "#000000" });
+    }
+}
 export class GenesysProficiencyDiceGeometry extends GenesysD12DiceGeometry {
     labels = [
         "",
         "",
-        "a\na",
-        "a",
-        "a\na",
-        "x",
-        "s",
-        "s\na",
-        "s",
-        "s\na",
-        "s\ns",
-        "s\na",
-        "s\ns",
-        ""
+        "", //Moved Blank to top as a 1 roll.
+        "s", //Success
+        "s", //Success
+        "s\ns", //Success Success
+        "s\ns", //Success Success
+        "a", //Advantage
+        "s\na", //Success Advantage
+        "s\na", //Success Advantage
+        "s\na", //Success Advantage
+        "a\na", //Advantage Advantage
+        "a\na", //Advantage Advantage
+        "x", //Triumph
     ];
     constructor(
         w: number,
@@ -946,18 +970,18 @@ export class GenesysChallengeDiceGeometry extends GenesysD12DiceGeometry {
     labels = [
         "",
         "",
-        "t\nt",
-        "t",
-        "t\nt",
-        "t",
-        "t\nf",
-        "f",
-        "t\nf",
-        "f",
-        "f\nf",
-        "y",
-        "f\nf",
-        ""
+        "", //Moved blank to roll of 1.
+        "f", //Fail
+        "f", //Fail
+        "f\nf", //Fail Fail
+        "f\nf", //Fail Fail
+        "t", //Threat
+        "t", //Threat
+        "t\nf", //Threat Fail
+        "t\nf", //Threat Fail
+        "t\nt", //Threat Threat
+        "t\nt", //Threat Threat
+        "y", //Despair
     ];
     constructor(
         w: number,
@@ -1000,7 +1024,18 @@ abstract class GenesysD8DiceGeometry extends GenesysDice {
 }
 
 export class GenesysAbilityDiceGeometry extends GenesysD8DiceGeometry {
-    labels = ["", "", "s", "a", "s\na", "s\ns", "a", "s", "a\na", ""];
+    labels = [
+        "", 
+        "", 
+        "", //Blank on 1
+        "s", //Success
+        "s", //Success
+        "s\ns", //Success Success 
+        "a", //Adv
+        "a", //Adv
+        "s\na", //Success Advantage
+        "a\na", //Adv Adv
+    ];
     constructor(
         w: number,
         h: number,
@@ -1012,7 +1047,18 @@ export class GenesysAbilityDiceGeometry extends GenesysD8DiceGeometry {
     }
 }
 export class GenesysDifficultyDiceGeometry extends GenesysD8DiceGeometry {
-    labels = ["", "", "t", "f", "f\nt", "t", "", "t\nt", "f\nf", "t", ""];
+    labels = [
+        "", 
+        "", 
+        "", //Blank on 1
+        "f", //Fail
+        "f\nf", //Fail Fail
+        "t", //Threat
+        "t", //Threat
+        "t", //Threat
+        "t\nt", //Threat Threat
+        "f\nt", //Fail Threat
+    ];
     constructor(
         w: number,
         h: number,
@@ -1054,7 +1100,16 @@ class GenesysD6DiceGeometry extends GenesysDice {
 }
 
 export class GenesysBoostDiceGeometry extends GenesysD6DiceGeometry {
-    labels = ["", "", "", "", "s", "s  \n  a", "a  \n  a", "a", "", ""];
+    labels = [
+        "",
+        "",
+        "", //Blank on 1 
+        "", //Blank on 2 
+        "a\na", //Adv Adv
+        "a", //Adv
+        "s\na", //Success Adv
+        "s", //Success
+        ];
     constructor(
         w: number,
         h: number,
@@ -1066,7 +1121,16 @@ export class GenesysBoostDiceGeometry extends GenesysD6DiceGeometry {
     }
 }
 export class GenesysSetbackDiceGeometry extends GenesysD6DiceGeometry {
-    labels = ["", "", "", "t", "f", "", ""];
+    labels = [
+        "",
+        "",
+        "", //Blank on 1 
+        "", //Blank on 2 
+        "f", //Fail
+        "f", //Fail
+        "t", //Threat
+        "t", //Threat
+        ];
     constructor(
         w: number,
         h: number,

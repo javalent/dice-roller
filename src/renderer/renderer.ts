@@ -15,6 +15,7 @@ import DiceGeometry, {
     GenesysBoostDiceGeometry,
     GenesysChallengeDiceGeometry,
     GenesysDifficultyDiceGeometry,
+    GenesysForceDiceGeometry,
     GenesysProficiencyDiceGeometry,
     GenesysSetbackDiceGeometry,
     StuntDiceGeometry
@@ -27,7 +28,15 @@ import {
     D6Dice,
     D8Dice,
     D12Dice,
-    D20Dice
+    D20Dice,
+    D100Dice,
+    BoostDice,
+    ChallengeDice,
+    ProficiencyDice,
+    DifficultyDice,
+    AbilityDice,
+    SetbackDice,
+    ForceDice
 } from "./shapes";
 
 import {
@@ -65,6 +74,7 @@ export type RendererData = {
     scaler: number;
     renderTime: number;
     textFont: string;
+    narrativeSymbolSet: string;
 };
 
 class DiceRendererClass extends Component {
@@ -120,7 +130,8 @@ class DiceRendererClass extends Component {
                 textColor: this.data.textColor,
                 colorfulDice: this.data.colorfulDice,
                 scaler: this.data.scaler,
-                textFont: this.data.textFont
+                textFont: this.data.textFont,
+                narrativeSymbolSet: this.data.narrativeSymbolSet
             });
         } else {
             this.factory.width = this.WIDTH;
@@ -186,7 +197,6 @@ class DiceRendererClass extends Component {
     }
 
     onunload() {
-        this.stop();
         this.loaded = false;
         cancelAnimationFrame(this.animation);
 
@@ -210,7 +220,7 @@ class DiceRendererClass extends Component {
 
     start() {
         if (this.#animating) {
-            this.unload();
+            this.stop();
         }
         if (!this.loaded) {
             this.load();
@@ -449,7 +459,7 @@ class DiceRendererClass extends Component {
                     if (!this.data.renderTime) {
                         const renderer = this;
                         function unrender() {
-                            renderer.unload();
+                            renderer.stop();
                             document.body.removeEventListener(
                                 "click",
                                 unrender
@@ -623,6 +633,7 @@ class DiceFactory extends Component {
         const diceColor = this.options.diceColor;
         const textColor = this.options.textColor;
         const textFont = this.options.textFont;
+        const narrativeSymbolSet = this.options.narrativeSymbolSet;
 
         // If we want colorful dice then just use the default colors in the geometry
         if (this.options.colorfulDice) {
@@ -631,7 +642,8 @@ class DiceFactory extends Component {
 
         return {
             diceColor,
-            textFont
+            textFont,
+            narrativeSymbolSet
         };
     }
     constructor(
@@ -756,19 +768,94 @@ class DiceFactory extends Component {
             }
             case RenderTypes.D100: {
                 dice.push(
-                    new D10Dice(
+                    new D100Dice(
                         this.width,
                         this.height,
                         this.clone("d100"),
-                        vector,
-                        true
+                        vector
                     ),
                     new D10Dice(
                         this.width,
                         this.height,
                         this.clone("d10"),
-                        vector,
-                        true
+                        vector
+                    )
+                );
+                break;
+            }
+            case RenderTypes.BOOST: {
+                dice.push(
+                    new BoostDice(
+                        this.width,
+                        this.height,
+                        this.clone("boost"),
+                        vector
+                    )
+                );
+                break;
+            }
+            case RenderTypes.SETBACK: {
+                dice.push(
+                    new SetbackDice(
+                        this.width,
+                        this.height,
+                        this.clone("setback"),
+                        vector
+                    )
+                );
+                break;
+            }
+            case RenderTypes.ABILITY: {
+                dice.push(
+                    new AbilityDice(
+                        this.width,
+                        this.height,
+                        this.clone("ability"),
+                        vector
+                    )
+                );
+                break;
+            }
+            case RenderTypes.DIFFICULTY: {
+                dice.push(
+                    new DifficultyDice(
+                        this.width,
+                        this.height,
+                        this.clone("difficulty"),
+                        vector
+                    )
+                );
+                break;
+            }
+            case RenderTypes.FORCE: {
+                dice.push(
+                    new ForceDice(
+                        this.width,
+                        this.height,
+                        this.clone("force"),
+                        vector
+                    )
+                );
+                break;
+            }
+            case RenderTypes.PROFICIENCY: {
+                dice.push(
+                    new ProficiencyDice(
+                        this.width,
+                        this.height,
+                        this.clone("proficiency"),
+                        vector
+                    )
+                );
+                break;
+            }
+            case RenderTypes.CHALLENGE: {
+                dice.push(
+                    new ChallengeDice(
+                        this.width,
+                        this.height,
+                        this.clone("challenge"),
+                        vector
                     )
                 );
                 break;
@@ -875,6 +962,12 @@ class DiceFactory extends Component {
             this.options.scaler
         ).create();
         this.dice.proficiency = new GenesysProficiencyDiceGeometry(
+            this.width,
+            this.height,
+            this.colors,
+            this.options.scaler
+        ).create();
+        this.dice.force = new GenesysForceDiceGeometry(
             this.width,
             this.height,
             this.colors,

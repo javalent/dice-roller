@@ -11,11 +11,13 @@ import {
 } from "obsidian";
 
 import type { LexicalToken } from "src/lexer/lexer";
+import { DiceRenderer } from "src/renderer/renderer";
 import type {
     ButtonPosition,
     DiceRollerSettings
 } from "src/settings/settings.types";
 import { Icons } from "src/utils/icons";
+import type { RenderableDice } from "./dice/renderable";
 
 export interface ComponentLike {
     addChild(child: Component): void;
@@ -46,7 +48,11 @@ export abstract class Roller<T> extends Component implements Events {
     abstract roll(): Promise<T> | T;
 
     components: ComponentLike[] = [];
-
+    loaded: boolean = false;
+    onload(): void {
+        this.loaded = true;
+        this.trigger("loaded");
+    }
     onunload(): void {
         this.components = [];
     }
@@ -71,7 +77,8 @@ interface BareRoller<T> {
     trigger(name: "loaded"): void;
     on(name: "new-result", callback: () => void): EventRef;
     trigger(name: "new-result"): void;
-}abstract class BareRoller<T> extends Roller<T> {
+}
+abstract class BareRoller<T> extends Roller<T> {
     constructor(
         public data: DiceRollerSettings,
         public original = "",
@@ -125,14 +132,14 @@ interface BareRoller<T> {
         this.containerEl.append(pre);
     }
     abstract build(): Promise<void>;
-    abstract get tooltip(): string;
+    abstract getTooltip(): string;
     containerEl: HTMLSpanElement;
     resultEl: HTMLSpanElement;
     iconEl: HTMLSpanElement;
     setTooltip() {
         if (this.data.displayResultsInline) return;
         this.containerEl.setAttrs({
-            "aria-label": this.tooltip
+            "aria-label": this.getTooltip()
         });
     }
     getRandomBetween(min: number, max: number): number {
@@ -159,6 +166,12 @@ export abstract class BasicRoller<T = any> extends BareRoller<T> {
     source: string;
     abstract getReplacer(): Promise<string>;
     save: boolean = false;
+
+    setSpinner() {
+        this.resultEl.empty();
+        setIcon(this.resultEl.createDiv("should-spin"), Icons.LOADING);
+    }
+
     abstract result: T;
     abstract roll(): Promise<T>;
 
@@ -170,8 +183,9 @@ export abstract class BasicRoller<T = any> extends BareRoller<T> {
     }
 
     get inlineText() {
-        return `${this.tooltip.split("\n").join(" -> ")} -> `;
+        return `${this.getTooltip().split("\n").join(" -> ")} -> `;
     }
+
     constructor(
         public data: DiceRollerSettings,
         public original: string,
@@ -182,6 +196,66 @@ export abstract class BasicRoller<T = any> extends BareRoller<T> {
     }
 }
 
+export abstract class RenderableRoller<T = any> extends BasicRoller<T> {
+    shouldRender: boolean = false;
+    isRendering: boolean = false;
+    hasRunOnce: boolean = false;
+    override onunload(): void {
+        if (this.isRendering) {
+            DiceRenderer.stop();
+        }
+        super.onunload();
+    }
+    override async onClick(evt: MouseEvent) {
+        evt.stopPropagation();
+        evt.stopImmediatePropagation();
+
+        if (this.isRendering) {
+            DiceRenderer.stop();
+        }
+        this.#controller?.abort();
+        if (evt.getModifierState("Shift")) {
+            await this.roll(true);
+            this.hasRunOnce = true;
+        } else if (window.getSelection()?.isCollapsed) {
+            await this.roll();
+        }
+    }
+
+    abstract rollSync(): T;
+    abstract roll(render?: boolean): Promise<T>;
+    abstract getResultText(): string;
+
+    children: RenderableDice<any>[];
+    #controller: AbortController;
+    async renderChildren(): Promise<void> {
+        this.isRendering = true;
+        this.setTooltip();
+        this.setSpinner();
+        const promises = [];
+        this.#controller = new AbortController();
+        for (const die of this.children) {
+            promises.push(
+                new Promise<void>(async (resolve, reject) => {
+                    this.#controller.signal.addEventListener("abort", () => {
+                        reject();
+                    });
+                    await die.render(this.#controller);
+                    resolve();
+                })
+            );
+        }
+        try {
+            await Promise.all(promises);
+        } catch (e) {
+            return;
+        }
+
+        this.isRendering = false;
+
+        this.setTooltip();
+    }
+}
 export abstract class GenericFileRoller<T> extends BasicRoller<T> {
     path: string;
     file: TFile;
@@ -308,7 +382,7 @@ export abstract class GenericEmbeddedRoller<T> extends GenericFileRoller<T> {
 export class ArrayRoller<T = any> extends BareRoller<T> {
     declare result: any;
     results: any[];
-    get tooltip() {
+    getTooltip(): string {
         return `${this.options.toString()}\n\n${this.results.toString()}`;
     }
     async roll() {

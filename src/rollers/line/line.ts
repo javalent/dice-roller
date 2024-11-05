@@ -17,7 +17,7 @@ export class LineRoller extends GenericEmbeddedRoller<string> {
     types: string[];
     content: string;
 
-    get tooltip() {
+    getTooltip() {
         return `${this.original}\n${this.path}`;
     }
     async build() {

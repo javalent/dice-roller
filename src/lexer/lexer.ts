@@ -164,6 +164,27 @@ class LexerClass {
             value: this.clampInfinite
         },
         u: /u/u,
+        narrative: {
+            match: /^(?:\d*(?:[GgYyBbRrPpSsWw]|[AaPpDdCcBbSsFf]|pro|boo|blk|k|sb|diff))(?: ?\d*(?:[GgYyBbRrPpSsWw]|[AaPpDdCcBbSsFf]|pro|boo|blk|k|sb|diff))+$/u,
+            value: (match) => {
+                const isAbbr = /[AaCcDd]/.test(match);
+                return match
+                    .toLowerCase()
+                    .replace(/pro/g, "y")
+                    .replace(/diff/g, "p")
+                    .replace(/(blk|k|sb)/g, "s")
+                    .replace(/boo/g, "b")
+                    .replace(/p/g, isAbbr ? "y" : "p")
+                    .replace(/a/g, "g")
+                    .replace(/d/g, "p")
+                    .replace(/c/g, "r")
+                    .replace(/f/g, "w")
+                    .replace(/ /g, "")
+                    .replace(/(\d+)(\w)/g, (_, num: string, char: string) =>
+                        char.repeat(Number(num))
+                    )
+            }
+        },
         stunt: /1[Dd]S/u,
         "%": /\d+[Dd]\d+%/u,
         fudge: {
