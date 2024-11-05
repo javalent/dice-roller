@@ -38,11 +38,11 @@ export default class DiceRollerPlugin extends Plugin {
         };
     }
     async onload() {
-        console.log("DiceRoller plugin loaded");
         await this.loadSettings();
+        console.log(`DiceRoller v${this.data.version} loaded`);
 
         DiceRenderer.setData(this.getRendererData());
-        this.addChild(DiceRenderer);
+
         this.api.initialize(this.data, this.app);
 
         window["DiceRoller"] = this.api;

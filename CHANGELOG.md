@@ -2,6 +2,48 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.3.4](https://github.com/javalent/dice-roller/compare/11.3.3...11.3.4) (2024-10-23)
+
+
+### Bug Fixes
+
+* Asynchronous rollers will now load themselves if not already loaded when `roll` is called ([35102eb](https://github.com/javalent/dice-roller/commit/35102eb5e9e9516144f386d9f059cf029552cc4a))
+* Show Dice Roller version on load ([b1438ef](https://github.com/javalent/dice-roller/commit/b1438efe9b3292848e269405e3c76d41229905d3))
+
+## [11.3.3](https://github.com/javalent/dice-roller/compare/11.3.2...11.3.3) (2024-10-23)
+
+
+### Bug Fixes
+
+* Respect escaped dice flags on lookup rollers ([1f48026](https://github.com/javalent/dice-roller/commit/1f480262954a3e7ced311e7552b0dd7f85ae193b))
+
+## [11.3.2](https://github.com/javalent/dice-roller/compare/11.3.1...11.3.2) (2024-10-04)
+
+
+### Bug Fixes
+
+* Fix for bug where menu bar is not interactible if Dice Roller is enabled with no in-view dice rolls ([d91a8ab](https://github.com/javalent/dice-roller/commit/d91a8abf85e96ce8f8f0add70ade15b365a7a0a7))
+
+## [11.3.1](https://github.com/javalent/dice-roller/compare/11.3.0...11.3.1) (2024-10-02)
+
+
+### Bug Fixes
+
+* Fixes imports for file reorg ([8245e29](https://github.com/javalent/dice-roller/commit/8245e29664084f03a82b68d632142986cf49ec21))
+
+## [11.3.0](https://github.com/javalent/dice-roller/compare/11.2.1...11.3.0) (2024-10-02)
+
+
+### Features
+
+* Stunt dice are now renderable ([e9d72b3](https://github.com/javalent/dice-roller/commit/e9d72b351e5d066610e3178c70f9a0ab2be6bd0c))
+
+
+### Bug Fixes
+
+* Dice rollers will now cancel rendering when unloaded ([a0ddb12](https://github.com/javalent/dice-roller/commit/a0ddb12b3378619320a79890c9085cd33a8198a4))
+* Reverts unintentional breaking API change to `getRoller` ([2aff04b](https://github.com/javalent/dice-roller/commit/2aff04b851f6a5608859fe63852435e6e2932d61))
+
 ## [11.2.1](https://github.com/javalent/dice-roller/compare/11.2.0...11.2.1) (2024-09-26)
 
 

@@ -309,6 +309,8 @@ export class TableRoller extends GenericFileRoller<string> {
                     this.trigger("new-result");
                     resolve(this.result);
                 });
+
+                this.load();
             }
         });
     }
@@ -349,12 +351,15 @@ export class TableRoller extends GenericFileRoller<string> {
                 ) ||
                 this.lookup
             ) {
-                const roller = await API.getRoller(
+                const rollString =
                     this.lookup ??
-                        Array.from(table.columns.keys())[0]
-                            .split(":")
-                            .pop()
-                            .replace(/\`/g, ""),
+                    Array.from(table.columns.keys())[0]
+                        .split(":")
+                        .pop()
+                        .replace(/\`/g, "");
+
+                const roller = await API.getRoller(
+                    rollString.replace(/{ESCAPED_PIPE}/g, "\\|"),
                     this.source
                 );
                 if (roller) {
