@@ -10,6 +10,8 @@ interface NarrativeResult {
     advantage: number; //negative => threat
     triumph: number; //triumphs & despairs do not cancel, but count additonally for success/failure for the purpose of overall success.
     despair: number;
+    light: number; //Light & Dark Side points are rolled independently and do not cancel.
+    dark: number;
 }
 
 abstract class NarrativeRoller extends DiceRoller {
@@ -26,7 +28,9 @@ class BoostRoller extends NarrativeRoller {
             success: 0,
             advantage: 0,
             triumph: 0,
-            despair: 0
+            despair: 0,
+            light: 0,
+            dark: 0
         };
         for (const result of this.resultArray) {
             if (result === 6) narrativeResult.success += 1; //Success
@@ -60,7 +64,9 @@ class SetbackRoller extends NarrativeRoller {
             success: 0,
             advantage: 0,
             triumph: 0,
-            despair: 0
+            despair: 0,
+            light: 0,
+            dark: 0
         };
         for (const result of this.resultArray) {
             if (result === 6) narrativeResult.advantage -= 1; //1 Threat
@@ -90,7 +96,9 @@ class AbilityRoller extends NarrativeRoller {
             success: 0,
             advantage: 0,
             triumph: 0,
-            despair: 0
+            despair: 0,
+            light: 0,
+            dark: 0
         };
         for (const result of this.resultArray) {
             if (result === 8) {
@@ -129,7 +137,9 @@ class DifficultyRoller extends NarrativeRoller {
             success: 0,
             advantage: 0,
             triumph: 0,
-            despair: 0
+            despair: 0,
+            light: 0,
+            dark: 0
         };
         for (const result of this.resultArray) {
             if (result === 8) {
@@ -165,7 +175,9 @@ class ProficiencyRoller extends NarrativeRoller {
             success: 0,
             advantage: 0,
             triumph: 0,
-            despair: 0
+            despair: 0,
+            light: 0,
+            dark: 0
         };
         for (const result of this.resultArray) {
             //@Javalent are 0 results possible?
@@ -224,7 +236,9 @@ class ChallengeRoller extends NarrativeRoller {
             success: 0,
             advantage: 0,
             triumph: 0,
-            despair: 0
+            despair: 0,
+            light: 0,
+            dark: 0
         };
         for (const result of this.resultArray) {
             //@Javalent are 0 results possible?
@@ -282,43 +296,24 @@ class ForceRoller extends NarrativeRoller {
             success: 0,
             advantage: 0,
             triumph: 0,
-            despair: 0
+            despair: 0,
+            light: 0,
+            dark: 0
         };
         for (const result of this.resultArray) {
             //@Javalent are 0 results possible?
-            if (result === 12) {
-                //1 Despair
-                narrativeResult.despair += 1;
-                narrativeResult.success -= 1; //Despair counts as fail, but does not cancel Despair.
-            }
-            if (result === 11) narrativeResult.advantage -= 2; //2 Threat
-            if (result === 10) narrativeResult.advantage -= 2; //2 Threat
-            if (result === 9) {
-                //1 Threat 1 Fail
-                narrativeResult.advantage -= 1;
-                narrativeResult.success -= 1;
-            }
-            if (result === 8) {
-                //1 Threat 1 Fail
-                narrativeResult.advantage -= 1;
-                narrativeResult.success -= 1;
-            }
-            if (result === 7) {
-                //1 Threat
-                narrativeResult.advantage -= 1;
-            }
-            if (result === 6) {
-                //1 Threat
-                narrativeResult.advantage -= 1;
-            }
-            if (result === 5) {
-                //2 Fail
-                narrativeResult.success -= 2;
-            }
-            if (result === 4) narrativeResult.success -= 2; //2 Fail
-            if (result === 3) narrativeResult.success -= 1; //1 Fail
-            if (result === 2) narrativeResult.success -= 1; //1 Fail
-            if (result === 1) continue; //Blank
+            if (result === 12) narrativeResult.light += 2; //2 Light
+            if (result === 11) narrativeResult.light += 2; //2 Light
+            if (result === 10) narrativeResult.light += 2; //2 Light
+            if (result === 9) narrativeResult.light += 1; //1 Light
+            if (result === 8) narrativeResult.light += 1; //1 Light
+            if (result === 7) narrativeResult.dark += 2; //2 Dark
+            if (result === 6) narrativeResult.dark += 1; //1 Dark
+            if (result === 5) narrativeResult.dark += 1; //1 Dark
+            if (result === 4) narrativeResult.dark += 1; //1 Dark
+            if (result === 3) narrativeResult.dark += 1; //1 Dark
+            if (result === 2) narrativeResult.dark += 1; //1 Dark
+            if (result === 1) narrativeResult.dark += 1; //1 Dark
             if (result === 0) continue;
         }
 
@@ -354,7 +349,9 @@ export class NarrativeStackRoller extends RenderableRoller<NarrativeResult> {
             advantage: 0,
             threat: 0,
             triumph: 0,
-            despair: 0
+            despair: 0,
+            light: 0,
+            dark: 0
         };
 
         for (const child of this.children) {
@@ -372,6 +369,8 @@ export class NarrativeStackRoller extends RenderableRoller<NarrativeResult> {
             }
             map.triumph += die.triumph;
             map.despair += die.despair;
+            map.light += die.light;
+            map.dark += die.dark
         }
         return `**Totals**
 Successes: ${map.success}
@@ -379,7 +378,9 @@ Failures: ${map.failure}
 Advantages: ${map.advantage}
 Threats: ${map.threat}
 Triumphs: ${map.triumph}
-Despairs: ${map.despair}`;
+Despairs: ${map.despair}
+${map.light > 0 ? `Light Side: ${map.light}` : ''}
+${map.dark > 0 ? `Dark Side: ${map.dark}` : ''}`;
     }
     private formatSymbol(text: string, fontFamily: string): string {
         return `<span style="font-family: ${fontFamily}; font-weight: normal;">${text}</span>`;
@@ -404,6 +405,12 @@ Despairs: ${map.despair}`;
             } else if (this.result.despair > 0) {
                 display.push(`${Math.abs(this.result.despair)} ` + this.formatSymbol('y', this.data.narrativeSymbolSet));
             }
+            if (this.result.light > 0) {
+                display.push(`${this.result.light} ` + this.formatSymbol('z', this.data.narrativeSymbolSet));
+            }
+            if (this.result.dark > 0) {
+                display.push(`${this.result.dark} ` + this.formatSymbol('Z', this.data.narrativeSymbolSet));
+            }
             return display.join(", ");
         } else {
             if (this.result.success === 0) {
@@ -422,6 +429,12 @@ Despairs: ${map.despair}`;
                 display.push(`${this.result.triumph} triumph`);
             } else if (this.result.despair > 0) {
                 display.push(`${Math.abs(this.result.despair)} despair`);
+            }
+            if (this.result.light > 0) {
+                display.push(`${this.result.light} light side`);
+            }
+            if (this.result.dark > 0) {
+                display.push(`${this.result.dark} dark side`);
             }
             return display.join(", ");
         }
@@ -512,13 +525,17 @@ Despairs: ${map.despair}`;
                 a.advantage += b.toNarrativeResult().advantage;
                 a.triumph += b.toNarrativeResult().triumph;
                 a.despair += b.toNarrativeResult().despair;
+                a.light += b.toNarrativeResult().light;
+                a.dark += b.toNarrativeResult().dark;
                 return a;
             },
             {
                 success: 0,
                 advantage: 0,
                 triumph: 0,
-                despair: 0
+                despair: 0,
+                light: 0,
+                dark: 0
             }
         );
     }
