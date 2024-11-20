@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.4.1](https://github.com/javalent/dice-roller/compare/11.4.0...11.4.1) (2024-11-20)
+
+
+### Bug Fixes
+
+* Better handling of links within rendered rollers ([c2d5e17](https://github.com/javalent/dice-roller/commit/c2d5e1701873259a0e931a505c9441ccd29f099a))
+
 ## [11.4.0](https://github.com/javalent/dice-roller/compare/11.3.4...11.4.0) (2024-11-05)
 
 
