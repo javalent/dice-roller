@@ -88,23 +88,14 @@ export class TableRoller extends GenericFileRoller<string> {
         if (this.data.displayResultsInline) {
             result.unshift(this.inlineText);
         }
-        const div = createSpan();
+        const resultEl = this.resultEl.createSpan("embedded-table-result");
         MarkdownRenderer.render(
             this.app,
             this.getResultText(),
-            div,
+            resultEl,
             this.source,
             new Component()
         );
-        const resultEl = this.resultEl.createSpan("embedded-table-result");
-        if (
-            div.childElementCount == 1 &&
-            div.firstElementChild instanceof HTMLParagraphElement
-        ) {
-            resultEl.append(...Array.from(div.firstElementChild.childNodes));
-        } else {
-            resultEl.append(...Array.from(div.childNodes));
-        }
     }
 
     prettify(input: string): string {

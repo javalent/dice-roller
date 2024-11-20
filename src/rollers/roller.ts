@@ -154,6 +154,8 @@ abstract class BareRoller<T> extends Roller<T> {
     }
 
     async onClick(evt: MouseEvent) {
+        if (evt.target instanceof HTMLAnchorElement) return;
+
         evt.stopPropagation();
         evt.stopImmediatePropagation();
         if (window.getSelection()?.isCollapsed) {
