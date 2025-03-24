@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.4.2](https://github.com/javalent/dice-roller/compare/11.4.1...11.4.2) (2025-03-24)
+
+
+### Bug Fixes
+
+* Temporarily disable the `D` genesys dice due to overly aggressive matching preventing regular dice rolls. ([e256e05](https://github.com/javalent/dice-roller/commit/e256e05385ad113bceac8a386575bb83d4f961d7))
+
 ## [11.4.1](https://github.com/javalent/dice-roller/compare/11.4.0...11.4.1) (2024-11-20)
 
 
