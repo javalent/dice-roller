@@ -165,7 +165,7 @@ class LexerClass {
         },
         u: /u/u,
         narrative: {
-            match: /^(?:\d*(?:[GgYyBbRrPpSsWw]|[AaPpDdCcBbSsFf]|pro|boo|blk|k|sb|diff))(?: ?\d*(?:[GgYyBbRrPpSsWw]|[AaPpDdCcBbSsFf]|pro|boo|blk|k|sb|diff))+$/u,
+            match: /^(?:\d*(?:[GgYyBbRrPpSsWw]|[AaPpCcBbSsFf]|pro|boo|blk|k|sb|diff))(?: ?\d*(?:[GgYyBbRrPpSsWw]|[AaPpDdCcBbSsFf]|pro|boo|blk|k|sb|diff))+$/u,
             value: (match) => {
                 const isAbbr = /[AaCcDd]/.test(match);
                 return match
