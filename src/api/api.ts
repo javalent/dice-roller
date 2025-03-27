@@ -241,13 +241,16 @@ class APIInstance {
         const type = this.#getTypeFromLexemes(lexemes);
         switch (type) {
             case "narrative": {
-                return new NarrativeStackRoller(
+                const roller = new NarrativeStackRoller(
                         this.data,
                         content,
                         lexemes,
                         this.app,
                         position
                     );
+
+                roller.onload(); //Retriggering onload solves the timing issue with FS rendering.
+                return roller;
             }
             case "dice": {
                 const roller = new StackRoller(
